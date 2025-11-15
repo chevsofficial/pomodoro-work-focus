@@ -15,9 +15,10 @@ import {
 import { ScreenContainer } from '../components/ScreenContainer';
 import { RootStackParamList } from '../navigation/RootNavigator';
 import { ActivityType, PomodoroSettings } from '../models';
-import useAppStore, { useActivityTypes, useSettings } from '../store/appStore';
+import useAppStore, { useActivityTypes, useIsPro, useSettings } from '../store/appStore';
 import { colors } from '../theme/colors';
 import { spacing } from '../theme/spacing';
+import { FREE_ACTIVITY_TYPE_LIMIT } from '../config/proFeatures';
 
 const parsePositiveInt = (value: string, fallback: number) => {
   const parsed = parseInt(value, 10);
@@ -298,11 +299,17 @@ type NumericSettingKey =
 export const SettingsScreen: React.FC = () => {
   const settings = useSettings();
   const activityTypes = useActivityTypes();
+  const isPro = useIsPro();
   const updateSettings = useAppStore((state) => state.updateSettings);
   const addActivityType = useAppStore((state) => state.addActivityType);
   const updateActivityType = useAppStore((state) => state.updateActivityType);
   const deleteActivityType = useAppStore((state) => state.deleteActivityType);
   const navigation = useNavigation<SettingsNavigation>();
+  const handleUpgradePress = () => {
+    navigation.navigate('Paywall');
+  };
+
+  const hasReachedFreeActivityLimit = !isPro && activityTypes.length >= FREE_ACTIVITY_TYPE_LIMIT;
 
   const [numericValues, setNumericValues] = useState<Record<NumericSettingKey, string>>({
     workDurationMinutes: settings.workDurationMinutes.toString(),
@@ -359,6 +366,9 @@ export const SettingsScreen: React.FC = () => {
   );
 
   const openAddModal = () => {
+    if (hasReachedFreeActivityLimit) {
+      return;
+    }
     setEditingType(undefined);
     setModalVisible(true);
   };
@@ -380,10 +390,6 @@ export const SettingsScreen: React.FC = () => {
     if (editingType) {
       deleteActivityType(editingType.id);
     }
-  };
-
-  const handleUpgradePress = () => {
-    navigation.navigate('Paywall');
   };
 
   return (
@@ -443,10 +449,27 @@ export const SettingsScreen: React.FC = () => {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Activity Types</Text>
-            <TouchableOpacity onPress={openAddModal}>
-              <Text style={styles.sectionAction}>+ Add Activity Type</Text>
+            <TouchableOpacity onPress={openAddModal} disabled={hasReachedFreeActivityLimit}>
+              <Text
+                style={[
+                  styles.sectionAction,
+                  hasReachedFreeActivityLimit && styles.sectionActionDisabled,
+                ]}
+              >
+                + Add Activity Type
+              </Text>
             </TouchableOpacity>
           </View>
+          {hasReachedFreeActivityLimit && (
+            <View style={styles.proBanner}>
+              <Text style={styles.proBannerTitle}>
+                Free accounts can create up to {FREE_ACTIVITY_TYPE_LIMIT} activity types.
+              </Text>
+              <TouchableOpacity onPress={handleUpgradePress}>
+                <Text style={styles.proBannerAction}>Upgrade to Pro to unlock more</Text>
+              </TouchableOpacity>
+            </View>
+          )}
           {activityTypes.length === 0 && (
             <Text style={styles.emptyStateText}>No custom activity types yet.</Text>
           )}
@@ -511,6 +534,10 @@ const styles = StyleSheet.create({
     color: colors.accent,
     fontWeight: '600',
   },
+  sectionActionDisabled: {
+    color: colors.textSecondary,
+    opacity: 0.5,
+  },
   settingRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -564,6 +591,23 @@ const styles = StyleSheet.create({
   emptyStateText: {
     color: colors.textSecondary,
     fontSize: 14,
+  },
+  proBanner: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 12,
+    padding: spacing.md,
+    marginBottom: spacing.md,
+    backgroundColor: colors.background,
+  },
+  proBannerTitle: {
+    fontSize: 14,
+    color: colors.textPrimary,
+    marginBottom: spacing.xs,
+  },
+  proBannerAction: {
+    color: colors.primary,
+    fontWeight: '600',
   },
   upgradeButton: {
     backgroundColor: colors.primary,

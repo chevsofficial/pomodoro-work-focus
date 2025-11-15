@@ -292,6 +292,8 @@ export const useSettings = () => useAppStore((state) => state.settings);
 
 export const useProStatus = () => useAppStore((state) => state.proStatus);
 
+export const useIsPro = () => useAppStore((state) => state.proStatus.isPro);
+
 export const useActivityTypes = () => useAppStore((state) => state.activityTypes);
 
 export const useAppStateSnapshot = () =>
