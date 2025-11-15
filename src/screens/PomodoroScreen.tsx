@@ -1,6 +1,7 @@
 import { RouteProp, useRoute } from '@react-navigation/native';
 import React, { useEffect, useMemo, useState } from 'react';
 import {
+  AppState,
   Modal,
   ScrollView,
   StyleSheet,
@@ -108,6 +109,7 @@ export const PomodoroScreen: React.FC = () => {
     handleIntervalCompletion,
     skipCurrentInterval,
     completedWorkIntervals,
+    syncWithCurrentTime,
   } = useTimerStore((state) => state);
 
   const [isTaskPickerVisible, setTaskPickerVisible] = useState(false);
@@ -123,6 +125,19 @@ export const PomodoroScreen: React.FC = () => {
 
     return () => clearInterval(timer);
   }, [isRunning, tick]);
+
+  useEffect(() => {
+    syncWithCurrentTime();
+    const subscription = AppState.addEventListener('change', (status) => {
+      if (status === 'active') {
+        syncWithCurrentTime();
+      }
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, [syncWithCurrentTime]);
 
   useEffect(() => {
     if (isRunning && remainingSeconds <= 0) {
