@@ -210,3 +210,17 @@ export const useTimerStore = create<TimerState>((set, get) => ({
     }
   },
 }));
+
+useAppStore.subscribe(
+  (state) => state.settings,
+  () => {
+    const timerState = useTimerStore.getState();
+    if (timerState.isRunning || timerState.activeIntervalId) {
+      return;
+    }
+
+    useTimerStore.setState({
+      remainingSeconds: getDurationForType(timerState.currentIntervalType),
+    });
+  },
+);
