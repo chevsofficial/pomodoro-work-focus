@@ -8,10 +8,15 @@ import { useIsPro } from '../store/appStore';
 import { colors } from '../theme/colors';
 import { spacing } from '../theme/spacing';
 
+// Loosen typing so we can safely use `key` on these elements without TS complaining
+const AnyView = View as any;
+const AnyTouchableOpacity = TouchableOpacity as any;
+
 // IMPORTANT: named export must be called AnalyticsScreen
 export const AnalyticsScreen: React.FC = () => {
   const isPro = useIsPro();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+
   const handleUpgradePress = () => {
     navigation.navigate('Paywall');
   };
@@ -30,28 +35,40 @@ export const AnalyticsScreen: React.FC = () => {
         <Text style={styles.sectionTitle}>Date range</Text>
         <View style={styles.rangePills}>
           {baseRanges.map((label) => (
-            <View key={label} style={styles.rangePill}>
+            <AnyView key={label} style={styles.rangePill}>
               <Text style={styles.rangePillText}>{label}</Text>
-            </View>
+            </AnyView>
           ))}
+
           {isPro
             ? advancedRanges.map((label) => (
-                <View key={label} style={[styles.rangePill, styles.rangePillPro]}>
-                  <Text style={[styles.rangePillText, styles.rangePillTextPro]}>{label}</Text>
-                </View>
+                <AnyView
+                  key={label}
+                  style={[styles.rangePill, styles.rangePillPro]}
+                >
+                  <Text style={[styles.rangePillText, styles.rangePillTextPro]}>
+                    {label}
+                  </Text>
+                </AnyView>
               ))
             : (
-                <TouchableOpacity
+                <AnyTouchableOpacity
                   key="pro-lock"
                   style={[styles.rangePill, styles.rangePillLocked]}
                   onPress={handleUpgradePress}
                 >
-                  <Text style={[styles.rangePillText, styles.rangePillTextLocked]}>Custom range · Pro</Text>
-                </TouchableOpacity>
+                  <Text
+                    style={[styles.rangePillText, styles.rangePillTextLocked]}
+                  >
+                    Custom range · Pro
+                  </Text>
+                </AnyTouchableOpacity>
               )}
         </View>
         {!isPro && (
-          <Text style={styles.proHint}>Unlock advanced date ranges and more insights with Pomodoro Focus Pro.</Text>
+          <Text style={styles.proHint}>
+            Unlock advanced date ranges and more insights with Pomodoro Focus Pro.
+          </Text>
         )}
       </View>
 
