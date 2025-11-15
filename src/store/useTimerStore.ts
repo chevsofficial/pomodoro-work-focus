@@ -211,16 +211,15 @@ export const useTimerStore = create<TimerState>((set, get) => ({
   },
 }));
 
-useAppStore.subscribe(
-  (state) => state.settings,
-  () => {
-    const timerState = useTimerStore.getState();
-    if (timerState.isRunning || timerState.activeIntervalId) {
-      return;
-    }
+// Recalculate timer duration whenever the app store changes,
+// but only if the timer is idle (not running and no active interval).
+useAppStore.subscribe((state) => {
+  const timerState = useTimerStore.getState();
+  if (timerState.isRunning || timerState.activeIntervalId) {
+    return;
+  }
 
-    useTimerStore.setState({
-      remainingSeconds: getDurationForType(timerState.currentIntervalType),
-    });
-  },
-);
+  useTimerStore.setState({
+    remainingSeconds: getDurationForType(timerState.currentIntervalType),
+  });
+});
