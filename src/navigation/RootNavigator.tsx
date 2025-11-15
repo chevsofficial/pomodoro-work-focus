@@ -1,6 +1,7 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { NavigatorScreenParams } from '@react-navigation/native';
 import { AnalyticsScreen } from '../screens/AnalyticsScreen';
 import { InfoScreen } from '../screens/InfoScreen';
 import { PomodoroScreen } from '../screens/PomodoroScreen';
@@ -11,14 +12,14 @@ import { colors } from '../theme/colors';
 
 export type RootTabParamList = {
   Tasks: undefined;
-  Pomodoro: undefined;
+  Pomodoro: { taskId?: string } | undefined;
   Analytics: undefined;
   Settings: undefined;
   Info: undefined;
 };
 
 export type RootStackParamList = {
-  RootTabs: undefined;
+  RootTabs: NavigatorScreenParams<RootTabParamList>;
   TaskDetail: { taskId: string };
 };
 

@@ -125,6 +125,17 @@ export const TaskDetailScreen: React.FC = () => {
     ]);
   };
 
+  const handleStartFocus = () => {
+    if (!task) {
+      return;
+    }
+
+    navigation.navigate('RootTabs', {
+      screen: 'Pomodoro',
+      params: { taskId: task.id },
+    });
+  };
+
   if (!task || task.deletedAt) {
     return (
       <ScreenContainer>
@@ -171,6 +182,10 @@ export const TaskDetailScreen: React.FC = () => {
     <ScreenContainer>
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <Text style={styles.headerTitle}>Task Details</Text>
+        <TouchableOpacity style={styles.focusButton} onPress={handleStartFocus}>
+          <Text style={styles.focusButtonText}>Start Focus</Text>
+          <Text style={styles.focusButtonSubtitle}>Open the Pomodoro timer with this task.</Text>
+        </TouchableOpacity>
 
         <View style={styles.section}>
           <Text style={styles.sectionLabel}>Title</Text>
@@ -321,6 +336,23 @@ const styles = StyleSheet.create({
   actionsRow: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
+  },
+  focusButton: {
+    backgroundColor: colors.primary,
+    borderRadius: 16,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    marginBottom: spacing.lg,
+  },
+  focusButtonText: {
+    color: colors.background,
+    fontWeight: '700',
+    fontSize: 16,
+  },
+  focusButtonSubtitle: {
+    marginTop: spacing.xs,
+    color: colors.background,
+    fontSize: 13,
   },
   modalButton: {
     paddingHorizontal: spacing.lg,
