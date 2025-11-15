@@ -24,10 +24,13 @@ export type RootStackParamList = {
 
 const Tab = createBottomTabNavigator<RootTabParamList>();
 
-// <-- add this line
+// Keep this to relax types for Tab.Navigator
 const AnyTabNavigator = Tab.Navigator as any;
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
+
+// NEW: relax types for Stack.Navigator as well
+const AnyStackNavigator = Stack.Navigator as any;
 
 function TabNavigator() {
   return (
@@ -52,14 +55,18 @@ function TabNavigator() {
 
 export function RootNavigator() {
   return (
-    <Stack.Navigator
+    <AnyStackNavigator
       screenOptions={{
         headerStyle: { backgroundColor: colors.surface },
         headerTintColor: colors.textPrimary,
         contentStyle: { backgroundColor: colors.background },
       }}
     >
-      <Stack.Screen name="RootTabs" component={TabNavigator} options={{ headerShown: false }} />
+      <Stack.Screen
+        name="RootTabs"
+        component={TabNavigator}
+        options={{ headerShown: false }}
+      />
       <Stack.Screen
         name="TaskDetail"
         component={TaskDetailScreen}
@@ -67,6 +74,6 @@ export function RootNavigator() {
           title: 'Task Detail',
         }}
       />
-    </Stack.Navigator>
+    </AnyStackNavigator>
   );
 }

@@ -25,6 +25,27 @@ type TaskSection = {
   data: Task[];
 };
 
+const ActivityTypeChip: React.FC<{
+  type: ActivityType;
+  selected: boolean;
+  onPress: () => void;
+}> = ({ type, selected, onPress }) => {
+  return (
+    <TouchableOpacity
+      style={[
+        styles.activityTypeOption,
+        selected && styles.activityTypeOptionSelected,
+      ]}
+      onPress={onPress}
+    >
+      <Text style={styles.activityTypeOptionText}>{type.name}</Text>
+    </TouchableOpacity>
+  );
+};
+
+// Relax typing so we can safely pass `key` in JSX without TS complaining
+const AnyActivityTypeChip = ActivityTypeChip as any;
+
 const AddTaskModal: React.FC<{
   visible: boolean;
   onClose: () => void;
@@ -84,30 +105,37 @@ const AddTaskModal: React.FC<{
           <Text style={styles.modalLabel}>Activity Type</Text>
           <View style={styles.activityTypeList}>
             <TouchableOpacity
-              style={[styles.activityTypeOption, !activityTypeId && styles.activityTypeOptionSelected]}
+              style={[
+                styles.activityTypeOption,
+                !activityTypeId && styles.activityTypeOptionSelected,
+              ]}
               onPress={() => setActivityTypeId(undefined)}
             >
               <Text style={styles.activityTypeOptionText}>None</Text>
             </TouchableOpacity>
             {activityTypes.map((type) => (
-              <TouchableOpacity
+              <AnyActivityTypeChip
                 key={type.id}
-                style={[
-                  styles.activityTypeOption,
-                  activityTypeId === type.id && styles.activityTypeOptionSelected,
-                ]}
+                type={type}
+                selected={activityTypeId === type.id}
                 onPress={() => setActivityTypeId(type.id)}
-              >
-                <Text style={styles.activityTypeOptionText}>{type.name}</Text>
-              </TouchableOpacity>
+              />
             ))}
           </View>
           <View style={styles.modalActions}>
-            <TouchableOpacity style={[styles.modalButton, styles.modalButtonSecondary]} onPress={onClose}>
+            <TouchableOpacity
+              style={[styles.modalButton, styles.modalButtonSecondary]}
+              onPress={onClose}
+            >
               <Text style={styles.modalButtonText}>Cancel</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={[styles.modalButton, styles.modalButtonPrimary]} onPress={handleSave}>
-              <Text style={[styles.modalButtonText, styles.modalButtonPrimaryText]}>Save</Text>
+            <TouchableOpacity
+              style={[styles.modalButton, styles.modalButtonPrimary]}
+              onPress={handleSave}
+            >
+              <Text style={[styles.modalButtonText, styles.modalButtonPrimaryText]}>
+                Save
+              </Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -167,7 +195,10 @@ export const TasksScreen: React.FC = () => {
           {item.isCompleted && <Text style={styles.checkboxMark}>✓</Text>}
         </TouchableOpacity>
         <View style={styles.taskContent}>
-          <Text style={[styles.taskTitle, item.isCompleted && styles.taskTitleCompleted]} numberOfLines={2}>
+          <Text
+            style={[styles.taskTitle, item.isCompleted && styles.taskTitleCompleted]}
+            numberOfLines={2}
+          >
             {item.title}
           </Text>
           {activityType && (
@@ -187,17 +218,19 @@ export const TasksScreen: React.FC = () => {
         sections={sections}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContent}
-        renderSectionHeader={({ section }) => (
+        renderSectionHeader={({ section }) =>
           section.data.length > 0 ? (
             <Text style={styles.sectionHeader}>{section.title}</Text>
           ) : null
-        )}
+        }
         renderItem={({ item }) => renderTaskItem({ item })}
         ItemSeparatorComponent={() => <View style={styles.separator} />}
         ListEmptyComponent={() => (
           <View style={styles.emptyState}>
             <Text style={styles.emptyStateTitle}>No tasks yet</Text>
-            <Text style={styles.emptyStateSubtitle}>Create your first focus task to get started.</Text>
+            <Text style={styles.emptyStateSubtitle}>
+              Create your first focus task to get started.
+            </Text>
           </View>
         )}
       />
