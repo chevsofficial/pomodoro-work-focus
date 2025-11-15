@@ -8,6 +8,7 @@ import { PomodoroScreen } from '../screens/PomodoroScreen';
 import { SettingsScreen } from '../screens/SettingsScreen';
 import { TasksScreen } from '../screens/TasksScreen';
 import { TaskDetailScreen } from '../screens/TaskDetailScreen';
+import { PaywallScreen } from '../screens/PaywallScreen';
 import { colors } from '../theme/colors';
 
 export type RootTabParamList = {
@@ -21,6 +22,7 @@ export type RootTabParamList = {
 export type RootStackParamList = {
   RootTabs: NavigatorScreenParams<RootTabParamList>;
   TaskDetail: { taskId: string };
+  Paywall: undefined;
 };
 
 const Tab = createBottomTabNavigator<RootTabParamList>();
@@ -73,6 +75,13 @@ export function RootNavigator() {
         component={TaskDetailScreen}
         options={{
           title: 'Task Detail',
+        }}
+      />
+      <Stack.Screen
+        name="Paywall"
+        component={PaywallScreen}
+        options={{
+          title: 'Upgrade',
         }}
       />
     </AnyStackNavigator>
