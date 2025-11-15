@@ -1,13 +1,17 @@
-import React from 'react';
+import React, { ReactNode } from 'react';
 import { SafeAreaView, StyleSheet, View, ViewProps } from 'react-native';
 import { colors } from '../theme/colors';
 import { spacing } from '../theme/spacing';
 
-interface ScreenContainerProps extends ViewProps {
-  children: React.ReactNode;
-}
+type ScreenContainerProps = ViewProps & {
+  children?: ReactNode;
+};
 
-export const ScreenContainer: React.FC<ScreenContainerProps> = ({ children, style, ...rest }) => {
+export function ScreenContainer({
+  children,
+  style,
+  ...rest
+}: ScreenContainerProps) {
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={[styles.content, style]} {...rest}>
@@ -15,7 +19,7 @@ export const ScreenContainer: React.FC<ScreenContainerProps> = ({ children, styl
       </View>
     </SafeAreaView>
   );
-};
+}
 
 const styles = StyleSheet.create({
   safeArea: {

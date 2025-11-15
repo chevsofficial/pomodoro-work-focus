@@ -1,10 +1,12 @@
 {
-  "extends": "expo/tsconfig.base",
+  "extends": "./node_modules/expo/tsconfig.base",
   "compilerOptions": {
     "strict": true,
     "noImplicitAny": true,
     "moduleResolution": "node",
-    "jsx": "react-native"
+    "jsx": "react-native",
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true
   },
   "include": ["src", "App.tsx"],
   "exclude": ["node_modules", "babel.config.js", "metro.config.js"]

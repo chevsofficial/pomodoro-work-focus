@@ -17,9 +17,12 @@ export type RootTabParamList = {
 
 const Tab = createBottomTabNavigator<RootTabParamList>();
 
-export const RootNavigator: React.FC = () => {
+// <-- add this line
+const AnyTabNavigator = Tab.Navigator as any;
+
+export function RootNavigator() {
   return (
-    <Tab.Navigator
+    <AnyTabNavigator
       screenOptions={{
         headerStyle: { backgroundColor: colors.surface },
         headerTintColor: colors.textPrimary,
@@ -34,6 +37,6 @@ export const RootNavigator: React.FC = () => {
       <Tab.Screen name="Analytics" component={AnalyticsScreen} />
       <Tab.Screen name="Settings" component={SettingsScreen} />
       <Tab.Screen name="Info" component={InfoScreen} />
-    </Tab.Navigator>
+    </AnyTabNavigator>
   );
-};
+}
