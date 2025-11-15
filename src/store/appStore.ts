@@ -35,7 +35,7 @@ export interface AppStore extends AppStateSnapshot {
   updateTask: (taskId: string, updates: UpdateTaskPayload) => void;
   toggleTaskCompleted: (taskId: string) => void;
   deleteTaskSoft: (taskId: string) => void;
-  startInterval: (payload: StartIntervalPayload) => void;
+  startInterval: (payload: StartIntervalPayload) => string;
   finishInterval: (payload: FinishIntervalPayload) => void;
   skipInterval: (payload: SkipIntervalPayload) => void;
   updateSettings: (updates: Partial<PomodoroSettings>) => void;
@@ -204,6 +204,8 @@ const useAppStore = create<AppStore>((set, get) => {
       };
 
       setStateAndPersist((state) => ({ intervals: [...state.intervals, interval] }));
+
+      return interval.id;
     },
 
     finishInterval: ({ intervalId, endedAt }) => {

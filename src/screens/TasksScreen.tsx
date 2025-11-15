@@ -18,7 +18,7 @@ import useAppStore, { useActivityTypes, useTasks } from '../store/appStore';
 import { colors } from '../theme/colors';
 import { spacing } from '../theme/spacing';
 
-type TasksNavigation = NativeStackNavigationProp<RootStackParamList, 'RootTabs'>;
+type TasksNavigation = NativeStackNavigationProp<RootStackParamList>;
 
 type TaskSection = {
   title: string;
