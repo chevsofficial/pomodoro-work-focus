@@ -4,11 +4,12 @@ import { NavigationContainer, DefaultTheme, Theme } from '@react-navigation/nati
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { RootNavigator } from './src/navigation/RootNavigator';
+import type { RootStackParamList } from './src/navigation/RootNavigator';
 import { colors } from './src/theme/colors';
 
 declare global {
   namespace ReactNavigation {
-    interface RootParamList extends import('./src/navigation/RootNavigator').RootTabParamList {}
+    interface RootParamList extends RootStackParamList {}
   }
 }
 
