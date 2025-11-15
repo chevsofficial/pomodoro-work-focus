@@ -63,7 +63,9 @@ export const calculateAnalyticsStats = (
 ): AnalyticsStats => {
   const rangeStart = getRangeStart(range);
 
-  const completedTasks = tasks.filter((task) => task.isCompleted && !task.deletedAt).length;
+  const completedTasks = tasks.filter(
+    (task) => task.isCompleted && !task.deletedAt && isAfterRangeStart(task.updatedAt, rangeStart),
+  ).length;
 
   let completedWorkIntervals = 0;
   let skippedIntervals = 0;
