@@ -157,13 +157,22 @@ export const TaskDetailScreen: React.FC = () => {
   const renderInterval = (interval: IntervalSession) => {
     const start = new Date(interval.startedAt).getTime();
     const end = interval.endedAt ? new Date(interval.endedAt).getTime() : undefined;
-    const actualDuration = end ? Math.max(0, Math.round((end - start) / 1000)) : interval.durationSeconds;
+
+    // Planned duration = what the interval was configured for when it started
+    const plannedDurationSeconds = interval.durationSeconds;
+
+    // Actual duration = real elapsed time between start and end (fallback to planned if no end yet)
+    const actualDurationSeconds = end
+      ? Math.max(0, Math.round((end - start) / 1000))
+      : plannedDurationSeconds;
 
     return (
       <View key={interval.id} style={styles.intervalRow}>
         <View style={styles.intervalHeader}>
           <Text style={styles.intervalType}>{intervalTypeLabel[interval.type] ?? interval.type}</Text>
-          <Text style={styles.intervalStatus}>{interval.wasSkipped ? 'Skipped' : interval.endedAt ? 'Completed' : 'In Progress'}</Text>
+          <Text style={styles.intervalStatus}>
+            {interval.wasSkipped ? 'Skipped' : interval.endedAt ? 'Completed' : 'In Progress'}
+          </Text>
         </View>
         <Text style={styles.intervalDetail}>
           Start: <Text style={styles.intervalValue}>{formatDateTime(interval.startedAt)}</Text>
@@ -172,7 +181,10 @@ export const TaskDetailScreen: React.FC = () => {
           End: <Text style={styles.intervalValue}>{formatDateTime(interval.endedAt)}</Text>
         </Text>
         <Text style={styles.intervalDetail}>
-          Duration: <Text style={styles.intervalValue}>{formatDuration(actualDuration)}</Text>
+          Planned: <Text style={styles.intervalValue}>{formatDuration(plannedDurationSeconds)}</Text>
+        </Text>
+        <Text style={styles.intervalDetail}>
+          Actual: <Text style={styles.intervalValue}>{formatDuration(actualDurationSeconds)}</Text>
         </Text>
       </View>
     );
