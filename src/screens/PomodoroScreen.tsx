@@ -106,7 +106,6 @@ export const PomodoroScreen: React.FC = () => {
     isRunning,
     startTimer,
     pauseTimer,
-    resetTimer,
     tick,
     handleIntervalCompletion,
     skipCurrentInterval,
@@ -246,12 +245,6 @@ export const PomodoroScreen: React.FC = () => {
 
       <View style={styles.secondaryControls}>
         <TouchableOpacity
-          style={[styles.secondaryButton, styles.resetButton]}
-          onPress={resetTimer}
-        >
-          <Text style={styles.secondaryButtonText}>Reset</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
           style={[styles.secondaryButton, styles.skipButton]}
           onPress={skipCurrentInterval}
         >
@@ -388,7 +381,7 @@ const styles = StyleSheet.create({
   },
   secondaryControls: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
   },
   secondaryButton: {
     flex: 1,
@@ -403,9 +396,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     color: colors.textPrimary,
-  },
-  resetButton: {
-    backgroundColor: colors.surface,
   },
   skipButton: {
     backgroundColor: colors.surface,
