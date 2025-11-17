@@ -57,25 +57,27 @@ const TaskPickerModal: React.FC<{
                 Track interval without linking a task.
               </Text>
             </TouchableOpacity>
+
             {tasks.map((task) => (
-              <TouchableOpacity
-                // key removed to satisfy strict TypeScript typing
-                style={[
-                  styles.modalTaskRow,
-                  selectedTaskId === task.id && styles.modalTaskRowSelected,
-                ]}
-                onPress={() => {
-                  onSelect(task.id);
-                  onClose();
-                }}
-              >
-                <Text style={styles.modalTaskTitle}>{task.title}</Text>
-                {task.description && (
-                  <Text style={styles.modalTaskSubtitle} numberOfLines={2}>
-                    {task.description}
-                  </Text>
-                )}
-              </TouchableOpacity>
+              <React.Fragment key={task.id}>
+                <TouchableOpacity
+                  style={[
+                    styles.modalTaskRow,
+                    selectedTaskId === task.id && styles.modalTaskRowSelected,
+                  ]}
+                  onPress={() => {
+                    onSelect(task.id);
+                    onClose();
+                  }}
+                >
+                  <Text style={styles.modalTaskTitle}>{task.title}</Text>
+                  {task.description && (
+                    <Text style={styles.modalTaskSubtitle} numberOfLines={2}>
+                      {task.description}
+                    </Text>
+                  )}
+                </TouchableOpacity>
+              </React.Fragment>
             ))}
           </ScrollView>
           <TouchableOpacity
@@ -179,23 +181,24 @@ export const PomodoroScreen: React.FC = () => {
 
       <View style={styles.segmentedControl}>
         {intervalOptions.map((option) => (
-          <TouchableOpacity
-            // key removed to satisfy strict TypeScript typing
-            style={[
-              styles.segment,
-              currentIntervalType === option.value && styles.segmentActive,
-            ]}
-            onPress={() => setIntervalType(option.value)}
-          >
-            <Text
+          <React.Fragment key={option.value}>
+            <TouchableOpacity
               style={[
-                styles.segmentLabel,
-                currentIntervalType === option.value && styles.segmentLabelActive,
+                styles.segment,
+                currentIntervalType === option.value && styles.segmentActive,
               ]}
+              onPress={() => setIntervalType(option.value)}
             >
-              {option.label}
-            </Text>
-          </TouchableOpacity>
+              <Text
+                style={[
+                  styles.segmentLabel,
+                  currentIntervalType === option.value && styles.segmentLabelActive,
+                ]}
+              >
+                {option.label}
+              </Text>
+            </TouchableOpacity>
+          </React.Fragment>
         ))}
       </View>
 
