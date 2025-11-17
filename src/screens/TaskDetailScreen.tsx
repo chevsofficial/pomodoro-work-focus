@@ -258,6 +258,13 @@ export const TaskDetailScreen: React.FC = () => {
           <Text style={styles.sectionValue}>{formatDateTime(task.createdAt)}</Text>
         </View>
 
+        {task.completedAt && (
+          <View style={styles.section}>
+            <Text style={styles.sectionLabel}>Completed</Text>
+            <Text style={styles.sectionValue}>{formatDateTime(task.completedAt)}</Text>
+          </View>
+        )}
+
         <View style={styles.section}>
           <Text style={styles.sectionLabel}>Intervals History</Text>
           {sortedIntervals.length === 0 ? (
