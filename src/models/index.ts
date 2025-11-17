@@ -8,6 +8,7 @@ export interface Task {
   createdAt: string;
   updatedAt: string;
   isCompleted: boolean;
+  completedAt?: string;
   deletedAt?: string;
 }
 

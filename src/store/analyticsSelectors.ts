@@ -64,7 +64,7 @@ export const calculateAnalyticsStats = (
   const rangeStart = getRangeStart(range);
 
   const completedTasks = tasks.filter(
-    (task) => task.isCompleted && !task.deletedAt && isAfterRangeStart(task.updatedAt, rangeStart),
+    (task) => task.completedAt && !task.deletedAt && isAfterRangeStart(task.completedAt, rangeStart),
   ).length;
 
   let completedWorkIntervals = 0;

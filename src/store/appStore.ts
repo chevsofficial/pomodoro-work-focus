@@ -8,7 +8,9 @@ type AddTaskPayload = {
   activityTypeId?: string;
 };
 
-type UpdateTaskPayload = Partial<Pick<Task, 'title' | 'description' | 'activityTypeId' | 'isCompleted' | 'deletedAt'>>;
+type UpdateTaskPayload = Partial<
+  Pick<Task, 'title' | 'description' | 'activityTypeId' | 'isCompleted' | 'completedAt' | 'deletedAt'>
+>;
 
 type AddActivityTypePayload = Omit<ActivityType, 'id'>;
 
@@ -142,6 +144,7 @@ const useAppStore = create<AppStore>((set, get) => {
         createdAt: timestamp,
         updatedAt: timestamp,
         isCompleted: false,
+        completedAt: undefined,
       };
 
       setStateAndPersist((state) => ({ tasks: [...state.tasks, newTask] }));
@@ -150,15 +153,30 @@ const useAppStore = create<AppStore>((set, get) => {
     updateTask: (taskId, updates) => {
       const timestamp = nowIso();
       setStateAndPersist((state) => ({
-        tasks: state.tasks.map((task) =>
-          task.id === taskId
-            ? {
-                ...task,
-                ...updates,
-                updatedAt: timestamp,
-              }
-            : task,
-        ),
+        tasks: state.tasks.map((task) => {
+          if (task.id !== taskId) {
+            return task;
+          }
+
+          const isCompletionUpdate = 'isCompleted' in updates || 'completedAt' in updates;
+          const nextIsCompleted = updates.isCompleted ?? task.isCompleted;
+          const nextCompletedAt =
+            'completedAt' in updates
+              ? updates.completedAt
+              : isCompletionUpdate
+              ? nextIsCompleted
+                ? timestamp
+                : undefined
+              : task.completedAt;
+
+          return {
+            ...task,
+            ...updates,
+            isCompleted: nextIsCompleted,
+            completedAt: nextCompletedAt,
+            updatedAt: timestamp,
+          };
+        }),
       }));
     },
 
@@ -170,6 +188,7 @@ const useAppStore = create<AppStore>((set, get) => {
             ? {
                 ...task,
                 isCompleted: !task.isCompleted,
+                completedAt: !task.isCompleted ? timestamp : undefined,
                 updatedAt: timestamp,
               }
             : task,
