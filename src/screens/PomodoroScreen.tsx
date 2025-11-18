@@ -109,11 +109,13 @@ export const PomodoroScreen: React.FC = () => {
     isRunning,
     startTimer,
     pauseTimer,
+    resetTimer,
     tick,
     handleIntervalCompletion,
     skipCurrentInterval,
     completedWorkIntervals,
     syncWithCurrentTime,
+    activeIntervalId,
   } = useTimerStore((state) => state);
 
   const [isTaskPickerVisible, setTaskPickerVisible] = useState(false);
@@ -250,12 +252,14 @@ export const PomodoroScreen: React.FC = () => {
       </View>
 
       <View style={styles.secondaryControls}>
-        <TouchableOpacity
-          style={[styles.secondaryButton, styles.skipButton]}
-          onPress={skipCurrentInterval}
-        >
-          <Text style={styles.secondaryButtonText}>Skip</Text>
-        </TouchableOpacity>
+        {activeIntervalId && (
+          <TouchableOpacity
+            style={[styles.secondaryButton, styles.skipButton]}
+            onPress={skipCurrentInterval}
+          >
+            <Text style={styles.secondaryButtonText}>Skip</Text>
+          </TouchableOpacity>
+        )}
       </View>
 
       <TaskPickerModal
