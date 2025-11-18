@@ -7,17 +7,58 @@ const ONE_MINUTE_IN_SECONDS = 60;
 
 const getSettings = () => useAppStore.getState().settings;
 
-const getDurationForType = (type: IntervalType) => {
-  const settings = getSettings();
+const getTimingConfigForTask = (taskId?: string) => {
+  const appState = useAppStore.getState();
+  const { settings, tasks, activityTypes } = appState;
+
+  if (!taskId) {
+    return {
+      workMinutes: settings.workDurationMinutes,
+      shortBreakMinutes: settings.shortBreakMinutes,
+      longBreakMinutes: settings.longBreakMinutes,
+      intervalsBeforeLongBreak: settings.intervalsBeforeLongBreak,
+    };
+  }
+
+  const task = tasks.find((t) => t.id === taskId);
+  if (!task || !task.activityTypeId) {
+    return {
+      workMinutes: settings.workDurationMinutes,
+      shortBreakMinutes: settings.shortBreakMinutes,
+      longBreakMinutes: settings.longBreakMinutes,
+      intervalsBeforeLongBreak: settings.intervalsBeforeLongBreak,
+    };
+  }
+
+  const activityType = activityTypes.find((a) => a.id === task.activityTypeId);
+  if (!activityType) {
+    return {
+      workMinutes: settings.workDurationMinutes,
+      shortBreakMinutes: settings.shortBreakMinutes,
+      longBreakMinutes: settings.longBreakMinutes,
+      intervalsBeforeLongBreak: settings.intervalsBeforeLongBreak,
+    };
+  }
+
+  return {
+    workMinutes: activityType.workDurationMinutes,
+    shortBreakMinutes: activityType.shortBreakMinutes,
+    longBreakMinutes: activityType.longBreakMinutes,
+    intervalsBeforeLongBreak: activityType.intervalsBeforeLongBreak,
+  };
+};
+
+const getDurationForType = (type: IntervalType, taskId?: string) => {
+  const config = getTimingConfigForTask(taskId);
 
   switch (type) {
     case 'short_break':
-      return Math.max(1, Math.round(settings.shortBreakMinutes * ONE_MINUTE_IN_SECONDS));
+      return Math.max(1, Math.round(config.shortBreakMinutes * ONE_MINUTE_IN_SECONDS));
     case 'long_break':
-      return Math.max(1, Math.round(settings.longBreakMinutes * ONE_MINUTE_IN_SECONDS));
+      return Math.max(1, Math.round(config.longBreakMinutes * ONE_MINUTE_IN_SECONDS));
     case 'work':
     default:
-      return Math.max(1, Math.round(settings.workDurationMinutes * ONE_MINUTE_IN_SECONDS));
+      return Math.max(1, Math.round(config.workMinutes * ONE_MINUTE_IN_SECONDS));
   }
 };
 
@@ -25,9 +66,10 @@ const determineNextInterval = (
   finishedType: IntervalType,
   completedWorkIntervals: number,
   shouldCountWorkCompletion: boolean,
+  taskId?: string,
 ) => {
-  const settings = getSettings();
-  const requiredBeforeLongBreak = Math.max(1, settings.intervalsBeforeLongBreak || 1);
+  const config = getTimingConfigForTask(taskId);
+  const requiredBeforeLongBreak = Math.max(1, config.intervalsBeforeLongBreak || 1);
 
   if (finishedType === 'work') {
     const incremented = shouldCountWorkCompletion ? completedWorkIntervals + 1 : completedWorkIntervals;
@@ -125,7 +167,7 @@ export const useTimerStore = create<TimerState>((set, get) => {
         appStore.skipInterval({ intervalId: state.activeIntervalId });
       }
 
-      const duration = getDurationForType(type);
+      const duration = getDurationForType(type, state.currentTaskId);
       set({
         currentIntervalType: type,
         remainingSeconds: duration,
@@ -146,7 +188,7 @@ export const useTimerStore = create<TimerState>((set, get) => {
 
       let remainingSeconds = state.remainingSeconds;
       if (!remainingSeconds || remainingSeconds <= 0) {
-        remainingSeconds = getDurationForType(state.currentIntervalType);
+        remainingSeconds = getDurationForType(state.currentIntervalType, state.currentTaskId);
       }
 
       let intervalId = state.activeIntervalId;
@@ -155,7 +197,7 @@ export const useTimerStore = create<TimerState>((set, get) => {
         intervalId = appStore.startInterval({
           taskId: state.currentTaskId,
           type: state.currentIntervalType,
-          durationSeconds: getDurationForType(state.currentIntervalType),
+          durationSeconds: getDurationForType(state.currentIntervalType, state.currentTaskId),
         });
       }
 
@@ -188,7 +230,7 @@ export const useTimerStore = create<TimerState>((set, get) => {
 
       cancelScheduledNotificationIfNeeded();
       set({
-        remainingSeconds: getDurationForType(state.currentIntervalType),
+        remainingSeconds: getDurationForType(state.currentIntervalType, state.currentTaskId),
         isRunning: false,
         activeIntervalId: undefined,
         intervalStartTime: undefined,
@@ -222,13 +264,14 @@ export const useTimerStore = create<TimerState>((set, get) => {
         state.currentIntervalType,
         state.completedWorkIntervals,
         true,
+        state.currentTaskId,
       );
 
       cancelScheduledNotificationIfNeeded();
       set({
         currentIntervalType: nextType,
         completedWorkIntervals: nextCompletedWorkIntervals,
-        remainingSeconds: getDurationForType(nextType),
+        remainingSeconds: getDurationForType(nextType, state.currentTaskId),
         isRunning: false,
         activeIntervalId: undefined,
         intervalStartTime: undefined,
@@ -249,7 +292,7 @@ export const useTimerStore = create<TimerState>((set, get) => {
         intervalId = appStore.startInterval({
           taskId: state.currentTaskId,
           type: state.currentIntervalType,
-          durationSeconds: getDurationForType(state.currentIntervalType),
+          durationSeconds: getDurationForType(state.currentIntervalType, state.currentTaskId),
         });
       }
 
@@ -259,13 +302,14 @@ export const useTimerStore = create<TimerState>((set, get) => {
         state.currentIntervalType,
         state.completedWorkIntervals,
         false,
+        state.currentTaskId,
       );
 
       cancelScheduledNotificationIfNeeded();
       set({
         currentIntervalType: nextType,
         completedWorkIntervals: nextCompletedWorkIntervals,
-        remainingSeconds: getDurationForType(nextType),
+        remainingSeconds: getDurationForType(nextType, state.currentTaskId),
         isRunning: false,
         activeIntervalId: undefined,
         intervalStartTime: undefined,
@@ -300,7 +344,7 @@ useAppStore.subscribe((state) => {
   }
 
   useTimerStore.setState({
-    remainingSeconds: getDurationForType(timerState.currentIntervalType),
+    remainingSeconds: getDurationForType(timerState.currentIntervalType, timerState.currentTaskId),
     intervalStartTime: undefined,
     plannedEndTime: undefined,
   });
