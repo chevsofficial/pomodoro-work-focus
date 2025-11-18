@@ -158,7 +158,30 @@ export const useTimerStore = create<TimerState>((set, get) => {
     plannedEndTime: undefined,
     scheduledNotificationId: undefined,
 
-    setCurrentTask: (taskId) => set({ currentTaskId: taskId }),
+    setCurrentTask: (taskId) =>
+      set((state) => {
+        // If timer is running or an interval is active, don't mess with remaining time.
+        if (state.isRunning || state.activeIntervalId) {
+          return {
+            ...state,
+            currentTaskId: taskId,
+          };
+        }
+
+        // Timer is idle → recompute remainingSeconds using the new task's config
+        const newRemaining = getDurationForType(
+          state.currentIntervalType,
+          taskId,
+        );
+
+        return {
+          ...state,
+          currentTaskId: taskId,
+          remainingSeconds: newRemaining,
+          intervalStartTime: undefined,
+          plannedEndTime: undefined,
+        };
+      }),
 
     setIntervalType: (type) => {
       const state = get();
