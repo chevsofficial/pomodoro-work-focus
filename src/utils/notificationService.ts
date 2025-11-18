@@ -26,13 +26,21 @@ export const initializeNotifications = () => {
 };
 
 export const requestNotificationPermissions = async (): Promise<boolean> => {
-  const existing = await Notifications.getPermissionsAsync();
-  if (existing.granted || existing.status === Notifications.AuthorizationStatus.GRANTED) {
-    return true;
-  }
+  try {
+    const { status: existingStatus } = await Notifications.getPermissionsAsync();
 
-  const requested = await Notifications.requestPermissionsAsync();
-  return requested.granted || requested.status === Notifications.AuthorizationStatus.GRANTED;
+    let finalStatus = existingStatus;
+
+    if (existingStatus !== 'granted') {
+      const { status } = await Notifications.requestPermissionsAsync();
+      finalStatus = status;
+    }
+
+    return finalStatus === 'granted';
+  } catch (error) {
+    console.warn('[Notifications] Error requesting permissions', error);
+    return false;
+  }
 };
 
 const getNotificationCopy = (intervalType: IntervalType) => {
@@ -60,25 +68,34 @@ export const scheduleIntervalCompletionNotification = async ({
     return undefined;
   }
 
-  const { title, body } = getNotificationCopy(intervalType);
-  const trigger: Notifications.TimeIntervalTriggerInput = {
-    seconds: secondsFromNow,
-    repeats: false,
-  };
+  try {
+    const { title, body } = getNotificationCopy(intervalType);
+    const trigger: Notifications.TimeIntervalTriggerInput = {
+      seconds: secondsFromNow,
+      repeats: false,
+    };
 
-  if (Platform.OS === 'android') {
-    trigger.channelId = CHANNEL_ID;
+    if (Platform.OS === 'android') {
+      trigger.channelId = CHANNEL_ID;
+    }
+
+    return await Notifications.scheduleNotificationAsync({
+      content: {
+        title,
+        body,
+      },
+      trigger,
+    });
+  } catch (error) {
+    console.warn('[Notifications] Error scheduling notification', error);
+    return undefined;
   }
-
-  return Notifications.scheduleNotificationAsync({
-    content: {
-      title,
-      body,
-    },
-    trigger,
-  });
 };
 
 export const cancelScheduledNotification = async (identifier: string) => {
-  await Notifications.cancelScheduledNotificationAsync(identifier);
+  try {
+    await Notifications.cancelScheduledNotificationAsync(identifier);
+  } catch (error) {
+    console.warn('[Notifications] Error canceling notification', error);
+  }
 };

@@ -19,6 +19,7 @@ import useAppStore, { useActivityTypes, useIsPro, useSettings } from '../store/a
 import { colors } from '../theme/colors';
 import { spacing } from '../theme/spacing';
 import { FREE_ACTIVITY_TYPE_LIMIT } from '../config/proFeatures';
+import { requestNotificationPermissions } from '../utils/notificationService';
 
 const parsePositiveInt = (value: string, fallback: number) => {
   const parsed = parseInt(value, 10);
@@ -342,9 +343,25 @@ export const SettingsScreen: React.FC = () => {
 
   const handleToggleChange = (key: keyof Pick<
     PomodoroSettings,
-    'autoStartNextInterval' | 'soundEnabled' | 'vibrationEnabled' | 'notificationsEnabled'
+    'autoStartNextInterval' | 'soundEnabled' | 'vibrationEnabled'
   >) => {
     return (value: boolean) => updateSettings({ [key]: value });
+  };
+
+  const handleToggleNotifications = async (enabled: boolean) => {
+    if (enabled) {
+      const granted = await requestNotificationPermissions();
+      if (!granted) {
+        updateSettings({ notificationsEnabled: false });
+        Alert.alert(
+          'Notifications disabled',
+          'We could not enable notifications. Please check your system settings.',
+        );
+        return;
+      }
+    }
+
+    updateSettings({ notificationsEnabled: enabled });
   };
 
   const [isModalVisible, setModalVisible] = useState(false);
@@ -442,7 +459,7 @@ export const SettingsScreen: React.FC = () => {
           <SettingToggleRow
             label="Notifications enabled"
             value={settings.notificationsEnabled}
-            onValueChange={handleToggleChange('notificationsEnabled')}
+            onValueChange={handleToggleNotifications}
           />
         </View>
 
