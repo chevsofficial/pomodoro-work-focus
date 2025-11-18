@@ -130,16 +130,31 @@ export const useTimerStore = create<TimerState>((set, get) => {
       return;
     }
 
+    const state = get();
+
+    let nextIntervalType: IntervalType | undefined;
+
+    if (type === 'work') {
+      const { nextType } = determineNextInterval(
+        'work',
+        state.completedWorkIntervals,
+        true,
+        state.currentTaskId,
+      );
+      nextIntervalType = nextType;
+    }
+
     void scheduleIntervalCompletionNotification({
       secondsFromNow,
       intervalType: type,
+      nextIntervalType,
     }).then((identifier) => {
       if (!identifier) {
         return;
       }
 
-      const state = get();
-      if (!state.isRunning) {
+      const latest = get();
+      if (!latest.isRunning) {
         return;
       }
 

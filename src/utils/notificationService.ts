@@ -43,33 +43,39 @@ export const requestNotificationPermissions = async (): Promise<boolean> => {
   }
 };
 
-const getNotificationCopy = (intervalType: IntervalType) => {
-  if (intervalType === 'work') {
-    return {
-      title: 'Work interval finished',
-      body: 'Time for a short break.',
-    };
-  }
-
-  return {
-    title: 'Break finished',
-    body: 'Ready to get back to it?',
-  };
-};
-
 export const scheduleIntervalCompletionNotification = async ({
   secondsFromNow,
   intervalType,
+  nextIntervalType,
 }: {
   secondsFromNow: number;
   intervalType: IntervalType;
+  nextIntervalType?: IntervalType;
 }): Promise<string | undefined> => {
   if (secondsFromNow <= 0) {
     return undefined;
   }
 
   try {
-    const { title, body } = getNotificationCopy(intervalType);
+    let title = '';
+    let body = '';
+
+    if (intervalType === 'work') {
+      title = 'Work interval completed';
+
+      if (nextIntervalType === 'long_break') {
+        body = 'Great job! Time for a long break.';
+      } else {
+        body = 'Nice work! Time for a short break.';
+      }
+    } else if (intervalType === 'short_break' || intervalType === 'long_break') {
+      title = intervalType === 'short_break' ? 'Short break finished' : 'Long break finished';
+      body = "Let's get back to focusing.";
+    } else {
+      title = 'Interval completed';
+      body = 'Ready for the next one?';
+    }
+
     const trigger: Notifications.TimeIntervalTriggerInput = {
       seconds: secondsFromNow,
       repeats: false,
