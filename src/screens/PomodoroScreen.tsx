@@ -148,10 +148,13 @@ export const PomodoroScreen: React.FC = () => {
 
   useEffect(() => {
     const incomingTaskId = route.params?.taskId;
-    if (incomingTaskId && incomingTaskId !== currentTaskId) {
+
+    // If we were navigated here with a taskId, use it once.
+    // After that, the user can freely change the task via the picker.
+    if (incomingTaskId) {
       setCurrentTask(incomingTaskId);
     }
-  }, [route.params?.taskId, currentTaskId, setCurrentTask]);
+  }, [route.params?.taskId, setCurrentTask]);
 
   const selectedTask = useMemo(
     () => visibleTasks.find((task) => task.id === currentTaskId),
