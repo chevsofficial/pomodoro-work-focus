@@ -95,7 +95,10 @@ const TaskPickerModal: React.FC<{
 export const PomodoroScreen: React.FC = () => {
   const route = useRoute<RouteProp<RootTabParamList, 'Pomodoro'>>();
   const tasks = useTasks();
-  const visibleTasks = useMemo(() => tasks.filter((task) => !task.deletedAt), [tasks]);
+  const visibleTasks = useMemo(
+    () => tasks.filter((task) => !task.deletedAt && !task.completedAt),
+    [tasks],
+  );
 
   const {
     currentIntervalType,
