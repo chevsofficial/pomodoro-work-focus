@@ -45,6 +45,9 @@ type MetricUnit = 'workIntervals' | 'focusHours';
 type TaskFilterId = 'all' | string;
 
 const PIE_COLORS = ['#FF5A5F', '#4CAF50', '#FFC107'];
+const screenWidth = Dimensions.get('window').width;
+const CHART_HORIZONTAL_MARGIN = 24;
+const chartWidth = screenWidth - CHART_HORIZONTAL_MARGIN * 2;
 
 const startOfDay = (d: Date) =>
   new Date(d.getFullYear(), d.getMonth(), d.getDate());
@@ -311,8 +314,6 @@ export const AnalyticsScreen: React.FC = () => {
     legendFontSize: 12,
   }));
 
-  const screenWidth = Dimensions.get('window').width;
-
   const chartConfig = {
     backgroundGradientFrom: colors.surface,
     backgroundGradientTo: colors.surface,
@@ -324,8 +325,6 @@ export const AnalyticsScreen: React.FC = () => {
     },
   } as const;
 
-  const yAxisSuffix = metricUnit === 'focusHours' ? 'h' : '';
-
   const hasAnyData =
     stats.completedWorkIntervals > 0 ||
     stats.skippedIntervals > 0 ||
@@ -333,259 +332,276 @@ export const AnalyticsScreen: React.FC = () => {
     stats.totalFocusSeconds > 0;
 
   return (
-    <ScreenContainer>
-      <Text style={styles.title}>Analytics</Text>
-      <Text style={styles.subtitle}>
-        Your focus analytics will appear here once you start using the app.
-      </Text>
+    <ScreenContainer style={styles.screenContainer}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+      >
+        <Text style={styles.title}>Analytics</Text>
+        <Text style={styles.subtitle}>
+          Your focus analytics will appear here once you start using the app.
+        </Text>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Date range</Text>
-        <View style={styles.rangeRow}>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.rangeScrollContent}
-          >
-            {DATE_RANGE_OPTIONS.map((opt) => {
-              const isActive = range === opt.key;
-              const isCustom = opt.key === 'custom';
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Date range</Text>
+          <View style={styles.rangeRow}>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.rangeScrollContent}
+            >
+              {DATE_RANGE_OPTIONS.map((opt) => {
+                const isActive = range === opt.key;
+                const isCustom = opt.key === 'custom';
 
-              const handlePress = () => {
-                if (isCustom && !isPro) {
-                  Alert.alert('Pro feature', 'Custom date ranges are available in Pro.');
-                  return;
-                }
-                setRange(opt.key);
-              };
+                const handlePress = () => {
+                  if (isCustom && !isPro) {
+                    Alert.alert('Pro feature', 'Custom date ranges are available in Pro.');
+                    return;
+                  }
+                  setRange(opt.key);
+                };
 
-              return (
-                <TouchableOpacity
-                  key={opt.key}
-                  style={[
-                    styles.rangePill,
-                    isActive && styles.rangePillActive,
-                    isCustom && !isPro && styles.rangePillLocked,
-                  ]}
-                  onPress={handlePress}
-                >
-                  <Text
+                return (
+                  <TouchableOpacity
+                    key={opt.key}
                     style={[
-                      styles.rangePillLabel,
-                      isActive && styles.rangePillLabelActive,
+                      styles.rangePill,
+                      isActive && styles.rangePillActive,
+                      isCustom && !isPro && styles.rangePillLocked,
                     ]}
+                    onPress={handlePress}
                   >
-                    {opt.label}
-                    {isCustom && !isPro ? ' 🔒' : ''}
-                  </Text>
-                </TouchableOpacity>
-              );
+                    <Text
+                      style={[
+                        styles.rangePillLabel,
+                        isActive && styles.rangePillLabelActive,
+                      ]}
+                    >
+                      {opt.label}
+                      {isCustom && !isPro ? ' 🔒' : ''}
+                    </Text>
+                  </TouchableOpacity>
+                );
               })}
             </ScrollView>
           </View>
         </View>
 
-      <View style={styles.taskFilterRow}>
-        <Text style={styles.taskFilterLabel}>Task</Text>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.taskFilterScroll}
-        >
-          <TouchableOpacity
-            style={[
-              styles.taskFilterPill,
-              selectedTaskId === 'all' && styles.taskFilterPillActive,
-            ]}
-            onPress={() => setSelectedTaskId('all')}
+        <View style={styles.taskFilterRow}>
+          <Text style={styles.taskFilterLabel}>Task</Text>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.taskFilterScroll}
           >
-            <Text
-              style={[
-                styles.taskFilterPillLabel,
-                selectedTaskId === 'all' && styles.taskFilterPillLabelActive,
-              ]}
-            >
-              All tasks
-            </Text>
-          </TouchableOpacity>
-
-          {selectableTasks.map((task) => (
             <TouchableOpacity
-              key={task.id}
               style={[
                 styles.taskFilterPill,
-                selectedTaskId === task.id && styles.taskFilterPillActive,
+                selectedTaskId === 'all' && styles.taskFilterPillActive,
               ]}
-              onPress={() => setSelectedTaskId(task.id)}
+              onPress={() => setSelectedTaskId('all')}
             >
               <Text
                 style={[
                   styles.taskFilterPillLabel,
-                  selectedTaskId === task.id && styles.taskFilterPillLabelActive,
+                  selectedTaskId === 'all' && styles.taskFilterPillLabelActive,
                 ]}
-                numberOfLines={1}
               >
-                {task.title}
+                All tasks
               </Text>
             </TouchableOpacity>
-          ))}
-        </ScrollView>
-      </View>
 
-      <View style={styles.dateTabsRow}>
-        <View style={styles.dateTab}>
-          <Text style={styles.dateTabLabel}>Start date</Text>
-          <Text style={styles.dateTabValue}>{dateLabels.start}</Text>
-        </View>
-        <View style={styles.dateTab}>
-          <Text style={styles.dateTabLabel}>End date</Text>
-          <Text style={styles.dateTabValue}>{dateLabels.end}</Text>
-        </View>
-      </View>
-
-      <View style={styles.viewModeRow}>
-        <TouchableOpacity
-          style={[styles.viewModeButton, viewMode === 'summary' && styles.viewModeButtonActive]}
-          onPress={() => setViewMode('summary')}
-        >
-          <Text
-            style={[styles.viewModeLabel, viewMode === 'summary' && styles.viewModeLabelActive]}
-          >
-            Summary
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.viewModeButton, viewMode === 'graph' && styles.viewModeButtonActive]}
-          onPress={() => setViewMode('graph')}
-        >
-          <Text
-            style={[styles.viewModeLabel, viewMode === 'graph' && styles.viewModeLabelActive]}
-          >
-            Graph
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.viewModeButton, viewMode === 'pie' && styles.viewModeButtonActive]}
-          onPress={() => setViewMode('pie')}
-        >
-          <Text
-            style={[styles.viewModeLabel, viewMode === 'pie' && styles.viewModeLabelActive]}
-          >
-            Pie
-          </Text>
-        </TouchableOpacity>
-      </View>
-
-      <View style={styles.unitRow}>
-        <TouchableOpacity
-          style={[styles.unitButton, metricUnit === 'workIntervals' && styles.unitButtonActive]}
-          onPress={() => setMetricUnit('workIntervals')}
-        >
-          <Text
-            style={[styles.unitLabel, metricUnit === 'workIntervals' && styles.unitLabelActive]}
-          >
-            Work intervals
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.unitButton, metricUnit === 'focusHours' && styles.unitButtonActive]}
-          onPress={() => setMetricUnit('focusHours')}
-        >
-          <Text
-            style={[styles.unitLabel, metricUnit === 'focusHours' && styles.unitLabelActive]}
-          >
-            Focus time (h)
-          </Text>
-        </TouchableOpacity>
-      </View>
-
-      {!hasAnyData ? (
-        <View style={styles.placeholderCard}>
-          <Text style={styles.placeholderTitle}>No data yet</Text>
-          <Text style={styles.placeholderText}>
-            Complete a few pomodoro sessions and check back to see your productivity stats.
-          </Text>
-        </View>
-      ) : (
-        <>
-          {viewMode === 'summary' && (
-            <View style={styles.statsCard}>
-              <Text style={styles.statsTitle}>Summary</Text>
-              <Text style={styles.statsRow}>
-                Completed work intervals: {stats.completedWorkIntervals}
-              </Text>
-              <Text style={styles.statsRow}>
-                Skipped intervals: {stats.skippedIntervals}
-              </Text>
-              <Text style={styles.statsRow}>Completed tasks: {stats.completedTasks}</Text>
-              <Text style={styles.statsRow}>
-                Total focus time: {Math.round(stats.totalFocusSeconds / 60)} minutes
-              </Text>
-              <Text style={styles.statsMeta}>
-                Intervals in range: {filteredIntervals.length}
-              </Text>
-            </View>
-          )}
-
-          {viewMode === 'graph' && (
-            <View style={styles.statsCard}>
-              {filteredIntervals.length === 0 || graphData.length === 0 ? (
-                <Text style={styles.emptyText}>
-                  Not enough data to display a graph.
+            {selectableTasks.map((task) => (
+              <TouchableOpacity
+                key={task.id}
+                style={[
+                  styles.taskFilterPill,
+                  selectedTaskId === task.id && styles.taskFilterPillActive,
+                ]}
+                onPress={() => setSelectedTaskId(task.id)}
+              >
+                <Text
+                  style={[
+                    styles.taskFilterPillLabel,
+                    selectedTaskId === task.id && styles.taskFilterPillLabelActive,
+                  ]}
+                  numberOfLines={1}
+                >
+                  {task.title}
                 </Text>
-              ) : (
-                <View style={styles.chartContainer}>
-                  <BarChart
-                    data={{
-                      labels: graphLabels,
-                      datasets: [{ data: graphValues }],
-                    }}
-                    width={screenWidth - spacing.lg * 2}
-                    height={220}
-                    fromZero
-                    chartConfig={chartConfig}
-                    style={{ borderRadius: 16 }}
-                    showValuesOnTopOfBars
-                    yAxisLabel=""
-                    yAxisSuffix={yAxisSuffix}
-                  />
-                </View>
-              )}
-            </View>
-          )}
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
 
-          {viewMode === 'pie' && (
-            <View style={styles.statsCard}>
-              {pieChartData.length === 0 ? (
-                <Text style={styles.emptyText}>
-                  Not enough data to display a pie chart.
+        <View style={styles.dateTabsRow}>
+          <View style={styles.dateTab}>
+            <Text style={styles.dateTabLabel}>Start date</Text>
+            <Text style={styles.dateTabValue}>{dateLabels.start}</Text>
+          </View>
+          <View style={styles.dateTab}>
+            <Text style={styles.dateTabLabel}>End date</Text>
+            <Text style={styles.dateTabValue}>{dateLabels.end}</Text>
+          </View>
+        </View>
+
+        <View style={styles.viewModeRow}>
+          <TouchableOpacity
+            style={[styles.viewModeButton, viewMode === 'summary' && styles.viewModeButtonActive]}
+            onPress={() => setViewMode('summary')}
+          >
+            <Text
+              style={[styles.viewModeLabel, viewMode === 'summary' && styles.viewModeLabelActive]}
+            >
+              Summary
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.viewModeButton, viewMode === 'graph' && styles.viewModeButtonActive]}
+            onPress={() => setViewMode('graph')}
+          >
+            <Text
+              style={[styles.viewModeLabel, viewMode === 'graph' && styles.viewModeLabelActive]}
+            >
+              Graph
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.viewModeButton, viewMode === 'pie' && styles.viewModeButtonActive]}
+            onPress={() => setViewMode('pie')}
+          >
+            <Text
+              style={[styles.viewModeLabel, viewMode === 'pie' && styles.viewModeLabelActive]}
+            >
+              Pie
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.unitRow}>
+          <TouchableOpacity
+            style={[styles.unitButton, metricUnit === 'workIntervals' && styles.unitButtonActive]}
+            onPress={() => setMetricUnit('workIntervals')}
+          >
+            <Text
+              style={[styles.unitLabel, metricUnit === 'workIntervals' && styles.unitLabelActive]}
+            >
+              Work intervals
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.unitButton, metricUnit === 'focusHours' && styles.unitButtonActive]}
+            onPress={() => setMetricUnit('focusHours')}
+          >
+            <Text
+              style={[styles.unitLabel, metricUnit === 'focusHours' && styles.unitLabelActive]}
+            >
+              Focus time (h)
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {!hasAnyData ? (
+          <View style={styles.placeholderCard}>
+            <Text style={styles.placeholderTitle}>No data yet</Text>
+            <Text style={styles.placeholderText}>
+              Complete a few pomodoro sessions and check back to see your productivity stats.
+            </Text>
+          </View>
+        ) : (
+          <>
+            {viewMode === 'summary' && (
+              <View style={styles.statsCard}>
+                <Text style={styles.statsTitle}>Summary</Text>
+                <Text style={styles.statsRow}>
+                  Completed work intervals: {stats.completedWorkIntervals}
                 </Text>
-              ) : (
-                <View style={styles.chartContainer}>
-                  <PieChart
-                    data={pieChartData}
-                    width={screenWidth - spacing.lg * 2}
-                    height={220}
-                    chartConfig={chartConfig}
-                    accessor="population"
-                    backgroundColor="transparent"
-                    paddingLeft="8"
-                    absolute={metricUnit === 'workIntervals'}
-                  />
-                </View>
-              )}
-            </View>
-          )}
-        </>
-      )}
+                <Text style={styles.statsRow}>
+                  Skipped intervals: {stats.skippedIntervals}
+                </Text>
+                <Text style={styles.statsRow}>Completed tasks: {stats.completedTasks}</Text>
+                <Text style={styles.statsRow}>
+                  Total focus time: {Math.round(stats.totalFocusSeconds / 60)} minutes
+                </Text>
+                <Text style={styles.statsMeta}>
+                  Intervals in range: {filteredIntervals.length}
+                </Text>
+              </View>
+            )}
+
+            {viewMode === 'graph' && (
+              <View style={styles.statsCard}>
+                {filteredIntervals.length === 0 || graphData.length === 0 ? (
+                  <Text style={styles.emptyText}>
+                    Not enough data to display a graph.
+                  </Text>
+                ) : (
+                  <View style={styles.chartContainer}>
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                      <BarChart
+                        data={{
+                          labels: graphLabels,
+                          datasets: [{ data: graphValues }],
+                        }}
+                        width={Math.max(chartWidth, graphLabels.length * 40)}
+                        height={220}
+                        fromZero
+                        chartConfig={chartConfig}
+                        style={{ borderRadius: 16, alignSelf: 'center' }}
+                        showValuesOnTopOfBars
+                        yAxisLabel=""
+                        yAxisSuffix={metricUnit === 'focusHours' ? 'h' : ''}
+                      />
+                    </ScrollView>
+                  </View>
+                )}
+              </View>
+            )}
+
+            {viewMode === 'pie' && (
+              <View style={styles.statsCard}>
+                {pieChartData.length === 0 ? (
+                  <Text style={styles.emptyText}>
+                    Not enough data to display a pie chart.
+                  </Text>
+                ) : (
+                  <View style={styles.chartContainer}>
+                    <PieChart
+                      data={pieChartData}
+                      width={chartWidth}
+                      height={220}
+                      chartConfig={chartConfig}
+                      accessor="population"
+                      backgroundColor="transparent"
+                      paddingLeft="16"
+                      absolute={metricUnit === 'workIntervals'}
+                      style={{ alignSelf: 'center' }}
+                    />
+                  </View>
+                )}
+              </View>
+            )}
+          </>
+        )}
+      </ScrollView>
     </ScreenContainer>
   );
 };
 
 const styles = StyleSheet.create({
+  screenContainer: {
+    paddingHorizontal: 0,
+    paddingVertical: 0,
+  },
+  scrollContent: {
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.xl * 2,
+  },
   title: {
     fontSize: 28,
     fontWeight: '700',
@@ -779,6 +795,7 @@ const styles = StyleSheet.create({
   },
   chartContainer: {
     marginTop: spacing.sm,
+    marginHorizontal: CHART_HORIZONTAL_MARGIN,
     borderRadius: 16,
     backgroundColor: colors.surface,
     paddingVertical: spacing.sm,
