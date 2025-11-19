@@ -292,14 +292,14 @@ export const TasksScreen: React.FC = () => {
             </Text>
           </View>
         ) : (
-          <View style={styles.listContent}>
+          <ScrollView style={styles.todoList} contentContainerStyle={styles.listContent}>
             {todoTasks.map((task, index) => (
               <React.Fragment key={task.id}>
                 {renderTaskItem(task)}
                 {index < todoTasks.length - 1 && <View style={styles.separator} />}
               </React.Fragment>
             ))}
-          </View>
+          </ScrollView>
         )
       ) : doneTasks.length === 0 ? (
         <Text style={styles.emptyText}>No completed tasks yet.</Text>
@@ -339,6 +339,9 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: colors.textPrimary,
     marginBottom: spacing.lg,
+  },
+  todoList: {
+    marginTop: spacing.sm,
   },
   listContent: {
     paddingBottom: spacing.xl * 2,
