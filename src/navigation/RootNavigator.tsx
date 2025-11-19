@@ -2,6 +2,7 @@ import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { NavigatorScreenParams } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
 import { AnalyticsScreen } from '../screens/AnalyticsScreen';
 import { InfoScreen } from '../screens/InfoScreen';
 import { PomodoroScreen } from '../screens/PomodoroScreen';
@@ -38,14 +39,41 @@ const AnyStackNavigator = Stack.Navigator as any;
 function TabNavigator() {
   return (
     <AnyTabNavigator
-      screenOptions={{
+      screenOptions={({ route }) => ({
         headerStyle: { backgroundColor: colors.surface },
         headerTintColor: colors.textPrimary,
         tabBarStyle: { backgroundColor: colors.surface },
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textSecondary,
         tabBarLabelStyle: { fontSize: 12, fontWeight: '500' },
-      }}
+        tabBarIcon: ({ focused, color, size }) => {
+          let iconName: string;
+
+          switch (route.name) {
+            case 'Tasks':
+              iconName = focused ? 'list' : 'list-outline';
+              break;
+            case 'Pomodoro':
+              iconName = focused ? 'timer' : 'timer-outline';
+              break;
+            case 'Analytics':
+              iconName = focused ? 'stats-chart' : 'stats-chart-outline';
+              break;
+            case 'Settings':
+              iconName = focused ? 'settings' : 'settings-outline';
+              break;
+            case 'Info':
+              iconName = focused
+                ? 'information-circle'
+                : 'information-circle-outline';
+              break;
+            default:
+              iconName = focused ? 'ellipse' : 'ellipse-outline';
+          }
+
+          return <Ionicons name={iconName as any} size={size} color={color} />;
+        },
+      })}
     >
       <Tab.Screen name="Tasks" component={TasksScreen} />
       <Tab.Screen name="Pomodoro" component={PomodoroScreen} />
