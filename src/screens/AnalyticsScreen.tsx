@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { VictoryAxis, VictoryBar, VictoryChart, VictoryPie, VictoryTheme } from 'victory-native';
+import { VictoryBar, VictoryChart, VictoryAxis, VictoryTheme, VictoryPie } from 'victory-native';
 import { ScreenContainer } from '../components/ScreenContainer';
 import { IntervalSession } from '../models';
 import useAppStore from '../store/appStore';
