@@ -158,13 +158,18 @@ export const TaskDetailScreen: React.FC = () => {
     const start = new Date(interval.startedAt).getTime();
     const end = interval.endedAt ? new Date(interval.endedAt).getTime() : undefined;
 
-    // Planned duration = what the interval was configured for when it started
-    const plannedDurationSeconds = interval.durationSeconds;
+    const plannedSeconds = interval.durationSeconds;
 
-    // Actual duration = real elapsed time between start and end (fallback to planned if no end yet)
-    const actualDurationSeconds = end
-      ? Math.max(0, Math.round((end - start) / 1000))
-      : plannedDurationSeconds;
+    let actualSeconds = end ? Math.max(0, Math.round((end - start) / 1000)) : plannedSeconds;
+
+    // If the interval was completed normally (not skipped), and actual is just slightly
+    // less than planned, snap it up so small drift doesn't show in history.
+    if (!interval.wasSkipped && interval.endedAt) {
+      const diff = plannedSeconds - actualSeconds;
+      if (diff > 0 && diff <= 5) {
+        actualSeconds = plannedSeconds;
+      }
+    }
 
     return (
       <View key={interval.id} style={styles.intervalRow}>
@@ -181,10 +186,10 @@ export const TaskDetailScreen: React.FC = () => {
           End: <Text style={styles.intervalValue}>{formatDateTime(interval.endedAt)}</Text>
         </Text>
         <Text style={styles.intervalDetail}>
-          Planned: <Text style={styles.intervalValue}>{formatDuration(plannedDurationSeconds)}</Text>
+          Planned: <Text style={styles.intervalValue}>{formatDuration(plannedSeconds)}</Text>
         </Text>
         <Text style={styles.intervalDetail}>
-          Actual: <Text style={styles.intervalValue}>{formatDuration(actualDurationSeconds)}</Text>
+          Actual: <Text style={styles.intervalValue}>{formatDuration(actualSeconds)}</Text>
         </Text>
       </View>
     );
