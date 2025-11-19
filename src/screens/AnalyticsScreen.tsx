@@ -1,9 +1,7 @@
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useNavigation } from '@react-navigation/native';
 import React, { useMemo, useState } from 'react';
-import { Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { VictoryAxis, VictoryBar, VictoryChart, VictoryPie, VictoryTheme } from 'victory-native';
 import { ScreenContainer } from '../components/ScreenContainer';
-import { RootStackParamList } from '../navigation/RootNavigator';
 import { IntervalSession } from '../models';
 import useAppStore from '../store/appStore';
 import { colors } from '../theme/colors';
@@ -14,17 +12,29 @@ type DateRangeKey =
   | 'yesterday'
   | 'thisWeek'
   | 'previousWeek'
-  | 'last7'
   | 'thisMonth'
   | 'previousMonth'
-  | 'last30'
   | 'thisYear'
   | 'previousYear'
   | 'all'
   | 'custom';
 
+const DATE_RANGE_OPTIONS: { key: DateRangeKey; label: string }[] = [
+  { key: 'today', label: 'Today' },
+  { key: 'yesterday', label: 'Yesterday' },
+  { key: 'thisWeek', label: 'This week' },
+  { key: 'previousWeek', label: 'Previous week' },
+  { key: 'thisMonth', label: 'This month' },
+  { key: 'previousMonth', label: 'Previous month' },
+  { key: 'thisYear', label: 'This year' },
+  { key: 'previousYear', label: 'Previous year' },
+  { key: 'all', label: 'All data' },
+  { key: 'custom', label: 'Custom' },
+];
+
 type ViewMode = 'summary' | 'graph' | 'pie';
 type MetricUnit = 'workIntervals' | 'focusHours';
+type TaskFilterId = 'all' | string;
 
 const startOfDay = (d: Date) =>
   new Date(d.getFullYear(), d.getMonth(), d.getDate());
@@ -85,9 +95,6 @@ const getRangeBounds = (
     const prevWeekEnd = thisWeekStart;
     start = prevWeekStart;
     end = prevWeekEnd;
-  } else if (range === 'last7') {
-    start = addDays(todayStart, -6);
-    end = addDays(todayStart, 1);
   } else if (range === 'thisMonth') {
     start = startOfMonth(now);
     end = addDays(todayStart, 1);
@@ -101,9 +108,6 @@ const getRangeBounds = (
     );
     start = prevMonthStart;
     end = prevMonthEnd;
-  } else if (range === 'last30') {
-    start = addDays(todayStart, -29);
-    end = addDays(todayStart, 1);
   } else if (range === 'thisYear') {
     start = startOfYear(now);
     end = addDays(todayStart, 1);
@@ -137,10 +141,15 @@ export const AnalyticsScreen: React.FC = () => {
   const [range, setRange] = useState<DateRangeKey>('thisWeek');
   const [viewMode, setViewMode] = useState<ViewMode>('summary');
   const [metricUnit, setMetricUnit] = useState<MetricUnit>('workIntervals');
+  const [selectedTaskId, setSelectedTaskId] = useState<TaskFilterId>('all');
   const isPro = useAppStore((state) => state.isPro);
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const intervals = useAppStore((state) => state.intervals);
   const tasks = useAppStore((state) => state.tasks);
+
+  const selectableTasks = useMemo(
+    () => tasks.filter((t) => !t.deletedAt),
+    [tasks],
+  );
 
   const { filteredIntervals, stats, dateLabels } = useMemo(() => {
     if (!intervals || intervals.length === 0) {
@@ -166,10 +175,15 @@ export const AnalyticsScreen: React.FC = () => {
       intervals,
     );
 
-    const filtered = intervals.filter((interval) => {
+    const filteredByDate = intervals.filter((interval) => {
       const startedMs = new Date(interval.startedAt).getTime();
       return startedMs >= startMs && startedMs < endMs;
     });
+
+    const filtered =
+      selectedTaskId === 'all'
+        ? filteredByDate
+        : filteredByDate.filter((i) => i.taskId === selectedTaskId);
 
     const completedWorkIntervals = filtered.filter(
       (i) => i.type === 'work' && !i.wasSkipped && i.endedAt,
@@ -183,6 +197,7 @@ export const AnalyticsScreen: React.FC = () => {
 
     const completedTasks = tasks.filter((t) => {
       if (!t.completedAt) return false;
+      if (selectedTaskId !== 'all' && t.id !== selectedTaskId) return false;
       const completedMs = new Date(t.completedAt).getTime();
       return completedMs >= startMs && completedMs < endMs;
     }).length;
@@ -200,14 +215,14 @@ export const AnalyticsScreen: React.FC = () => {
         end: labelEnd,
       },
     };
-  }, [intervals, tasks, range]);
+  }, [intervals, tasks, range, selectedTaskId]);
 
   const graphData = useMemo(() => {
     if (filteredIntervals.length === 0) return [];
 
     const byDay: Record<
       string,
-      { date: Date; workCount: number; focusSeconds: number }
+      { label: string; workCount: number; focusSeconds: number }
     > = {};
 
     filteredIntervals.forEach((i) => {
@@ -217,33 +232,39 @@ export const AnalyticsScreen: React.FC = () => {
       const key = day.toISOString().slice(0, 10);
 
       if (!byDay[key]) {
-        byDay[key] = { date: day, workCount: 0, focusSeconds: 0 };
+        byDay[key] = {
+          label: day.toLocaleDateString(undefined, {
+            month: 'short',
+            day: 'numeric',
+          }),
+          workCount: 0,
+          focusSeconds: 0,
+        };
       }
 
       byDay[key].workCount += 1;
       byDay[key].focusSeconds += i.durationSeconds;
     });
 
-    const rows = Object.values(byDay).sort(
-      (a, b) => a.date.getTime() - b.date.getTime(),
-    );
-
-    return rows.map((row) => ({
-      x: row.date,
-      y:
-        metricUnit === 'workIntervals'
-          ? row.workCount
-          : row.focusSeconds / 3600,
-    }));
+    return Object.values(byDay)
+      .sort((a, b) => a.label.localeCompare(b.label))
+      .map((row, index) => ({
+        x: index + 1,
+        label: row.label,
+        y:
+          metricUnit === 'workIntervals'
+            ? row.workCount
+            : row.focusSeconds / 3600,
+      }));
   }, [filteredIntervals, metricUnit]);
 
   const pieData = useMemo(() => {
     if (filteredIntervals.length === 0) return [];
 
     const aggregate = {
-      work: { label: 'Work', workCount: 0, focusSeconds: 0 },
-      short_break: { label: 'Short break', workCount: 0, focusSeconds: 0 },
-      long_break: { label: 'Long break', workCount: 0, focusSeconds: 0 },
+      work: { label: 'Work', count: 0, seconds: 0 },
+      short_break: { label: 'Short break', count: 0, seconds: 0 },
+      long_break: { label: 'Long break', count: 0, seconds: 0 },
     };
 
     filteredIntervals.forEach((i) => {
@@ -251,12 +272,8 @@ export const AnalyticsScreen: React.FC = () => {
       if (!bucket) return;
       if (!i.endedAt || i.wasSkipped) return;
 
-      if (i.type === 'work') {
-        bucket.workCount += 1;
-        bucket.focusSeconds += i.durationSeconds;
-      } else {
-        bucket.workCount += 1;
-      }
+      bucket.count += 1;
+      bucket.seconds += i.durationSeconds;
     });
 
     const items = Object.values(aggregate);
@@ -264,15 +281,15 @@ export const AnalyticsScreen: React.FC = () => {
     return items
       .filter((item) =>
         metricUnit === 'workIntervals'
-          ? item.workCount > 0
-          : item.focusSeconds > 0,
+          ? item.count > 0
+          : item.seconds > 0,
       )
       .map((item) => ({
-        label: item.label,
-        value:
+        x: item.label,
+        y:
           metricUnit === 'workIntervals'
-            ? item.workCount
-            : item.focusSeconds / 3600,
+            ? item.count
+            : item.seconds / 3600,
       }));
   }, [filteredIntervals, metricUnit]);
 
@@ -281,20 +298,6 @@ export const AnalyticsScreen: React.FC = () => {
     stats.skippedIntervals > 0 ||
     stats.completedTasks > 0 ||
     stats.totalFocusSeconds > 0;
-
-  const renderRangePill = (label: string, key: DateRangeKey) => (
-    <TouchableOpacity
-      key={label}
-      style={[styles.rangePill, range === key && styles.rangePillActive]}
-      onPress={() => setRange(key)}
-    >
-      <Text
-        style={[styles.rangePillText, range === key && styles.rangePillTextActive]}
-      >
-        {label}
-      </Text>
-    </TouchableOpacity>
-  );
 
   return (
     <ScreenContainer>
@@ -306,44 +309,94 @@ export const AnalyticsScreen: React.FC = () => {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Date range</Text>
         <View style={styles.rangeRow}>
-          {renderRangePill('Today', 'today')}
-          {renderRangePill('Yesterday', 'yesterday')}
-          {renderRangePill('This week', 'thisWeek')}
-          {renderRangePill('Previous week', 'previousWeek')}
-          {renderRangePill('Last 7 days', 'last7')}
-          {renderRangePill('This month', 'thisMonth')}
-          {renderRangePill('Previous month', 'previousMonth')}
-          {renderRangePill('Last 30 days', 'last30')}
-          {renderRangePill('This year', 'thisYear')}
-          {renderRangePill('Previous year', 'previousYear')}
-          {renderRangePill('All data', 'all')}
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.rangeScrollContent}
+          >
+            {DATE_RANGE_OPTIONS.map((opt) => {
+              const isActive = range === opt.key;
+              const isCustom = opt.key === 'custom';
 
+              const handlePress = () => {
+                if (isCustom && !isPro) {
+                  Alert.alert('Pro feature', 'Custom date ranges are available in Pro.');
+                  return;
+                }
+                setRange(opt.key);
+              };
+
+              return (
+                <TouchableOpacity
+                  key={opt.key}
+                  style={[
+                    styles.rangePill,
+                    isActive && styles.rangePillActive,
+                    isCustom && !isPro && styles.rangePillLocked,
+                  ]}
+                  onPress={handlePress}
+                >
+                  <Text
+                    style={[
+                      styles.rangePillLabel,
+                      isActive && styles.rangePillLabelActive,
+                    ]}
+                  >
+                    {opt.label}
+                    {isCustom && !isPro ? ' 🔒' : ''}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })
+          </ScrollView>
+        </View>
+      </View>
+
+      <View style={styles.taskFilterRow}>
+        <Text style={styles.taskFilterLabel}>Task</Text>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.taskFilterScroll}
+        >
           <TouchableOpacity
             style={[
-              styles.rangePill,
-              range === 'custom' && styles.rangePillActive,
-              !isPro && styles.rangePillLocked,
+              styles.taskFilterPill,
+              selectedTaskId === 'all' && styles.taskFilterPillActive,
             ]}
-            onPress={() => {
-              if (!isPro) {
-                Alert.alert('Pro feature', 'Custom date ranges are available in Pro.');
-                navigation.navigate('Paywall');
-                return;
-              }
-              setRange('custom');
-            }}
+            onPress={() => setSelectedTaskId('all')}
           >
             <Text
               style={[
-                styles.rangePillText,
-                range === 'custom' && styles.rangePillTextActive,
-                !isPro && styles.rangePillTextLocked,
+                styles.taskFilterPillLabel,
+                selectedTaskId === 'all' && styles.taskFilterPillLabelActive,
               ]}
             >
-              Custom {!isPro && '🔒'}
+              All tasks
             </Text>
           </TouchableOpacity>
-        </View>
+
+          {selectableTasks.map((task) => (
+            <TouchableOpacity
+              key={task.id}
+              style={[
+                styles.taskFilterPill,
+                selectedTaskId === task.id && styles.taskFilterPillActive,
+              ]}
+              onPress={() => setSelectedTaskId(task.id)}
+            >
+              <Text
+                style={[
+                  styles.taskFilterPillLabel,
+                  selectedTaskId === task.id && styles.taskFilterPillLabelActive,
+                ]}
+                numberOfLines={1}
+              >
+                {task.title}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
       </View>
 
       <View style={styles.dateTabsRow}>
@@ -451,9 +504,34 @@ export const AnalyticsScreen: React.FC = () => {
                   Not enough data to display a graph.
                 </Text>
               ) : (
-                <Text style={styles.placeholderText}>
-                  Graph view coming soon. Data points: {graphData.length}
-                </Text>
+                <View style={styles.chartContainer}>
+                  <VictoryChart
+                    theme={VictoryTheme.material}
+                    domainPadding={{ x: 20, y: 10 }}
+                  >
+                    <VictoryAxis
+                      tickFormat={(t) => graphData[t - 1]?.label ?? ''}
+                      style={{
+                        tickLabels: { fontSize: 10, padding: 4, angle: 0 },
+                      }}
+                    />
+                    <VictoryAxis
+                      dependentAxis
+                      tickFormat={(t) =>
+                        metricUnit === 'workIntervals' ? t : `${t.toFixed(1)}h`
+                      }
+                      style={{
+                        tickLabels: { fontSize: 10, padding: 4 },
+                      }}
+                    />
+                    <VictoryBar
+                      data={graphData}
+                      x="x"
+                      y="y"
+                      cornerRadius={{ top: 4 }}
+                    />
+                  </VictoryChart>
+                </View>
               )}
             </View>
           )}
@@ -465,9 +543,23 @@ export const AnalyticsScreen: React.FC = () => {
                   Not enough data to display a pie chart.
                 </Text>
               ) : (
-                <Text style={styles.placeholderText}>
-                  Pie chart view coming soon. Slices: {pieData.length}
-                </Text>
+                <View style={styles.chartContainer}>
+                  <VictoryPie
+                    data={pieData}
+                    innerRadius={40}
+                    labels={({ datum }) =>
+                      `${datum.x}\n${
+                        metricUnit === 'workIntervals'
+                          ? datum.y
+                          : `${datum.y.toFixed(1)}h`
+                      }`
+                    }
+                    labelRadius={80}
+                    style={{
+                      labels: { fontSize: 10 },
+                    }}
+                  />
+                </View>
               )}
             </View>
           )}
@@ -499,42 +591,31 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   rangeRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.sm,
+    marginBottom: spacing.sm,
+  },
+  rangeScrollContent: {
+    paddingHorizontal: spacing.xs,
   },
   rangePill: {
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
     borderRadius: 999,
     backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
+    marginHorizontal: spacing.xs,
   },
   rangePillActive: {
     backgroundColor: colors.primary,
-    borderColor: colors.primary,
-  },
-  rangePillPro: {
-    borderColor: colors.primary,
   },
   rangePillLocked: {
-    borderStyle: 'dashed',
-    borderColor: colors.border,
-    backgroundColor: colors.background,
+    opacity: 0.6,
   },
-  rangePillText: {
-    color: colors.textPrimary,
-    fontWeight: '600',
-  },
-  rangePillTextActive: {
-    color: colors.textOnPrimary,
-  },
-  rangePillTextPro: {
-    color: colors.primary,
-  },
-  rangePillTextLocked: {
+  rangePillLabel: {
+    fontSize: 12,
+    fontWeight: '500',
     color: colors.textSecondary,
+  },
+  rangePillLabelActive: {
+    color: colors.background,
   },
   dateTabsRow: {
     flexDirection: 'row',
@@ -609,6 +690,36 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     fontWeight: '600',
   },
+  taskFilterRow: {
+    marginBottom: spacing.sm,
+  },
+  taskFilterLabel: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    marginBottom: spacing.xs,
+  },
+  taskFilterScroll: {
+    paddingHorizontal: spacing.xs,
+  },
+  taskFilterPill: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: 999,
+    backgroundColor: colors.surface,
+    marginHorizontal: spacing.xs,
+    maxWidth: 160,
+  },
+  taskFilterPillActive: {
+    backgroundColor: colors.accent,
+  },
+  taskFilterPillLabel: {
+    fontSize: 12,
+    color: colors.textSecondary,
+  },
+  taskFilterPillLabelActive: {
+    color: colors.background,
+    fontWeight: '600',
+  },
   proHint: {
     marginTop: spacing.sm,
     color: colors.textSecondary,
@@ -650,8 +761,16 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: colors.textSecondary,
   },
+  chartContainer: {
+    height: 260,
+    padding: spacing.sm,
+    borderRadius: 16,
+    backgroundColor: colors.surface,
+    marginTop: spacing.sm,
+  },
   emptyText: {
-    fontSize: 14,
     color: colors.textSecondary,
+    fontStyle: 'italic',
+    marginTop: spacing.sm,
   },
 });
