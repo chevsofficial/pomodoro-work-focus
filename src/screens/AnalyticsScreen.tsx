@@ -1,6 +1,14 @@
 import React, { useMemo, useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { VictoryBar, VictoryChart, VictoryAxis, VictoryTheme, VictoryPie } from 'victory-native';
+import {
+  Alert,
+  Dimensions,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { BarChart, PieChart } from 'react-native-chart-kit';
 import { ScreenContainer } from '../components/ScreenContainer';
 import { IntervalSession } from '../models';
 import useAppStore from '../store/appStore';
@@ -35,6 +43,8 @@ const DATE_RANGE_OPTIONS: { key: DateRangeKey; label: string }[] = [
 type ViewMode = 'summary' | 'graph' | 'pie';
 type MetricUnit = 'workIntervals' | 'focusHours';
 type TaskFilterId = 'all' | string;
+
+const PIE_COLORS = ['#FF5A5F', '#4CAF50', '#FFC107'];
 
 const startOfDay = (d: Date) =>
   new Date(d.getFullYear(), d.getMonth(), d.getDate());
@@ -246,10 +256,9 @@ export const AnalyticsScreen: React.FC = () => {
       byDay[key].focusSeconds += i.durationSeconds;
     });
 
-    return Object.entries(byDay)
-      .sort(([keyA], [keyB]) => keyA.localeCompare(keyB))
-      .map(([_, row], index) => ({
-        x: index + 1,
+    return Object.values(byDay)
+      .sort((a, b) => a.label.localeCompare(b.label))
+      .map((row) => ({
         label: row.label,
         y:
           metricUnit === 'workIntervals'
@@ -257,6 +266,9 @@ export const AnalyticsScreen: React.FC = () => {
             : row.focusSeconds / 3600,
       }));
   }, [filteredIntervals, metricUnit]);
+
+  const graphLabels = graphData.map((d) => d.label);
+  const graphValues = graphData.map((d) => d.y);
 
   const pieData = useMemo(() => {
     if (filteredIntervals.length === 0) return [];
@@ -276,22 +288,41 @@ export const AnalyticsScreen: React.FC = () => {
       bucket.seconds += i.durationSeconds;
     });
 
-    const items = Object.values(aggregate);
-
-    return items
+    return Object.values(aggregate)
       .filter((item) =>
         metricUnit === 'workIntervals'
           ? item.count > 0
           : item.seconds > 0,
       )
       .map((item) => ({
-        x: item.label,
-        y:
+        label: item.label,
+        value:
           metricUnit === 'workIntervals'
             ? item.count
             : item.seconds / 3600,
       }));
   }, [filteredIntervals, metricUnit]);
+
+  const pieChartData = pieData.map((item, index) => ({
+    name: item.label,
+    population: item.value,
+    color: PIE_COLORS[index % PIE_COLORS.length],
+    legendFontColor: colors.textPrimary,
+    legendFontSize: 12,
+  }));
+
+  const screenWidth = Dimensions.get('window').width;
+
+  const chartConfig = {
+    backgroundGradientFrom: colors.surface,
+    backgroundGradientTo: colors.surface,
+    decimalPlaces: metricUnit === 'focusHours' ? 1 : 0,
+    color: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
+    labelColor: (opacity = 1) => `rgba(200, 200, 200, ${opacity})`,
+    propsForLabels: {
+      fontSize: 10,
+    },
+  } as const;
 
   const hasAnyData =
     stats.completedWorkIntervals > 0 ||
@@ -499,38 +530,24 @@ export const AnalyticsScreen: React.FC = () => {
 
           {viewMode === 'graph' && (
             <View style={styles.statsCard}>
-              {filteredIntervals.length === 0 ? (
+              {filteredIntervals.length === 0 || graphData.length === 0 ? (
                 <Text style={styles.emptyText}>
                   Not enough data to display a graph.
                 </Text>
               ) : (
                 <View style={styles.chartContainer}>
-                  <VictoryChart
-                    theme={VictoryTheme.material}
-                    domainPadding={{ x: 20, y: 10 }}
-                  >
-                    <VictoryAxis
-                      tickFormat={(t) => graphData[t - 1]?.label ?? ''}
-                      style={{
-                        tickLabels: { fontSize: 10, padding: 4, angle: 0 },
-                      }}
-                    />
-                    <VictoryAxis
-                      dependentAxis
-                      tickFormat={(t) =>
-                        metricUnit === 'workIntervals' ? t : `${t.toFixed(1)}h`
-                      }
-                      style={{
-                        tickLabels: { fontSize: 10, padding: 4 },
-                      }}
-                    />
-                    <VictoryBar
-                      data={graphData}
-                      x="x"
-                      y="y"
-                      cornerRadius={{ top: 4 }}
-                    />
-                  </VictoryChart>
+                  <BarChart
+                    data={{
+                      labels: graphLabels,
+                      datasets: [{ data: graphValues }],
+                    }}
+                    width={screenWidth - spacing.lg * 2}
+                    height={220}
+                    fromZero
+                    chartConfig={chartConfig}
+                    style={{ borderRadius: 16 }}
+                    showValuesOnTopOfBars
+                  />
                 </View>
               )}
             </View>
@@ -538,26 +555,21 @@ export const AnalyticsScreen: React.FC = () => {
 
           {viewMode === 'pie' && (
             <View style={styles.statsCard}>
-              {pieData.length === 0 ? (
+              {pieChartData.length === 0 ? (
                 <Text style={styles.emptyText}>
                   Not enough data to display a pie chart.
                 </Text>
               ) : (
                 <View style={styles.chartContainer}>
-                  <VictoryPie
-                    data={pieData}
-                    innerRadius={40}
-                    labels={({ datum }) =>
-                      `${datum.x}\n${
-                        metricUnit === 'workIntervals'
-                          ? datum.y
-                          : `${datum.y.toFixed(1)}h`
-                      }`
-                    }
-                    labelRadius={80}
-                    style={{
-                      labels: { fontSize: 10 },
-                    }}
+                  <PieChart
+                    data={pieChartData}
+                    width={screenWidth - spacing.lg * 2}
+                    height={220}
+                    chartConfig={chartConfig}
+                    accessor="population"
+                    backgroundColor="transparent"
+                    paddingLeft="8"
+                    absolute={metricUnit === 'workIntervals'}
                   />
                 </View>
               )}
@@ -762,11 +774,11 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
   },
   chartContainer: {
-    height: 260,
-    padding: spacing.sm,
+    marginTop: spacing.sm,
     borderRadius: 16,
     backgroundColor: colors.surface,
-    marginTop: spacing.sm,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.sm,
   },
   emptyText: {
     color: colors.textSecondary,
