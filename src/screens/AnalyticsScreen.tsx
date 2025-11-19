@@ -246,9 +246,9 @@ export const AnalyticsScreen: React.FC = () => {
       byDay[key].focusSeconds += i.durationSeconds;
     });
 
-    return Object.values(byDay)
-      .sort((a, b) => a.label.localeCompare(b.label))
-      .map((row, index) => ({
+    return Object.entries(byDay)
+      .sort(([keyA], [keyB]) => keyA.localeCompare(keyB))
+      .map(([_, row], index) => ({
         x: index + 1,
         label: row.label,
         y:
