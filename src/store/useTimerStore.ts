@@ -278,13 +278,17 @@ export const useTimerStore = create<TimerState>((set, get) => {
 
     tick: () => {
       set((state) => {
-        if (!state.isRunning || state.remainingSeconds <= 0) {
+        if (!state.isRunning || !state.plannedEndTime) {
           return state;
         }
 
+        const now = Date.now();
+        const remainingMs = state.plannedEndTime - now;
+        const nextRemainingSeconds = Math.max(0, Math.round(remainingMs / 1000));
+
         return {
           ...state,
-          remainingSeconds: Math.max(0, state.remainingSeconds - 1),
+          remainingSeconds: nextRemainingSeconds,
         };
       });
     },
