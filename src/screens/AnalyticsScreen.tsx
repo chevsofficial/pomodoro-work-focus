@@ -324,6 +324,8 @@ export const AnalyticsScreen: React.FC = () => {
     },
   } as const;
 
+  const yAxisSuffix = metricUnit === 'focusHours' ? 'h' : '';
+
   const hasAnyData =
     stats.completedWorkIntervals > 0 ||
     stats.skippedIntervals > 0 ||
@@ -547,6 +549,8 @@ export const AnalyticsScreen: React.FC = () => {
                     chartConfig={chartConfig}
                     style={{ borderRadius: 16 }}
                     showValuesOnTopOfBars
+                    yAxisLabel=""
+                    yAxisSuffix={yAxisSuffix}
                   />
                 </View>
               )}

@@ -33,6 +33,7 @@ type SkipIntervalPayload = {
 };
 
 export interface AppStore extends AppStateSnapshot {
+  isPro: boolean;
   addTask: (payload: AddTaskPayload) => void;
   updateTask: (taskId: string, updates: UpdateTaskPayload) => void;
   toggleTaskCompleted: (taskId: string) => void;
@@ -45,6 +46,7 @@ export interface AppStore extends AppStateSnapshot {
   updateActivityType: (activityTypeId: string, updates: UpdateActivityTypePayload) => void;
   deleteActivityType: (activityTypeId: string) => void;
   setProStatus: (status: ProStatus) => void;
+  setPro: (value: boolean) => void;
 }
 
 const STORAGE_KEY = 'POMODORO_APP_STATE_V1';
@@ -111,14 +113,18 @@ const useAppStore = create<AppStore>((set, get) => {
       const stored = await AsyncStorage.getItem(STORAGE_KEY);
       if (stored) {
         const parsed = JSON.parse(stored) as Partial<AppStateSnapshot>;
-        set((state) => ({
-          ...state,
-          tasks: parsed.tasks ?? state.tasks,
-          intervals: parsed.intervals ?? state.intervals,
-          activityTypes: parsed.activityTypes ?? state.activityTypes,
-          settings: parsed.settings ?? state.settings,
-          proStatus: parsed.proStatus ?? state.proStatus,
-        }));
+                set((state) => {
+          const nextProStatus = parsed.proStatus ?? state.proStatus;
+          return {
+            ...state,
+            tasks: parsed.tasks ?? state.tasks,
+            intervals: parsed.intervals ?? state.intervals,
+            activityTypes: parsed.activityTypes ?? state.activityTypes,
+            settings: parsed.settings ?? state.settings,
+            proStatus: nextProStatus,
+            isPro: nextProStatus.isPro,
+          };
+        });
       }
     } catch (error) {
       console.error('Failed to hydrate app state', error);
@@ -133,6 +139,7 @@ const useAppStore = create<AppStore>((set, get) => {
     activityTypes: [],
     settings: { ...defaultSettings },
     proStatus: { ...defaultProStatus },
+    isPro: defaultProStatus.isPro,
 
     addTask: ({ title, description, activityTypeId }) => {
       const timestamp = nowIso();
@@ -295,7 +302,17 @@ const useAppStore = create<AppStore>((set, get) => {
     },
 
     setProStatus: (status) => {
-      setStateAndPersist(() => ({ proStatus: { ...status } }));
+          setStateAndPersist((state) => {
+        const nextProStatus = { ...state.proStatus, ...status };
+        return { proStatus: nextProStatus, isPro: nextProStatus.isPro };
+      });
+    },
+
+    setPro: (value) => {
+      setStateAndPersist((state) => {
+        const nextProStatus = { ...state.proStatus, isPro: value };
+        return { proStatus: nextProStatus, isPro: value };
+      });
     },
   };
 });
@@ -311,7 +328,7 @@ export const useSettings = () => useAppStore((state) => state.settings);
 
 export const useProStatus = () => useAppStore((state) => state.proStatus);
 
-export const useIsPro = () => useAppStore((state) => state.proStatus.isPro);
+export const useIsPro = () => useAppStore((state) => state.isPro);
 
 export const useActivityTypes = () => useAppStore((state) => state.activityTypes);
 
