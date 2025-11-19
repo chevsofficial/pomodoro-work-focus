@@ -347,10 +347,10 @@ export const AnalyticsScreen: React.FC = () => {
                   </Text>
                 </TouchableOpacity>
               );
-            })
-          </ScrollView>
+              })}
+            </ScrollView>
+          </View>
         </View>
-      </View>
 
       <View style={styles.taskFilterRow}>
         <Text style={styles.taskFilterLabel}>Task</Text>
