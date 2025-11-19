@@ -3,7 +3,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import {
   Alert,
   Modal,
-  SectionList,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -19,11 +19,6 @@ import { colors } from '../theme/colors';
 import { spacing } from '../theme/spacing';
 
 type TasksNavigation = NativeStackNavigationProp<RootStackParamList>;
-
-type TaskSection = {
-  title: string;
-  data: Task[];
-};
 
 const ActivityTypeChip: React.FC<{
   type: ActivityType;
@@ -151,22 +146,68 @@ export const TasksScreen: React.FC = () => {
   const toggleTaskCompleted = useAppStore((state) => state.toggleTaskCompleted);
   const navigation = useNavigation<TasksNavigation>();
   const [isModalVisible, setModalVisible] = useState(false);
+  const [activeTab, setActiveTab] = useState<'todo' | 'done'>('todo');
 
   const activityTypeMap = useMemo(() => {
     const entries = activityTypes.map((type) => [type.id, type] as const);
     return Object.fromEntries(entries) as Record<string, ActivityType>;
   }, [activityTypes]);
 
-  const sections = useMemo<TaskSection[]>(() => {
-    const visibleTasks = tasks.filter((task) => !task.deletedAt);
-    const todo = visibleTasks.filter((task) => !task.isCompleted);
-    const done = visibleTasks.filter((task) => task.isCompleted);
+  const todoTasks = useMemo(
+    () => tasks.filter((task) => !task.deletedAt && !task.completedAt),
+    [tasks],
+  );
 
-    return [
-      { title: 'To-Do', data: todo },
-      { title: 'Done', data: done },
-    ];
-  }, [tasks]);
+  const doneTasks = useMemo(
+    () => tasks.filter((task) => !task.deletedAt && task.completedAt),
+    [tasks],
+  );
+
+  const formatCompletionDateLabel = (iso: string) => {
+    const date = new Date(iso);
+    if (Number.isNaN(date.getTime())) return 'Unknown date';
+
+    return date.toLocaleDateString(undefined, {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    });
+  };
+
+  const groupedDoneTasks = useMemo(() => {
+    const groups: Record<string, Task[]> = {};
+
+    doneTasks.forEach((task) => {
+      if (!task.completedAt) return;
+
+      const label = formatCompletionDateLabel(task.completedAt);
+      if (!groups[label]) {
+        groups[label] = [];
+      }
+      groups[label].push(task);
+    });
+
+    const entries = Object.entries(groups).sort((a, b) => {
+      const aTask = a[1][0];
+      const bTask = b[1][0];
+
+      const aTime = aTask.completedAt ? new Date(aTask.completedAt).getTime() : 0;
+      const bTime = bTask.completedAt ? new Date(bTask.completedAt).getTime() : 0;
+
+      return bTime - aTime;
+    });
+
+    entries.forEach(([, tasksForDay]) => {
+      tasksForDay.sort((t1, t2) => {
+        const t1Time = t1.completedAt ? new Date(t1.completedAt).getTime() : 0;
+        const t2Time = t2.completedAt ? new Date(t2.completedAt).getTime() : 0;
+        return t2Time - t1Time;
+      });
+    });
+
+    return entries;
+  }, [doneTasks]);
 
   const handleToggleCompleted = (taskId: string) => {
     toggleTaskCompleted(taskId);
@@ -180,26 +221,30 @@ export const TasksScreen: React.FC = () => {
     navigation.navigate('TaskDetail', { taskId });
   };
 
-  const renderTaskItem = ({ item }: { item: Task }) => {
-    const activityType = item.activityTypeId ? activityTypeMap[item.activityTypeId] : undefined;
+  const renderTaskItem = (task: Task) => {
+    const activityType = task.activityTypeId ? activityTypeMap[task.activityTypeId] : undefined;
 
     return (
-      <TouchableOpacity style={styles.taskRow} onPress={() => handleOpenTaskDetail(item.id)}>
+      <TouchableOpacity
+        key={task.id}
+        style={styles.taskRow}
+        onPress={() => handleOpenTaskDetail(task.id)}
+      >
         <TouchableOpacity
-          style={[styles.checkbox, item.isCompleted && styles.checkboxCompleted]}
+          style={[styles.checkbox, task.isCompleted && styles.checkboxCompleted]}
           onPress={(event) => {
             event.stopPropagation();
-            handleToggleCompleted(item.id);
+            handleToggleCompleted(task.id);
           }}
         >
-          {item.isCompleted && <Text style={styles.checkboxMark}>✓</Text>}
+          {task.isCompleted && <Text style={styles.checkboxMark}>✓</Text>}
         </TouchableOpacity>
         <View style={styles.taskContent}>
           <Text
-            style={[styles.taskTitle, item.isCompleted && styles.taskTitleCompleted]}
+            style={[styles.taskTitle, task.isCompleted && styles.taskTitleCompleted]}
             numberOfLines={2}
           >
-            {item.title}
+            {task.title}
           </Text>
           {activityType && (
             <View style={styles.activityBadge}>
@@ -214,26 +259,65 @@ export const TasksScreen: React.FC = () => {
   return (
     <ScreenContainer>
       <Text style={styles.headerTitle}>Tasks</Text>
-      <SectionList
-        sections={sections}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContent}
-        renderSectionHeader={({ section }) =>
-          section.data.length > 0 ? (
-            <Text style={styles.sectionHeader}>{section.title}</Text>
-          ) : null
-        }
-        renderItem={({ item }) => renderTaskItem({ item })}
-        ItemSeparatorComponent={() => <View style={styles.separator} />}
-        ListEmptyComponent={() => (
+      <View style={styles.tabRow}>
+        <TouchableOpacity
+          style={[styles.tabButton, activeTab === 'todo' && styles.tabButtonActive]}
+          onPress={() => setActiveTab('todo')}
+        >
+          <Text
+            style={[styles.tabButtonLabel, activeTab === 'todo' && styles.tabButtonLabelActive]}
+          >
+            To-Do
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.tabButton, activeTab === 'done' && styles.tabButtonActive]}
+          onPress={() => setActiveTab('done')}
+        >
+          <Text
+            style={[styles.tabButtonLabel, activeTab === 'done' && styles.tabButtonLabelActive]}
+          >
+            Done
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      {activeTab === 'todo' ? (
+        todoTasks.length === 0 ? (
           <View style={styles.emptyState}>
-            <Text style={styles.emptyStateTitle}>No tasks yet</Text>
+            <Text style={styles.emptyStateTitle}>No tasks in your To-Do list yet.</Text>
             <Text style={styles.emptyStateSubtitle}>
               Create your first focus task to get started.
             </Text>
           </View>
-        )}
-      />
+        ) : (
+          <View style={styles.listContent}>
+            {todoTasks.map((task, index) => (
+              <React.Fragment key={task.id}>
+                {renderTaskItem(task)}
+                {index < todoTasks.length - 1 && <View style={styles.separator} />}
+              </React.Fragment>
+            ))}
+          </View>
+        )
+      ) : doneTasks.length === 0 ? (
+        <Text style={styles.emptyText}>No completed tasks yet.</Text>
+      ) : (
+        <ScrollView style={styles.doneList} contentContainerStyle={styles.listContent}>
+          {groupedDoneTasks.map(([dateLabel, tasksForDay]) => (
+            <View key={dateLabel} style={styles.doneGroup}>
+              <Text style={styles.doneGroupHeader}>{dateLabel}</Text>
+              {tasksForDay.map((task, index) => (
+                <React.Fragment key={task.id}>
+                  {renderTaskItem(task)}
+                  {index < tasksForDay.length - 1 && <View style={styles.separator} />}
+                </React.Fragment>
+              ))}
+            </View>
+          ))}
+        </ScrollView>
+      )}
 
       <TouchableOpacity style={styles.fab} onPress={() => setModalVisible(true)}>
         <Text style={styles.fabIcon}>＋</Text>
@@ -259,12 +343,28 @@ const styles = StyleSheet.create({
   listContent: {
     paddingBottom: spacing.xl * 2,
   },
-  sectionHeader: {
-    fontSize: 18,
+  tabRow: {
+    flexDirection: 'row',
+    backgroundColor: colors.surface,
+    borderRadius: 16,
+    padding: spacing.xs,
+    marginBottom: spacing.lg,
+  },
+  tabButton: {
+    flex: 1,
+    borderRadius: 12,
+    paddingVertical: spacing.sm,
+    alignItems: 'center',
+  },
+  tabButtonActive: {
+    backgroundColor: colors.primary,
+  },
+  tabButtonLabel: {
     fontWeight: '600',
     color: colors.textSecondary,
-    marginTop: spacing.lg,
-    marginBottom: spacing.sm,
+  },
+  tabButtonLabelActive: {
+    color: colors.background,
   },
   taskRow: {
     flexDirection: 'row',
@@ -336,6 +436,23 @@ const styles = StyleSheet.create({
   emptyStateSubtitle: {
     fontSize: 14,
     color: colors.textSecondary,
+  },
+  emptyText: {
+    color: colors.textSecondary,
+    fontStyle: 'italic',
+    marginTop: spacing.md,
+  },
+  doneList: {
+    marginTop: spacing.sm,
+  },
+  doneGroup: {
+    marginBottom: spacing.lg,
+  },
+  doneGroupHeader: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: colors.textSecondary,
+    marginBottom: spacing.xs,
   },
   fab: {
     position: 'absolute',
