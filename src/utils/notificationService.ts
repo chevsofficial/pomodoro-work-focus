@@ -11,6 +11,7 @@ Notifications.setNotificationHandler({
 });
 
 const CHANNEL_ID = 'interval-timer';
+const CHANNEL_ID_SILENT = 'interval-timer-silent';
 
 export const initializeNotifications = () => {
   if (Platform.OS !== 'android') {
@@ -21,6 +22,13 @@ export const initializeNotifications = () => {
     name: 'Interval timers',
     importance: Notifications.AndroidImportance.HIGH,
     sound: 'default',
+    enableVibrate: true,
+  });
+
+  void Notifications.setNotificationChannelAsync(CHANNEL_ID_SILENT, {
+    name: 'Interval timers (silent)',
+    importance: Notifications.AndroidImportance.HIGH,
+    sound: undefined,
     enableVibrate: true,
   });
 };
@@ -92,7 +100,7 @@ export const scheduleIntervalCompletionNotification = async ({
     };
 
     if (Platform.OS === 'android') {
-      trigger.channelId = CHANNEL_ID;
+      trigger.channelId = soundEnabled ? CHANNEL_ID : CHANNEL_ID_SILENT;
     }
 
     return await Notifications.scheduleNotificationAsync({
