@@ -43,15 +43,19 @@ export const requestNotificationPermissions = async (): Promise<boolean> => {
   }
 };
 
+type ScheduleArgs = {
+  secondsFromNow: number;
+  intervalType: IntervalType;
+  nextIntervalType?: IntervalType;
+  soundEnabled: boolean;
+};
+
 export const scheduleIntervalCompletionNotification = async ({
   secondsFromNow,
   intervalType,
   nextIntervalType,
-}: {
-  secondsFromNow: number;
-  intervalType: IntervalType;
-  nextIntervalType?: IntervalType;
-}): Promise<string | undefined> => {
+  soundEnabled,
+}: ScheduleArgs): Promise<string | undefined> => {
   if (secondsFromNow <= 0) {
     return undefined;
   }
@@ -76,7 +80,13 @@ export const scheduleIntervalCompletionNotification = async ({
       body = 'Ready for the next one?';
     }
 
-    const trigger: Notifications.TimeIntervalTriggerInput = {
+    const content: Notifications.NotificationContentInput = {
+      title,
+      body,
+      sound: soundEnabled ? 'default' : undefined,
+    };
+
+    const trigger: Notifications.NotificationTriggerInput = {
       seconds: secondsFromNow,
       repeats: false,
     };
@@ -86,10 +96,7 @@ export const scheduleIntervalCompletionNotification = async ({
     }
 
     return await Notifications.scheduleNotificationAsync({
-      content: {
-        title,
-        body,
-      },
+      content,
       trigger,
     });
   } catch (error) {

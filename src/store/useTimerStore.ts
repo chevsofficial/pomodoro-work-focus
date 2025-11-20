@@ -148,6 +148,7 @@ export const useTimerStore = create<TimerState>((set, get) => {
       secondsFromNow,
       intervalType: type,
       nextIntervalType,
+      soundEnabled: settings.soundEnabled ?? true,
     }).then((identifier) => {
       if (!identifier) {
         return;
