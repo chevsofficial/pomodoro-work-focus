@@ -2,35 +2,33 @@ import { Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import { IntervalType } from '../models';
 
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-  }),
-});
+const SOUND_CHANNEL_ID = 'pomodoro-sound';
+const SILENT_CHANNEL_ID = 'pomodoro-silent';
 
-const CHANNEL_ID = 'interval-timer';
-const CHANNEL_ID_SILENT = 'interval-timer-silent';
+export const initializeNotifications = async () => {
+  Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldShowAlert: true,
+      shouldPlaySound: true,
+      shouldSetBadge: false,
+    }),
+  });
 
-export const initializeNotifications = () => {
-  if (Platform.OS !== 'android') {
-    return;
+  if (Platform.OS === 'android') {
+    await Notifications.setNotificationChannelAsync(SOUND_CHANNEL_ID, {
+      name: 'Pomodoro timers (sound)',
+      importance: Notifications.AndroidImportance.HIGH,
+      sound: 'default',
+      enableVibrate: true,
+    });
+
+    await Notifications.setNotificationChannelAsync(SILENT_CHANNEL_ID, {
+      name: 'Pomodoro timers (silent)',
+      importance: Notifications.AndroidImportance.DEFAULT,
+      sound: undefined,
+      enableVibrate: false,
+    });
   }
-
-  void Notifications.setNotificationChannelAsync(CHANNEL_ID, {
-    name: 'Interval timers',
-    importance: Notifications.AndroidImportance.HIGH,
-    sound: 'default',
-    enableVibrate: true,
-  });
-
-  void Notifications.setNotificationChannelAsync(CHANNEL_ID_SILENT, {
-    name: 'Interval timers (silent)',
-    importance: Notifications.AndroidImportance.HIGH,
-    sound: null,
-    enableVibrate: true,
-  });
 };
 
 export const requestNotificationPermissions = async (): Promise<boolean> => {
@@ -73,15 +71,18 @@ export const scheduleIntervalCompletionNotification = async ({
     let body = '';
 
     if (intervalType === 'work') {
-      title = 'Work interval completed';
-
       if (nextIntervalType === 'long_break') {
+        title = 'Work interval completed';
         body = 'Great job! Time for a long break.';
       } else {
+        title = 'Work interval completed';
         body = 'Nice work! Time for a short break.';
       }
     } else if (intervalType === 'short_break' || intervalType === 'long_break') {
-      title = intervalType === 'short_break' ? 'Short break finished' : 'Long break finished';
+      title =
+        intervalType === 'short_break'
+          ? 'Short break finished'
+          : 'Long break finished';
       body = "Let's get back to focusing.";
     } else {
       title = 'Interval completed';
@@ -94,19 +95,25 @@ export const scheduleIntervalCompletionNotification = async ({
       sound: soundEnabled ? 'default' : undefined,
     };
 
+    const channelId =
+      Platform.OS === 'android'
+        ? soundEnabled
+          ? SOUND_CHANNEL_ID
+          : SILENT_CHANNEL_ID
+        : undefined;
+
     const trigger: Notifications.NotificationTriggerInput = {
       seconds: secondsFromNow,
       repeats: false,
+      channelId,
     };
 
-    if (Platform.OS === 'android') {
-      trigger.channelId = soundEnabled ? CHANNEL_ID : CHANNEL_ID_SILENT;
-    }
-
-    return await Notifications.scheduleNotificationAsync({
+    const id = await Notifications.scheduleNotificationAsync({
       content,
       trigger,
     });
+
+    return id;
   } catch (error) {
     console.warn('[Notifications] Error scheduling notification', error);
     return undefined;

@@ -32,7 +32,7 @@ const App: React.FC = () => {
   const settings = useSettings();
 
   useEffect(() => {
-    initializeNotifications();
+    void initializeNotifications();
   }, []);
 
   useEffect(() => {
