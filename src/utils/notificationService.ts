@@ -28,7 +28,7 @@ export const initializeNotifications = () => {
   void Notifications.setNotificationChannelAsync(CHANNEL_ID_SILENT, {
     name: 'Interval timers (silent)',
     importance: Notifications.AndroidImportance.HIGH,
-    sound: undefined,
+    sound: null,
     enableVibrate: true,
   });
 };
