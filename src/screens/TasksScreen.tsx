@@ -16,9 +16,9 @@ import { RootStackParamList } from '../navigation/RootNavigator';
 import { ActivityType, Task } from '../models';
 import useAppStore, {
   selectCanCreateTask,
-  selectIsProEffective,
   selectRemainingFreeTasks,
   useActivityTypes,
+  useIsPro,
   useTasks,
 } from '../store/appStore';
 import { colors } from '../theme/colors';
@@ -173,7 +173,7 @@ export const TasksScreen: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'todo' | 'done'>('todo');
   const canCreateTask = useAppStore(selectCanCreateTask);
   const remainingFreeTasks = useAppStore(selectRemainingFreeTasks);
-  const isPro = useAppStore(selectIsProEffective);
+  const isPro = useIsPro();
 
   const activityTypeMap = useMemo(() => {
     const entries = activityTypes.map((type) => [type.id, type] as const);
@@ -387,9 +387,9 @@ export const TasksScreen: React.FC = () => {
       )}
 
       <TouchableOpacity
+        accessibilityState={{ disabled: !canCreateTask }}
         style={[styles.fab, !canCreateTask && styles.fabDisabled]}
         onPress={handleAddTaskPress}
-        disabled={!canCreateTask}
       >
         <Text style={styles.fabIcon}>＋</Text>
       </TouchableOpacity>
@@ -532,7 +532,8 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
     color: colors.textSecondary,
     fontSize: 12,
-    textAlign: 'right',
+    textAlign: 'left',
+    alignSelf: 'flex-start',
   },
   fab: {
     position: 'absolute',

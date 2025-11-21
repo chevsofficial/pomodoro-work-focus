@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { Alert, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { ScreenContainer } from '../components/ScreenContainer';
 import { IntervalSession } from '../models';
-import useAppStore from '../store/appStore';
+import useAppStore, { useIsPro } from '../store/appStore';
 import { colors } from '../theme/colors';
 import { spacing } from '../theme/spacing';
 
@@ -137,7 +137,7 @@ const getRangeBounds = (
 // IMPORTANT: named export must be called AnalyticsScreen
 export const AnalyticsScreen: React.FC = () => {
   const [range, setRange] = useState<DateRangeKey>('thisWeek');
-  const isPro = useAppStore((state) => state.isPro);
+  const isPro = useIsPro();
   const intervals = useAppStore((state) => state.intervals);
   const tasks = useAppStore((state) => state.tasks);
   const activityTypes = useAppStore((state) => state.activityTypes);
