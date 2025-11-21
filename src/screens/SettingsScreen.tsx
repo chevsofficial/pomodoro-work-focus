@@ -37,6 +37,19 @@ const SOUND_OPTIONS = [
   { key: 'chime3', label: 'Chime 3' },
 ];
 
+const ACTIVITY_COLORS = [
+  { key: 'red', label: 'Red', value: '#FF5A5F' },
+  { key: 'green', label: 'Green', value: '#4CAF50' },
+  { key: 'blue', label: 'Blue', value: '#2196F3' },
+  { key: 'yellow', label: 'Yellow', value: '#FFC107' },
+  { key: 'purple', label: 'Purple', value: '#9C27B0' },
+  { key: 'orange', label: 'Orange', value: '#FF9800' },
+];
+
+const FREE_COLOR_KEYS = ['red', 'green'];
+
+const DEFAULT_ACTIVITY_COLOR = ACTIVITY_COLORS[0].value;
+
 const SettingInputRow: React.FC<{
   label: string;
   value: string;
@@ -131,7 +144,7 @@ const buildFormState = (
   if (initialValues) {
     return {
       name: initialValues.name,
-      color: initialValues.color ?? '',
+      color: initialValues.color ?? DEFAULT_ACTIVITY_COLOR,
       workDurationMinutes: initialValues.workDurationMinutes.toString(),
       shortBreakMinutes: initialValues.shortBreakMinutes.toString(),
       longBreakMinutes: initialValues.longBreakMinutes.toString(),
@@ -141,7 +154,7 @@ const buildFormState = (
 
   return {
     name: '',
-    color: '',
+    color: DEFAULT_ACTIVITY_COLOR,
     workDurationMinutes: defaults.workDurationMinutes.toString(),
     shortBreakMinutes: defaults.shortBreakMinutes.toString(),
     longBreakMinutes: defaults.longBreakMinutes.toString(),
@@ -158,6 +171,7 @@ const ActivityTypeModal: React.FC<ActivityTypeModalProps> = ({
   onDelete,
 }) => {
   const [formValues, setFormValues] = useState<ActivityTypeFormValues>(() => buildFormState(defaults, initialValues));
+  const isPro = useIsPro();
 
   useEffect(() => {
     if (visible) {
@@ -168,6 +182,8 @@ const ActivityTypeModal: React.FC<ActivityTypeModalProps> = ({
   const handleChange = (key: keyof ActivityTypeFormValues, value: string) => {
     setFormValues((prev) => ({ ...prev, [key]: value }));
   };
+
+  const setColor = (value: string) => handleChange('color', value);
 
   const handleSubmit = () => {
     const trimmedName = formValues.name.trim();
@@ -215,20 +231,88 @@ const ActivityTypeModal: React.FC<ActivityTypeModalProps> = ({
       <View style={styles.modalBackdrop}>
         <View style={styles.modalContent}>
           <Text style={styles.modalTitle}>{initialValues ? 'Edit Activity Type' : 'Add Activity Type'}</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Name"
-            placeholderTextColor={colors.textSecondary}
-            value={formValues.name}
-            onChangeText={(text) => handleChange('name', text)}
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Color (hex or name)"
-            placeholderTextColor={colors.textSecondary}
-            value={formValues.color}
-            onChangeText={(text) => handleChange('color', text)}
-          />
+          <View style={styles.modalField}>
+            <TextInput
+              style={styles.input}
+              placeholder="Name"
+              placeholderTextColor={colors.textSecondary}
+              value={formValues.name}
+              onChangeText={(text) => handleChange('name', text)}
+            />
+          </View>
+          <View style={styles.modalField}>
+            <Text style={styles.modalLabel}>Color</Text>
+            <Text style={styles.modalHint}>
+              {isPro
+                ? 'Choose a color for this activity type.'
+                : 'Free users can choose between red and green.'}
+            </Text>
+
+            <View style={styles.colorGrid}>
+              {ACTIVITY_COLORS.map((c) => {
+                const isSelected = formValues.color?.toLowerCase() === c.value.toLowerCase();
+                const isFreeColor = FREE_COLOR_KEYS.includes(c.key);
+                const isLocked = !isPro && !isFreeColor;
+
+                const handlePress = () => {
+                  if (isLocked) {
+                    Alert.alert(
+                      'Pro feature',
+                      'Additional colors are available in the Pro version.',
+                    );
+                    return;
+                  }
+
+                  setColor(c.value);
+                };
+
+                return (
+                  <TouchableOpacity
+                    key={c.key}
+                    style={[
+                      styles.colorSwatchWrapper,
+                      isSelected && styles.colorSwatchWrapperSelected,
+                    ]}
+                    onPress={handlePress}
+                    activeOpacity={0.8}
+                  >
+                    <View
+                      style={[
+                        styles.colorSwatch,
+                        { backgroundColor: c.value },
+                        isLocked && styles.colorSwatchLocked,
+                      ]}
+                    >
+                      {isLocked && <Text style={styles.colorLockIcon}>🔒</Text>}
+                    </View>
+                    <Text
+                      style={[
+                        styles.colorLabel,
+                        isSelected && styles.colorLabelSelected,
+                      ]}
+                    >
+                      {c.label}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </View>
+
+          {isPro && (
+            <View style={styles.modalField}>
+              <Text style={styles.modalSubLabel}>Custom hex (optional)</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="#FF5A5F"
+                placeholderTextColor={colors.textSecondary}
+                value={formValues.color}
+                onChangeText={(text) => handleChange('color', text)}
+                autoCapitalize="none"
+                autoCorrect={false}
+              />
+            </View>
+          )}
           <View style={styles.modalRowGroup}>
             <View style={[styles.modalRowItem, styles.modalRowItemSpacing]}>
               <Text style={styles.modalLabel}>Work (min)</Text>
@@ -736,6 +820,9 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     marginBottom: spacing.md,
   },
+  modalField: {
+    marginBottom: spacing.md,
+  },
   modalRowGroup: {
     flexDirection: 'row',
     marginBottom: spacing.md,
@@ -750,6 +837,58 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     fontSize: 13,
     marginBottom: spacing.xs,
+  },
+  modalHint: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    marginTop: 2,
+  },
+  modalSubLabel: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    marginBottom: spacing.xs / 2,
+  },
+  colorGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginTop: spacing.xs,
+    marginHorizontal: -spacing.xs,
+  },
+  colorSwatchWrapper: {
+    width: '30%',
+    alignItems: 'center',
+    marginHorizontal: spacing.xs,
+    marginVertical: spacing.xs,
+  },
+  colorSwatchWrapperSelected: {
+    borderRadius: 16,
+    padding: 2,
+    borderWidth: 2,
+    borderColor: colors.primary,
+  },
+  colorSwatch: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.3)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  colorSwatchLocked: {
+    opacity: 0.5,
+  },
+  colorLockIcon: {
+    fontSize: 14,
+  },
+  colorLabel: {
+    marginTop: 4,
+    fontSize: 11,
+    color: colors.textSecondary,
+  },
+  colorLabelSelected: {
+    color: colors.textPrimary,
+    fontWeight: '600',
   },
   modalActions: {
     marginTop: spacing.md,
