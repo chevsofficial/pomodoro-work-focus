@@ -32,6 +32,8 @@ export interface ActivityType {
   intervalsBeforeLongBreak: number;
 }
 
+export type ThemeName = 'dark' | 'light';
+
 export interface PomodoroSettings {
   workDurationMinutes: number;
   shortBreakMinutes: number;
@@ -43,6 +45,7 @@ export interface PomodoroSettings {
   notificationsEnabled: boolean;
   notificationSoundKey: string;
   defaultActivityTypeId?: string;
+  theme: ThemeName;
 }
 
 export interface ProStatus {

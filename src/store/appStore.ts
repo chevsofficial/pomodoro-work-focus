@@ -1,6 +1,14 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
-import { AppStateSnapshot, ActivityType, IntervalSession, IntervalType, PomodoroSettings, ProStatus, Task } from '../models';
+import {
+  AppStateSnapshot,
+  ActivityType,
+  IntervalSession,
+  IntervalType,
+  PomodoroSettings,
+  ProStatus,
+  Task,
+} from '../models';
 
 type AddTaskPayload = {
   title: string;
@@ -67,6 +75,7 @@ const defaultSettings: PomodoroSettings = {
   notificationsEnabled: true,
   notificationSoundKey: 'chime1',
   defaultActivityTypeId: undefined,
+  theme: 'dark',
 };
 
 const defaultProStatus: ProStatus = {
@@ -116,7 +125,11 @@ const useAppStore = create<AppStore>((set, get) => {
         const parsed = JSON.parse(stored) as Partial<AppStateSnapshot>;
         set((state) => {
           const nextProStatus = parsed.proStatus ? { ...state.proStatus, ...parsed.proStatus } : state.proStatus;
-          const nextSettings = { ...state.settings, ...(parsed.settings ?? {}) };
+          const nextSettings = {
+            ...state.settings,
+            ...(parsed.settings ?? {}),
+            theme: parsed.settings?.theme ?? state.settings.theme ?? 'dark',
+          };
 
           return {
             ...state,
