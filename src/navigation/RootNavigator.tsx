@@ -1,7 +1,7 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { NavigatorScreenParams } from '@react-navigation/native';
+import { NavigatorScreenParams, RouteProp } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { AnalyticsScreen } from '../screens/AnalyticsScreen';
 import { InfoScreen } from '../screens/InfoScreen';
@@ -39,7 +39,11 @@ const AnyStackNavigator = Stack.Navigator as any;
 function TabNavigator() {
   return (
     <AnyTabNavigator
-      screenOptions={({ route }) => ({
+      screenOptions={({
+        route,
+      }: {
+        route: RouteProp<RootTabParamList, keyof RootTabParamList>;
+      }) => ({
         headerShown: false,
         headerStyle: { backgroundColor: colors.surface },
         headerTintColor: colors.textPrimary,
@@ -47,7 +51,15 @@ function TabNavigator() {
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textSecondary,
         tabBarLabelStyle: { fontSize: 12, fontWeight: '500' },
-        tabBarIcon: ({ focused, color, size }) => {
+        tabBarIcon: ({
+          focused,
+          color,
+          size,
+        }: {
+          focused: boolean;
+          color: string;
+          size: number;
+        }) => {
           let iconName: string;
 
           switch (route.name) {
