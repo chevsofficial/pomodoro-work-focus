@@ -3,9 +3,9 @@ import { Vibration } from 'react-native';
 import useAppStore from '../store/appStore';
 
 const SOUND_SOURCES: Record<string, AVPlaybackSource> = {
-  chime1: require('../../assets/sounds/chime1.wav'),
-  chime2: require('../../assets/sounds/chime2.wav'),
-  chime3: require('../../assets/sounds/chime3.wav'),
+  chime1: require('../../assets/sounds/chime1.mp3'),
+  chime2: require('../../assets/sounds/chime2.mp3'),
+  chime3: require('../../assets/sounds/chime3.mp3'),
 };
 
 let currentSound: Audio.Sound | null = null;
