@@ -2,13 +2,14 @@ import React, { useMemo, useState } from 'react';
 import {
   Alert,
   Dimensions,
+  Image,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
-import { BarChart, PieChart } from 'react-native-chart-kit';
+import { StackedBarChart } from 'react-native-chart-kit';
 import { ScreenContainer } from '../components/ScreenContainer';
 import { IntervalSession } from '../models';
 import useAppStore from '../store/appStore';
@@ -27,6 +28,8 @@ type DateRangeKey =
   | 'previousYear'
   | 'all';
 
+type TaskFilterId = 'all' | string;
+
 const DATE_RANGE_OPTIONS: { key: DateRangeKey; label: string }[] = [
   { key: 'custom', label: 'Custom' },
   { key: 'today', label: 'Today' },
@@ -40,14 +43,11 @@ const DATE_RANGE_OPTIONS: { key: DateRangeKey; label: string }[] = [
   { key: 'all', label: 'All data' },
 ];
 
-type ViewMode = 'summary' | 'graph' | 'pie';
-type MetricUnit = 'workIntervals' | 'focusHours';
-type TaskFilterId = 'all' | string;
-
-const PIE_COLORS = ['#FF5A5F', '#4CAF50', '#FFC107'];
 const screenWidth = Dimensions.get('window').width;
 const CHART_HORIZONTAL_MARGIN = 24;
 const chartWidth = screenWidth - CHART_HORIZONTAL_MARGIN * 2;
+const DEFAULT_ACTIVITY_COLOR = '#4A5568';
+const DEFAULT_ACTIVITY_NAME = 'No activity type';
 
 const startOfDay = (d: Date) =>
   new Date(d.getFullYear(), d.getMonth(), d.getDate());
@@ -152,184 +152,208 @@ const getRangeBounds = (
 // IMPORTANT: named export must be called AnalyticsScreen
 export const AnalyticsScreen: React.FC = () => {
   const [range, setRange] = useState<DateRangeKey>('thisWeek');
-  const [viewMode, setViewMode] = useState<ViewMode>('summary');
-  const [metricUnit, setMetricUnit] = useState<MetricUnit>('workIntervals');
   const [selectedTaskId, setSelectedTaskId] = useState<TaskFilterId>('all');
   const isPro = useAppStore((state) => state.isPro);
   const intervals = useAppStore((state) => state.intervals);
   const tasks = useAppStore((state) => state.tasks);
+  const activityTypes = useAppStore((state) => state.activityTypes);
 
   const selectableTasks = useMemo(
     () => tasks.filter((t) => !t.deletedAt),
     [tasks],
   );
 
-  const { filteredIntervals, stats, dateLabels } = useMemo(() => {
-    if (!intervals || intervals.length === 0) {
-      const now = new Date();
-      const todayLabel = formatRangeDateLabel(startOfDay(now));
-      return {
-        filteredIntervals: [] as IntervalSession[],
-        stats: {
-          completedWorkIntervals: 0,
-          skippedIntervals: 0,
-          completedTasks: 0,
-          totalFocusSeconds: 0,
-        },
-        dateLabels: {
-          start: todayLabel,
-          end: todayLabel,
-        },
-      };
+  const { startMs, endMs, labelStart, labelEnd } = useMemo(
+    () => getRangeBounds(range, intervals ?? []),
+    [intervals, range],
+  );
+
+  const rangeStart = useMemo(() => new Date(startMs), [startMs]);
+  const rangeEnd = useMemo(() => new Date(endMs), [endMs]);
+
+  const workIntervals = useMemo(
+    () =>
+      (intervals ?? []).filter((i) => i.type === 'work' && !!i.startedAt),
+    [intervals],
+  );
+
+  const filteredWorkIntervals = useMemo(
+    () =>
+      selectedTaskId === 'all'
+        ? workIntervals
+        : workIntervals.filter((i) => i.taskId === selectedTaskId),
+    [selectedTaskId, workIntervals],
+  );
+
+  const workIntervalsInRange = useMemo(() => {
+    if (!rangeStart || !rangeEnd) return [] as IntervalSession[];
+    const startTime = rangeStart.getTime();
+    const endTime = rangeEnd.getTime();
+
+    return filteredWorkIntervals.filter((i) => {
+      const started = new Date(i.startedAt).getTime();
+      return started >= startTime && started < endTime;
+    });
+  }, [filteredWorkIntervals, rangeEnd, rangeStart]);
+
+  const lifetimeCompletedWork = useMemo(
+    () => filteredWorkIntervals.filter((i) => !i.wasSkipped).length,
+    [filteredWorkIntervals],
+  );
+
+  const lifetimeFocusSeconds = useMemo(
+    () =>
+      filteredWorkIntervals
+        .filter((i) => !i.wasSkipped && i.endedAt)
+        .reduce((sum, i) => sum + i.durationSeconds, 0),
+    [filteredWorkIntervals],
+  );
+
+  const lifetimeFocusHours = lifetimeFocusSeconds / 3600;
+
+  const rangeCompletedWork = useMemo(
+    () => workIntervalsInRange.filter((i) => !i.wasSkipped).length,
+    [workIntervalsInRange],
+  );
+
+  const rangeSkippedWork = useMemo(
+    () => workIntervalsInRange.filter((i) => i.wasSkipped).length,
+    [workIntervalsInRange],
+  );
+
+  const rangeFocusSeconds = useMemo(
+    () =>
+      workIntervalsInRange
+        .filter((i) => !i.wasSkipped && i.endedAt)
+        .reduce((sum, i) => sum + i.durationSeconds, 0),
+    [workIntervalsInRange],
+  );
+
+  const rangeFocusHours = rangeFocusSeconds / 3600;
+
+  const activityTypeMap = useMemo(() => {
+    const entries = activityTypes.map((t) => [t.id, t] as const);
+    return Object.fromEntries(entries) as Record<string, (typeof activityTypes)[number]>;
+  }, [activityTypes]);
+
+  const taskMap = useMemo(() => {
+    const map: Record<string, (typeof tasks)[number]> = {};
+    tasks.forEach((t) => {
+      map[t.id] = t;
+    });
+    return map;
+  }, [tasks]);
+
+  const dailyBuckets = useMemo(() => {
+    const map = new Map<
+      string,
+      {
+        dateKey: string;
+        label: string;
+        activityTotals: Record<string, number>;
+      }
+    >();
+
+    for (const interval of workIntervalsInRange) {
+      const started = new Date(interval.startedAt);
+      const dateKey = started.toISOString().slice(0, 10);
+      const label = started
+        .toLocaleDateString(undefined, { weekday: 'short' })
+        .slice(0, 1);
+
+      const bucket =
+        map.get(dateKey) ?? {
+          dateKey,
+          label,
+          activityTotals: {},
+        };
+
+      const task = interval.taskId ? taskMap[interval.taskId] : undefined;
+      const activityId = task?.activityTypeId ?? 'none';
+      const hours = interval.durationSeconds / 3600;
+
+      bucket.activityTotals[activityId] =
+        (bucket.activityTotals[activityId] ?? 0) + hours;
+      map.set(dateKey, bucket);
     }
 
-    const { startMs, endMs, labelStart, labelEnd } = getRangeBounds(
-      range,
-      intervals,
+    return Array.from(map.values()).sort((a, b) =>
+      a.dateKey.localeCompare(b.dateKey),
     );
+  }, [taskMap, workIntervalsInRange]);
 
-    const filteredByDate = intervals.filter((interval) => {
-      const startedMs = new Date(interval.startedAt).getTime();
-      return startedMs >= startMs && startedMs < endMs;
+  const activityKeysInRange = useMemo(() => {
+    const set = new Set<string>();
+    dailyBuckets.forEach((bucket) => {
+      Object.keys(bucket.activityTotals).forEach((k) => set.add(k));
     });
+    return Array.from(set);
+  }, [dailyBuckets]);
 
-    const filtered =
-      selectedTaskId === 'all'
-        ? filteredByDate
-        : filteredByDate.filter((i) => i.taskId === selectedTaskId);
+  const stackedColors = activityKeysInRange.map((key) =>
+    key === 'none'
+      ? DEFAULT_ACTIVITY_COLOR
+      : activityTypeMap[key]?.color ?? DEFAULT_ACTIVITY_COLOR,
+  );
 
-    const completedWorkIntervals = filtered.filter(
-      (i) => i.type === 'work' && !i.wasSkipped && i.endedAt,
-    ).length;
+  const stackedLegend = activityKeysInRange.map((key) =>
+    key === 'none'
+      ? DEFAULT_ACTIVITY_NAME
+      : activityTypeMap[key]?.name ?? 'Unknown',
+  );
 
-    const skippedIntervals = filtered.filter((i) => i.wasSkipped).length;
+  const stackedLabels = dailyBuckets.map((b) => b.label);
 
-    const totalFocusSeconds = filtered
-      .filter((i) => i.type === 'work' && !i.wasSkipped && i.endedAt)
-      .reduce((sum, i) => sum + i.durationSeconds, 0);
+  const stackedData = dailyBuckets.map((b) =>
+    activityKeysInRange.map((key) => b.activityTotals[key] ?? 0),
+  );
 
-    const completedTasks = tasks.filter((t) => {
-      if (!t.completedAt) return false;
-      if (selectedTaskId !== 'all' && t.id !== selectedTaskId) return false;
-      const completedMs = new Date(t.completedAt).getTime();
-      return completedMs >= startMs && completedMs < endMs;
-    }).length;
+  const activityTypeRatio = useMemo(() => {
+    const totals: Record<string, number> = {};
 
-    return {
-      filteredIntervals: filtered,
-      stats: {
-        completedWorkIntervals,
-        skippedIntervals,
-        completedTasks,
-        totalFocusSeconds,
-      },
-      dateLabels: {
-        start: labelStart,
-        end: labelEnd,
-      },
-    };
-  }, [intervals, tasks, range, selectedTaskId]);
+    for (const interval of workIntervalsInRange) {
+      if (interval.wasSkipped || !interval.endedAt) continue;
 
-  const graphData = useMemo(() => {
-    if (filteredIntervals.length === 0) return [];
+      const task = interval.taskId ? taskMap[interval.taskId] : undefined;
+      const activityId = task?.activityTypeId ?? 'none';
+      const hours = interval.durationSeconds / 3600;
 
-    const byDay: Record<
-      string,
-      { label: string; workCount: number; focusSeconds: number }
-    > = {};
+      totals[activityId] = (totals[activityId] ?? 0) + hours;
+    }
 
-    filteredIntervals.forEach((i) => {
-      if (i.type !== 'work' || !i.endedAt || i.wasSkipped) return;
+    const totalHours = Object.values(totals).reduce((sum, v) => sum + v, 0);
+    if (totalHours === 0) return [] as {
+      key: string;
+      label: string;
+      color: string;
+      hours: number;
+      percent: number;
+    }[];
 
-      const day = startOfDay(new Date(i.startedAt));
-      const key = day.toISOString().slice(0, 10);
-
-      if (!byDay[key]) {
-        byDay[key] = {
-          label: day.toLocaleDateString(undefined, {
-            month: 'short',
-            day: 'numeric',
-          }),
-          workCount: 0,
-          focusSeconds: 0,
+    return Object.entries(totals)
+      .map(([key, hours]) => {
+        const type = key === 'none' ? undefined : activityTypeMap[key];
+        return {
+          key,
+          label: type?.name ?? DEFAULT_ACTIVITY_NAME,
+          color: type?.color ?? DEFAULT_ACTIVITY_COLOR,
+          hours,
+          percent: (hours / totalHours) * 100,
         };
-      }
-
-      byDay[key].workCount += 1;
-      byDay[key].focusSeconds += i.durationSeconds;
-    });
-
-    return Object.values(byDay)
-      .sort((a, b) => a.label.localeCompare(b.label))
-      .map((row) => ({
-        label: row.label,
-        y:
-          metricUnit === 'workIntervals'
-            ? row.workCount
-            : row.focusSeconds / 3600,
-      }));
-  }, [filteredIntervals, metricUnit]);
-
-  const graphLabels = graphData.map((d) => d.label);
-  const graphValues = graphData.map((d) => d.y);
-
-  const pieData = useMemo(() => {
-    if (filteredIntervals.length === 0) return [];
-
-    const aggregate = {
-      work: { label: 'Work', count: 0, seconds: 0 },
-      short_break: { label: 'Short break', count: 0, seconds: 0 },
-      long_break: { label: 'Long break', count: 0, seconds: 0 },
-    };
-
-    filteredIntervals.forEach((i) => {
-      const bucket = aggregate[i.type as keyof typeof aggregate];
-      if (!bucket) return;
-      if (!i.endedAt || i.wasSkipped) return;
-
-      bucket.count += 1;
-      bucket.seconds += i.durationSeconds;
-    });
-
-    return Object.values(aggregate)
-      .filter((item) =>
-        metricUnit === 'workIntervals'
-          ? item.count > 0
-          : item.seconds > 0,
-      )
-      .map((item) => ({
-        label: item.label,
-        value:
-          metricUnit === 'workIntervals'
-            ? item.count
-            : item.seconds / 3600,
-      }));
-  }, [filteredIntervals, metricUnit]);
-
-  const pieChartData = pieData.map((item, index) => ({
-    name: item.label,
-    population: item.value,
-    color: PIE_COLORS[index % PIE_COLORS.length],
-    legendFontColor: colors.textPrimary,
-    legendFontSize: 12,
-  }));
+      })
+      .sort((a, b) => b.hours - a.hours);
+  }, [activityTypeMap, taskMap, workIntervalsInRange]);
 
   const chartConfig = {
     backgroundGradientFrom: colors.surface,
     backgroundGradientTo: colors.surface,
-    decimalPlaces: metricUnit === 'focusHours' ? 1 : 0,
+    decimalPlaces: 1,
     color: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
     labelColor: (opacity = 1) => `rgba(200, 200, 200, ${opacity})`,
     propsForLabels: {
       fontSize: 10,
     },
   } as const;
-
-  const hasAnyData =
-    stats.completedWorkIntervals > 0 ||
-    stats.skippedIntervals > 0 ||
-    stats.completedTasks > 0 ||
-    stats.totalFocusSeconds > 0;
 
   return (
     <ScreenContainer style={styles.screenContainer}>
@@ -438,155 +462,142 @@ export const AnalyticsScreen: React.FC = () => {
         <View style={styles.dateTabsRow}>
           <View style={styles.dateTab}>
             <Text style={styles.dateTabLabel}>Start date</Text>
-            <Text style={styles.dateTabValue}>{dateLabels.start}</Text>
+            <Text style={styles.dateTabValue}>{labelStart}</Text>
           </View>
           <View style={styles.dateTab}>
             <Text style={styles.dateTabLabel}>End date</Text>
-            <Text style={styles.dateTabValue}>{dateLabels.end}</Text>
+            <Text style={styles.dateTabValue}>{labelEnd}</Text>
           </View>
         </View>
 
-        <View style={styles.viewModeRow}>
-          <TouchableOpacity
-            style={[styles.viewModeButton, viewMode === 'summary' && styles.viewModeButtonActive]}
-            onPress={() => setViewMode('summary')}
-          >
-            <Text
-              style={[styles.viewModeLabel, viewMode === 'summary' && styles.viewModeLabelActive]}
-            >
-              Summary
-            </Text>
-          </TouchableOpacity>
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Total</Text>
+          <View style={styles.totalRow}>
+            <View style={styles.totalMetric}>
+              <Image
+                source={require('../../assets/tomato-happy.png')}
+                style={styles.tomatoIcon}
+              />
+              <View>
+                <Text style={styles.totalLabel}>Total Pomodoros</Text>
+                <Text style={styles.totalValue}>{lifetimeCompletedWork}</Text>
+              </View>
+            </View>
 
-          <TouchableOpacity
-            style={[styles.viewModeButton, viewMode === 'graph' && styles.viewModeButtonActive]}
-            onPress={() => setViewMode('graph')}
-          >
-            <Text
-              style={[styles.viewModeLabel, viewMode === 'graph' && styles.viewModeLabelActive]}
-            >
-              Graph
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.viewModeButton, viewMode === 'pie' && styles.viewModeButtonActive]}
-            onPress={() => setViewMode('pie')}
-          >
-            <Text
-              style={[styles.viewModeLabel, viewMode === 'pie' && styles.viewModeLabelActive]}
-            >
-              Pie
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.unitRow}>
-          <TouchableOpacity
-            style={[styles.unitButton, metricUnit === 'workIntervals' && styles.unitButtonActive]}
-            onPress={() => setMetricUnit('workIntervals')}
-          >
-            <Text
-              style={[styles.unitLabel, metricUnit === 'workIntervals' && styles.unitLabelActive]}
-            >
-              Work intervals
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.unitButton, metricUnit === 'focusHours' && styles.unitButtonActive]}
-            onPress={() => setMetricUnit('focusHours')}
-          >
-            <Text
-              style={[styles.unitLabel, metricUnit === 'focusHours' && styles.unitLabelActive]}
-            >
-              Focus time (h)
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        {!hasAnyData ? (
-          <View style={styles.placeholderCard}>
-            <Text style={styles.placeholderTitle}>No data yet</Text>
-            <Text style={styles.placeholderText}>
-              Complete a few pomodoro sessions and check back to see your productivity stats.
-            </Text>
+            <View style={styles.totalMetric}>
+              <Text style={styles.totalLabel}>Total Focus</Text>
+              <Text style={styles.totalValue}>{lifetimeFocusHours.toFixed(1)}h</Text>
+            </View>
           </View>
-        ) : (
-          <>
-            {viewMode === 'summary' && (
-              <View style={styles.statsCard}>
-                <Text style={styles.statsTitle}>Summary</Text>
-                <Text style={styles.statsRow}>
-                  Completed work intervals: {stats.completedWorkIntervals}
-                </Text>
-                <Text style={styles.statsRow}>
-                  Skipped intervals: {stats.skippedIntervals}
-                </Text>
-                <Text style={styles.statsRow}>Completed tasks: {stats.completedTasks}</Text>
-                <Text style={styles.statsRow}>
-                  Total focus time: {Math.round(stats.totalFocusSeconds / 60)} minutes
-                </Text>
-                <Text style={styles.statsMeta}>
-                  Intervals in range: {filteredIntervals.length}
-                </Text>
-              </View>
-            )}
+        </View>
 
-            {viewMode === 'graph' && (
-              <View style={styles.statsCard}>
-                {filteredIntervals.length === 0 || graphData.length === 0 ? (
-                  <Text style={styles.emptyText}>
-                    Not enough data to display a graph.
-                  </Text>
-                ) : (
-                  <View style={styles.chartContainer}>
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                      <BarChart
-                        data={{
-                          labels: graphLabels,
-                          datasets: [{ data: graphValues }],
-                        }}
-                        width={Math.max(chartWidth, graphLabels.length * 40)}
-                        height={220}
-                        fromZero
-                        chartConfig={chartConfig}
-                        style={{ borderRadius: 16, alignSelf: 'center' }}
-                        showValuesOnTopOfBars
-                        yAxisLabel=""
-                        yAxisSuffix={metricUnit === 'focusHours' ? 'h' : ''}
-                      />
-                    </ScrollView>
-                  </View>
-                )}
-              </View>
-            )}
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Focus</Text>
+          <Text style={styles.cardSubtitle}>Work focus in selected range</Text>
 
-            {viewMode === 'pie' && (
-              <View style={styles.statsCard}>
-                {pieChartData.length === 0 ? (
-                  <Text style={styles.emptyText}>
-                    Not enough data to display a pie chart.
-                  </Text>
-                ) : (
-                  <View style={styles.chartContainer}>
-                    <PieChart
-                      data={pieChartData}
-                      width={chartWidth}
-                      height={220}
-                      chartConfig={chartConfig}
-                      accessor="population"
-                      backgroundColor="transparent"
-                      paddingLeft="16"
-                      absolute={metricUnit === 'workIntervals'}
-                      style={{ alignSelf: 'center' }}
-                    />
+          <View style={styles.focusMetricsRow}>
+            <View>
+              <Text style={styles.focusMetricLabel}>Focus this range</Text>
+              <Text style={styles.focusMetricValue}>{rangeFocusHours.toFixed(1)}h</Text>
+            </View>
+            <View>
+              <Text style={styles.focusMetricLabel}>Completed pomos</Text>
+              <Text style={styles.focusMetricValue}>{rangeCompletedWork}</Text>
+            </View>
+          </View>
+
+          {stackedData.length === 0 ? (
+            <Text style={styles.emptyText}>No work pomodoros in this range yet.</Text>
+          ) : (
+            <View style={styles.chartContainerCard}>
+              <StackedBarChart
+                data={{
+                  labels: stackedLabels,
+                  legend: stackedLegend,
+                  data: stackedData,
+                  barColors: stackedColors,
+                }}
+                width={chartWidth}
+                height={220}
+                chartConfig={chartConfig}
+                style={{ borderRadius: 16 }}
+              />
+            </View>
+          )}
+        </View>
+
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Activity Type Ratio</Text>
+          <Text style={styles.cardSubtitle}>Focus split by activity type</Text>
+
+          {activityTypeRatio.length === 0 ? (
+            <Text style={styles.emptyText}>No focus data for this range yet.</Text>
+          ) : (
+            <View style={styles.ratioList}>
+              {activityTypeRatio.map((row) => (
+                <View key={row.key} style={styles.ratioRow}>
+                  <View
+                    style={[
+                      styles.ratioColorDot,
+                      { backgroundColor: row.color },
+                    ]}
+                  />
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.ratioLabel}>{row.label}</Text>
+                    <Text style={styles.ratioSubLabel}>
+                      {row.hours.toFixed(1)}h · {row.percent.toFixed(0)}%
+                    </Text>
                   </View>
-                )}
+                </View>
+              ))}
+            </View>
+          )}
+        </View>
+
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Pomodoro Details</Text>
+
+          <View style={styles.pomoStatsRow}>
+            <View style={styles.pomoStat}>
+              <View style={styles.pomoStatHeader}>
+                <Image
+                  source={require('../../assets/tomato-happy.png')}
+                  style={styles.tomatoIconSmall}
+                />
+                <Text style={styles.pomoStatLabel}>Completed</Text>
               </View>
-            )}
-          </>
-        )}
+              <Text style={styles.pomoStatValue}>{rangeCompletedWork}</Text>
+            </View>
+
+            <View style={styles.pomoStat}>
+              <View style={styles.pomoStatHeader}>
+                <Image
+                  source={require('../../assets/tomato-withered.png')}
+                  style={styles.tomatoIconSmall}
+                />
+                <Text style={styles.pomoStatLabel}>Skipped</Text>
+              </View>
+              <Text style={styles.pomoStatValue}>{rangeSkippedWork}</Text>
+            </View>
+          </View>
+
+          <View style={styles.tomatoGrid}>
+            {Array.from({ length: Math.min(rangeCompletedWork, 24) }, (_, idx) => (
+              <Image
+                key={`done-${idx}`}
+                source={require('../../assets/tomato-happy.png')}
+                style={styles.tomatoGridIcon}
+              />
+            ))}
+            {Array.from({ length: Math.min(rangeSkippedWork, 8) }, (_, idx) => (
+              <Image
+                key={`skipped-${idx}`}
+                source={require('../../assets/tomato-withered.png')}
+                style={styles.tomatoGridIcon}
+              />
+            ))}
+          </View>
+        </View>
       </ScrollView>
     </ScreenContainer>
   );
@@ -594,22 +605,20 @@ export const AnalyticsScreen: React.FC = () => {
 
 const styles = StyleSheet.create({
   screenContainer: {
-    paddingHorizontal: 0,
-    paddingVertical: 0,
+    flex: 1,
+    backgroundColor: colors.background,
   },
   scrollContent: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.lg,
-    paddingBottom: spacing.xl * 2,
+    padding: spacing.lg,
+    paddingBottom: spacing.xl,
   },
   title: {
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: '700',
     color: colors.textPrimary,
-    marginBottom: spacing.md,
+    marginBottom: spacing.xs,
   },
   subtitle: {
-    fontSize: 14,
     color: colors.textSecondary,
     marginBottom: spacing.lg,
   },
@@ -643,7 +652,6 @@ const styles = StyleSheet.create({
   },
   rangePillLabel: {
     fontSize: 12,
-    fontWeight: '500',
     color: colors.textSecondary,
   },
   rangePillLabelActive: {
@@ -671,56 +679,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
     color: colors.textPrimary,
-  },
-  viewModeRow: {
-    flexDirection: 'row',
-    backgroundColor: colors.surface,
-    borderRadius: 16,
-    padding: spacing.xs,
-    marginBottom: spacing.md,
-  },
-  viewModeButton: {
-    flex: 1,
-    alignItems: 'center',
-    paddingVertical: spacing.sm,
-    borderRadius: 12,
-  },
-  viewModeButtonActive: {
-    backgroundColor: colors.primary,
-  },
-  viewModeLabel: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: colors.textSecondary,
-  },
-  viewModeLabelActive: {
-    color: colors.background,
-  },
-  unitRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginBottom: spacing.md,
-  },
-  unitButton: {
-    flex: 1,
-    borderRadius: 12,
-    paddingVertical: spacing.xs,
-    marginHorizontal: spacing.xs,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: colors.surface,
-  },
-  unitButtonActive: {
-    borderColor: colors.primary,
-    backgroundColor: colors.surface,
-  },
-  unitLabel: {
-    fontSize: 11,
-    color: colors.textSecondary,
-  },
-  unitLabelActive: {
-    color: colors.textPrimary,
-    fontWeight: '600',
   },
   taskFilterRow: {
     marginBottom: spacing.sm,
@@ -772,38 +730,135 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.textSecondary,
   },
-  statsCard: {
+  chart: {
     borderRadius: 16,
-    padding: spacing.lg,
-    backgroundColor: colors.surface,
   },
-  statsTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.textPrimary,
-    marginBottom: spacing.sm,
-  },
-  statsRow: {
-    fontSize: 14,
-    color: colors.textPrimary,
-    marginBottom: spacing.xs,
-  },
-  statsMeta: {
-    marginTop: spacing.sm,
-    fontSize: 12,
+  chartCaption: {
+    marginTop: spacing.xs,
     color: colors.textSecondary,
-  },
-  chartContainer: {
-    marginTop: spacing.sm,
-    marginHorizontal: CHART_HORIZONTAL_MARGIN,
-    borderRadius: 16,
-    backgroundColor: colors.surface,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.sm,
+    textAlign: 'center',
+    fontSize: 12,
   },
   emptyText: {
     color: colors.textSecondary,
-    fontStyle: 'italic',
+    fontSize: 13,
     marginTop: spacing.sm,
+  },
+  card: {
+    backgroundColor: colors.surface,
+    borderRadius: 24,
+    padding: spacing.lg,
+    marginBottom: spacing.lg,
+  },
+  cardTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: colors.textPrimary,
+    marginBottom: spacing.sm,
+  },
+  cardSubtitle: {
+    color: colors.textSecondary,
+    fontSize: 13,
+    marginBottom: spacing.sm,
+  },
+  totalRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  totalMetric: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  tomatoIcon: {
+    width: 32,
+    height: 32,
+    marginRight: spacing.sm,
+  },
+  tomatoIconSmall: {
+    width: 20,
+    height: 20,
+    marginRight: spacing.xs,
+  },
+  totalLabel: {
+    color: colors.textSecondary,
+    fontSize: 13,
+  },
+  totalValue: {
+    color: colors.textPrimary,
+    fontSize: 22,
+    fontWeight: '700',
+  },
+  focusMetricsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: spacing.md,
+  },
+  focusMetricLabel: {
+    color: colors.textSecondary,
+    fontSize: 12,
+  },
+  focusMetricValue: {
+    color: colors.textPrimary,
+    fontSize: 18,
+    fontWeight: '700',
+  },
+  chartContainerCard: {
+    marginTop: spacing.sm,
+  },
+  ratioList: {
+    marginTop: spacing.sm,
+  },
+  ratioRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: spacing.sm,
+  },
+  ratioColorDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    marginRight: spacing.sm,
+  },
+  ratioLabel: {
+    color: colors.textPrimary,
+    fontSize: 14,
+  },
+  ratioSubLabel: {
+    color: colors.textSecondary,
+    fontSize: 12,
+  },
+  pomoStatsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: spacing.md,
+  },
+  pomoStat: {
+    flex: 1,
+  },
+  pomoStatHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  pomoStatLabel: {
+    color: colors.textSecondary,
+    fontSize: 13,
+  },
+  pomoStatValue: {
+    color: colors.textPrimary,
+    fontSize: 22,
+    fontWeight: '700',
+    marginTop: spacing.xs,
+  },
+  tomatoGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginTop: spacing.sm,
+  },
+  tomatoGridIcon: {
+    width: 24,
+    height: 24,
+    marginRight: 4,
+    marginBottom: 4,
   },
 });
