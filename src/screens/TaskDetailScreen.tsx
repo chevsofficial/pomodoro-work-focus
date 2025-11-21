@@ -138,7 +138,7 @@ export const TaskDetailScreen: React.FC = () => {
 
   if (!task || task.deletedAt) {
     return (
-      <ScreenContainer>
+      <ScreenContainer withTopPadding={false}>
         <View style={styles.missingTaskContainer}>
           <Text style={styles.missingTaskTitle}>Task not found</Text>
           <Text style={styles.missingTaskSubtitle}>
@@ -196,7 +196,7 @@ export const TaskDetailScreen: React.FC = () => {
   };
 
   return (
-    <ScreenContainer>
+    <ScreenContainer withTopPadding={false}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <Text style={styles.headerTitle}>Task Details</Text>
         <TouchableOpacity style={styles.focusButton} onPress={handleStartFocus}>

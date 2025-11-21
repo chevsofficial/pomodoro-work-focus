@@ -34,7 +34,7 @@ export const PaywallScreen: React.FC = () => {
   };
 
   return (
-    <ScreenContainer>
+    <ScreenContainer withTopPadding={false}>
       <ScrollView contentContainerStyle={styles.content}>
         <Text style={styles.title}>Pomodoro Focus Pro</Text>
         <Text style={styles.description}>
