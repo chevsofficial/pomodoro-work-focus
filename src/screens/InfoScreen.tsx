@@ -16,7 +16,7 @@ import {
 import { ScreenContainer } from '../components/ScreenContainer';
 import { APP_LINKS } from '../config/links';
 import { RootStackParamList } from '../navigation/RootNavigator';
-import useAppStore from '../store/appStore';
+import useAppStore, { useIsPro } from '../store/appStore';
 import { colors } from '../theme/colors';
 import { spacing } from '../theme/spacing';
 
@@ -58,6 +58,8 @@ const AnyView = View as any;
 export const InfoScreen: React.FC = () => {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const setProStatus = useAppStore((state) => state.setProStatus);
+  const setPro = useAppStore((state) => state.setPro);
+  const isPro = useIsPro();
   const [isRedeemModalVisible, setRedeemModalVisible] = useState(false);
   const [redeemCode, setRedeemCode] = useState('');
 
@@ -89,7 +91,7 @@ export const InfoScreen: React.FC = () => {
       return;
     }
 
-    if (normalizedCode === 'FOCUSPRO2023') {
+    if (normalizedCode === 'FOCUSPRO2023' || normalizedCode === 'TESTPRO' || normalizedCode === 'DEBUGPRO') {
       setProStatus({ isPro: true });
       Alert.alert('Success', 'Code applied! Pomodoro Focus Pro is now unlocked.');
       closeRedeemModal();
@@ -226,6 +228,15 @@ export const InfoScreen: React.FC = () => {
             <Text style={styles.upgradeButtonText}>View plans</Text>
           </TouchableOpacity>
         </View>
+
+        {__DEV__ && (
+          <TouchableOpacity
+            style={styles.debugToggle}
+            onPress={() => setPro(!isPro)}
+          >
+            <Text style={styles.debugToggleText}>Toggle Pro (now: {isPro ? 'Pro' : 'Free'})</Text>
+          </TouchableOpacity>
+        )}
       </ScrollView>
 
       <Modal
@@ -357,6 +368,17 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     fontSize: 15,
     textTransform: 'uppercase',
+  },
+  debugToggle: {
+    marginTop: spacing.md,
+    backgroundColor: '#333',
+    padding: spacing.md,
+    borderRadius: 10,
+  },
+  debugToggleText: {
+    color: 'white',
+    fontWeight: 'bold',
+    textAlign: 'center',
   },
   modalBackdrop: {
     flex: 1,

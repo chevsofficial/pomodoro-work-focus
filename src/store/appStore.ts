@@ -3,7 +3,7 @@ import { create } from 'zustand';
 import { AppStateSnapshot, ActivityType, IntervalSession, IntervalType, PomodoroSettings, ProStatus, Task } from '../models';
 
 // Toggle this during development to unlock everything
-const FORCE_ALL_PRO_FEATURES = __DEV__ && true; // Set to false before shipping
+const FORCE_ALL_PRO_FEATURES = __DEV__ && false; // Set to true for local testing
 
 export const FREE_TASK_LIMIT = 10;
 
