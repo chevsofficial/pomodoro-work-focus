@@ -241,20 +241,46 @@ export const TaskDetailScreen: React.FC = () => {
                 key={type.id}
                 style={[
                   styles.activityTypeOption,
-                  activityTypeId === type.id && styles.activityTypeOptionSelected,
+                  activityTypeId === type.id && {
+                    backgroundColor: type.color ?? colors.accent,
+                    borderColor: type.color ?? colors.accent,
+                  },
                 ]}
                 onPress={() => setActivityTypeId(type.id)}
               >
-                <Text style={styles.activityTypeOptionText}>{type.name}</Text>
+                <View
+                  style={[
+                    styles.activityTypeColorDot,
+                    { backgroundColor: type.color ?? colors.primary },
+                  ]}
+                />
+                <Text
+                  style={[
+                    styles.activityTypeOptionText,
+                    activityTypeId === type.id && styles.activityTypeOptionTextSelected,
+                  ]}
+                >
+                  {type.name}
+                </Text>
               </TouchableOpacity>
             ))}
           </View>
           {selectedActivityType && (
-            <Text style={styles.activityTypeDescription}>
-              Default work interval: {selectedActivityType.workDurationMinutes}m · Short break:{' '}
-              {selectedActivityType.shortBreakMinutes}m · Long break:{' '}
-              {selectedActivityType.longBreakMinutes}m
-            </Text>
+            <View style={styles.selectedActivityTypeRow}>
+              <View
+                style={[
+                  styles.selectedActivityTypePill,
+                  { backgroundColor: selectedActivityType.color ?? colors.accent },
+                ]}
+              >
+                <Text style={styles.selectedActivityTypeText}>{selectedActivityType.name}</Text>
+              </View>
+              <Text style={styles.activityTypeDescription}>
+                Default work interval: {selectedActivityType.workDurationMinutes}m · Short break:{' '}
+                {selectedActivityType.shortBreakMinutes}m · Long break:{' '}
+                {selectedActivityType.longBreakMinutes}m
+              </Text>
+            </View>
           )}
         </View>
 
@@ -330,6 +356,8 @@ const styles = StyleSheet.create({
     marginHorizontal: -spacing.xs,
   },
   activityTypeOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
     borderRadius: 16,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
@@ -342,14 +370,38 @@ const styles = StyleSheet.create({
     backgroundColor: colors.accent,
     borderColor: colors.accent,
   },
+  activityTypeColorDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    marginRight: spacing.xs,
+  },
   activityTypeOptionText: {
     color: colors.textPrimary,
     fontWeight: '600',
     fontSize: 12,
   },
+  activityTypeOptionTextSelected: {
+    color: colors.background,
+  },
   activityTypeDescription: {
     marginTop: spacing.sm,
     color: colors.textSecondary,
+    fontSize: 12,
+  },
+  selectedActivityTypeRow: {
+    marginTop: spacing.sm,
+  },
+  selectedActivityTypePill: {
+    alignSelf: 'flex-start',
+    borderRadius: 999,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    marginBottom: spacing.xs,
+  },
+  selectedActivityTypeText: {
+    color: colors.background,
+    fontWeight: '700',
     fontSize: 12,
   },
   sectionValue: {
