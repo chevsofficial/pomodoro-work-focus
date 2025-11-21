@@ -40,6 +40,7 @@ function TabNavigator() {
   return (
     <AnyTabNavigator
       screenOptions={({ route }) => ({
+        headerShown: false,
         headerStyle: { backgroundColor: colors.surface },
         headerTintColor: colors.textPrimary,
         tabBarStyle: { backgroundColor: colors.surface },
