@@ -25,7 +25,7 @@ export const initializeNotifications = async () => {
     await Notifications.setNotificationChannelAsync(SILENT_CHANNEL_ID, {
       name: 'Pomodoro timers (silent)',
       importance: Notifications.AndroidImportance.DEFAULT,
-      sound: undefined,
+      sound: null,
       enableVibrate: false,
     });
   }
