@@ -2,6 +2,14 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { AppStateSnapshot, ActivityType, IntervalSession, IntervalType, PomodoroSettings, ProStatus, Task } from '../models';
 
+// Toggle this during development to unlock everything
+const FORCE_ALL_PRO_FEATURES = __DEV__ && true; // Set to false before shipping
+
+export const selectIsProEffective = (state: AppStore): boolean => {
+  if (FORCE_ALL_PRO_FEATURES) return true;
+  return state.isPro;
+};
+
 type AddTaskPayload = {
   title: string;
   description?: string;
@@ -331,7 +339,7 @@ export const useSettings = () => useAppStore((state) => state.settings);
 
 export const useProStatus = () => useAppStore((state) => state.proStatus);
 
-export const useIsPro = () => useAppStore((state) => state.isPro);
+export const useIsPro = () => useAppStore(selectIsProEffective);
 
 export const useActivityTypes = () => useAppStore((state) => state.activityTypes);
 
