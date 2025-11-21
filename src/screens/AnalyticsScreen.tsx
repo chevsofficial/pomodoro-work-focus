@@ -334,7 +334,8 @@ export const AnalyticsScreen: React.FC = () => {
               <View style={styles.totalValueRow}>
                 <Image
                   source={require('../../assets/tomato-happy.png')}
-                  style={styles.tomatoIcon}
+                  style={styles.tomatoIconLarge}
+                  resizeMode="contain"
                 />
                 <Text style={styles.totalValue}>{lifetimeCompletedWork}</Text>
               </View>
@@ -427,6 +428,7 @@ export const AnalyticsScreen: React.FC = () => {
                 <Image
                   source={require('../../assets/tomato-happy.png')}
                   style={styles.tomatoIconSmall}
+                  resizeMode="contain"
                 />
                 <Text style={styles.pomoStatLabel}>Completed</Text>
               </View>
@@ -438,6 +440,7 @@ export const AnalyticsScreen: React.FC = () => {
                 <Image
                   source={require('../../assets/tomato-withered.png')}
                   style={styles.tomatoIconSmall}
+                  resizeMode="contain"
                 />
                 <Text style={styles.pomoStatLabel}>Skipped</Text>
               </View>
@@ -451,6 +454,7 @@ export const AnalyticsScreen: React.FC = () => {
                 key={`done-${idx}`}
                 source={require('../../assets/tomato-happy.png')}
                 style={styles.tomatoGridIcon}
+                resizeMode="contain"
               />
             ))}
             {Array.from({ length: Math.min(rangeSkippedWork, 8) }, (_, idx) => (
@@ -458,6 +462,7 @@ export const AnalyticsScreen: React.FC = () => {
                 key={`skipped-${idx}`}
                 source={require('../../assets/tomato-withered.png')}
                 style={styles.tomatoGridIcon}
+                resizeMode="contain"
               />
             ))}
           </View>
@@ -588,15 +593,15 @@ const styles = StyleSheet.create({
   totalColumn: {
     flex: 1,
   },
-  tomatoIcon: {
+  tomatoIconSmall: {
     width: 28,
     height: 28,
-    marginRight: spacing.sm,
-  },
-  tomatoIconSmall: {
-    width: 20,
-    height: 20,
     marginRight: spacing.xs,
+  },
+  tomatoIconLarge: {
+    width: 48,
+    height: 48,
+    marginRight: spacing.sm,
   },
   totalLabel: {
     color: colors.textSecondary,
@@ -707,9 +712,8 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
   },
   tomatoGridIcon: {
-    width: 24,
-    height: 24,
-    marginRight: 4,
-    marginBottom: 4,
+    width: 32,
+    height: 32,
+    margin: 4,
   },
 });
