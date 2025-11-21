@@ -16,6 +16,7 @@ import { colors } from '../theme/colors';
 import { spacing } from '../theme/spacing';
 
 type DateRangeKey =
+  | 'custom'
   | 'today'
   | 'yesterday'
   | 'thisWeek'
@@ -24,10 +25,10 @@ type DateRangeKey =
   | 'previousMonth'
   | 'thisYear'
   | 'previousYear'
-  | 'all'
-  | 'custom';
+  | 'all';
 
 const DATE_RANGE_OPTIONS: { key: DateRangeKey; label: string }[] = [
+  { key: 'custom', label: 'Custom' },
   { key: 'today', label: 'Today' },
   { key: 'yesterday', label: 'Yesterday' },
   { key: 'thisWeek', label: 'This week' },
@@ -37,7 +38,6 @@ const DATE_RANGE_OPTIONS: { key: DateRangeKey; label: string }[] = [
   { key: 'thisYear', label: 'This year' },
   { key: 'previousYear', label: 'Previous year' },
   { key: 'all', label: 'All data' },
-  { key: 'custom', label: 'Custom' },
 ];
 
 type ViewMode = 'summary' | 'graph' | 'pie';
