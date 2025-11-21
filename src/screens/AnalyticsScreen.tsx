@@ -1,15 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import {
-  Alert,
-  Dimensions,
-  Image,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
-import { StackedBarChart } from 'react-native-chart-kit';
+import { Alert, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { ScreenContainer } from '../components/ScreenContainer';
 import { IntervalSession } from '../models';
 import useAppStore from '../store/appStore';
@@ -28,8 +18,6 @@ type DateRangeKey =
   | 'previousYear'
   | 'all';
 
-type TaskFilterId = 'all' | string;
-
 const DATE_RANGE_OPTIONS: { key: DateRangeKey; label: string }[] = [
   { key: 'custom', label: 'Custom' },
   { key: 'today', label: 'Today' },
@@ -43,9 +31,6 @@ const DATE_RANGE_OPTIONS: { key: DateRangeKey; label: string }[] = [
   { key: 'all', label: 'All data' },
 ];
 
-const screenWidth = Dimensions.get('window').width;
-const CHART_HORIZONTAL_MARGIN = 24;
-const chartWidth = screenWidth - CHART_HORIZONTAL_MARGIN * 2;
 const DEFAULT_ACTIVITY_COLOR = '#4A5568';
 const DEFAULT_ACTIVITY_NAME = 'No activity type';
 
@@ -152,16 +137,10 @@ const getRangeBounds = (
 // IMPORTANT: named export must be called AnalyticsScreen
 export const AnalyticsScreen: React.FC = () => {
   const [range, setRange] = useState<DateRangeKey>('thisWeek');
-  const [selectedTaskId, setSelectedTaskId] = useState<TaskFilterId>('all');
   const isPro = useAppStore((state) => state.isPro);
   const intervals = useAppStore((state) => state.intervals);
   const tasks = useAppStore((state) => state.tasks);
   const activityTypes = useAppStore((state) => state.activityTypes);
-
-  const selectableTasks = useMemo(
-    () => tasks.filter((t) => !t.deletedAt),
-    [tasks],
-  );
 
   const { startMs, endMs, labelStart, labelEnd } = useMemo(
     () => getRangeBounds(range, intervals ?? []),
@@ -177,37 +156,29 @@ export const AnalyticsScreen: React.FC = () => {
     [intervals],
   );
 
-  const filteredWorkIntervals = useMemo(
-    () =>
-      selectedTaskId === 'all'
-        ? workIntervals
-        : workIntervals.filter((i) => i.taskId === selectedTaskId),
-    [selectedTaskId, workIntervals],
-  );
-
   const workIntervalsInRange = useMemo(() => {
     if (!rangeStart || !rangeEnd) return [] as IntervalSession[];
     const startTime = rangeStart.getTime();
     const endTime = rangeEnd.getTime();
 
-    return filteredWorkIntervals.filter((i) => {
+    return workIntervals.filter((i) => {
       const started = new Date(i.startedAt).getTime();
       return started >= startTime && started < endTime;
     });
-  }, [filteredWorkIntervals, rangeEnd, rangeStart]);
+  }, [rangeEnd, rangeStart, workIntervals]);
 
   const lifetimeCompletedWork = useMemo(
     () =>
-      filteredWorkIntervals.filter((i) => !i.wasSkipped && i.endedAt).length,
-    [filteredWorkIntervals],
+      workIntervals.filter((i) => !i.wasSkipped && i.endedAt).length,
+    [workIntervals],
   );
 
   const lifetimeFocusSeconds = useMemo(
     () =>
-      filteredWorkIntervals
+      workIntervals
         .filter((i) => !i.wasSkipped && i.endedAt)
         .reduce((sum, i) => sum + i.durationSeconds, 0),
-    [filteredWorkIntervals],
+    [workIntervals],
   );
 
   const lifetimeFocusHours = lifetimeFocusSeconds / 3600;
@@ -246,72 +217,6 @@ export const AnalyticsScreen: React.FC = () => {
     return map;
   }, [tasks]);
 
-  const dailyBuckets = useMemo(() => {
-    const map = new Map<
-      string,
-      {
-        dateKey: string;
-        label: string;
-        activityTotals: Record<string, number>;
-      }
-    >();
-
-    for (const interval of workIntervalsInRange) {
-      if (interval.wasSkipped || !interval.endedAt) continue;
-
-      const started = new Date(interval.startedAt);
-      const dateKey = started.toISOString().slice(0, 10);
-      const label = started
-        .toLocaleDateString(undefined, { weekday: 'short' })
-        .slice(0, 1);
-
-      const bucket =
-        map.get(dateKey) ?? {
-          dateKey,
-          label,
-          activityTotals: {},
-        };
-
-      const task = interval.taskId ? taskMap[interval.taskId] : undefined;
-      const activityId = task?.activityTypeId ?? 'none';
-      const hours = interval.durationSeconds / 3600;
-
-      bucket.activityTotals[activityId] =
-        (bucket.activityTotals[activityId] ?? 0) + hours;
-      map.set(dateKey, bucket);
-    }
-
-    return Array.from(map.values()).sort((a, b) =>
-      a.dateKey.localeCompare(b.dateKey),
-    );
-  }, [taskMap, workIntervalsInRange]);
-
-  const activityKeysInRange = useMemo(() => {
-    const set = new Set<string>();
-    dailyBuckets.forEach((bucket) => {
-      Object.keys(bucket.activityTotals).forEach((k) => set.add(k));
-    });
-    return Array.from(set);
-  }, [dailyBuckets]);
-
-  const stackedColors = activityKeysInRange.map((key) =>
-    key === 'none'
-      ? DEFAULT_ACTIVITY_COLOR
-      : activityTypeMap[key]?.color ?? DEFAULT_ACTIVITY_COLOR,
-  );
-
-  const stackedLegend = activityKeysInRange.map((key) =>
-    key === 'none'
-      ? DEFAULT_ACTIVITY_NAME
-      : activityTypeMap[key]?.name ?? 'Unknown',
-  );
-
-  const stackedLabels = dailyBuckets.map((b) => b.label);
-
-  const stackedData = dailyBuckets.map((b) =>
-    activityKeysInRange.map((key) => b.activityTotals[key] ?? 0),
-  );
-
   const activityTypeRatio = useMemo(() => {
     const totals: Record<string, number> = {};
 
@@ -348,16 +253,11 @@ export const AnalyticsScreen: React.FC = () => {
       .sort((a, b) => b.hours - a.hours);
   }, [activityTypeMap, taskMap, workIntervalsInRange]);
 
-  const chartConfig = {
-    backgroundGradientFrom: colors.surface,
-    backgroundGradientTo: colors.surface,
-    decimalPlaces: 1,
-    color: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
-    labelColor: (opacity = 1) => `rgba(200, 200, 200, ${opacity})`,
-    propsForLabels: {
-      fontSize: 10,
-    },
-  } as const;
+  const totalRangeHours = useMemo(
+    () => activityTypeRatio.reduce((sum, row) => sum + row.hours, 0),
+    [activityTypeRatio],
+  );
+  const maxHours = Math.max(totalRangeHours, 0.1);
 
   return (
     <ScreenContainer style={styles.screenContainer}>
@@ -416,53 +316,6 @@ export const AnalyticsScreen: React.FC = () => {
           </View>
         </View>
 
-        <View style={styles.taskFilterRow}>
-          <Text style={styles.taskFilterLabel}>Task</Text>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.taskFilterScroll}
-          >
-            <TouchableOpacity
-              style={[
-                styles.taskFilterPill,
-                selectedTaskId === 'all' && styles.taskFilterPillActive,
-              ]}
-              onPress={() => setSelectedTaskId('all')}
-            >
-              <Text
-                style={[
-                  styles.taskFilterPillLabel,
-                  selectedTaskId === 'all' && styles.taskFilterPillLabelActive,
-                ]}
-              >
-                All tasks
-              </Text>
-            </TouchableOpacity>
-
-            {selectableTasks.map((task) => (
-              <TouchableOpacity
-                key={task.id}
-                style={[
-                  styles.taskFilterPill,
-                  selectedTaskId === task.id && styles.taskFilterPillActive,
-                ]}
-                onPress={() => setSelectedTaskId(task.id)}
-              >
-                <Text
-                  style={[
-                    styles.taskFilterPillLabel,
-                    selectedTaskId === task.id && styles.taskFilterPillLabelActive,
-                  ]}
-                  numberOfLines={1}
-                >
-                  {task.title}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </View>
-
         <View style={styles.dateTabsRow}>
           <View style={styles.dateTab}>
             <Text style={styles.dateTabLabel}>Start date</Text>
@@ -475,20 +328,19 @@ export const AnalyticsScreen: React.FC = () => {
         </View>
 
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>Total</Text>
           <View style={styles.totalRow}>
-            <View style={styles.totalMetric}>
-              <Image
-                source={require('../../assets/tomato-happy.png')}
-                style={styles.tomatoIcon}
-              />
-              <View>
-                <Text style={styles.totalLabel}>Total Pomodoros</Text>
+            <View style={styles.totalColumn}>
+              <Text style={styles.totalLabel}>Total Pomodoros</Text>
+              <View style={styles.totalValueRow}>
+                <Image
+                  source={require('../../assets/tomato-happy.png')}
+                  style={styles.tomatoIcon}
+                />
                 <Text style={styles.totalValue}>{lifetimeCompletedWork}</Text>
               </View>
             </View>
 
-            <View style={styles.totalMetric}>
+            <View style={styles.totalColumn}>
               <Text style={styles.totalLabel}>Total Focus</Text>
               <Text style={styles.totalValue}>{lifetimeFocusHours.toFixed(1)}h</Text>
             </View>
@@ -504,28 +356,36 @@ export const AnalyticsScreen: React.FC = () => {
               <Text style={styles.focusMetricLabel}>Focus this range</Text>
               <Text style={styles.focusMetricValue}>{rangeFocusHours.toFixed(1)}h</Text>
             </View>
-            <View>
-              <Text style={styles.focusMetricLabel}>Completed pomos</Text>
-              <Text style={styles.focusMetricValue}>{rangeCompletedWork}</Text>
-            </View>
           </View>
 
-          {stackedData.length === 0 ? (
+          {totalRangeHours <= 0 ? (
             <Text style={styles.emptyText}>No work pomodoros in this range yet.</Text>
           ) : (
-            <View style={styles.chartContainerCard}>
-              <StackedBarChart
-                data={{
-                  labels: stackedLabels,
-                  legend: stackedLegend,
-                  data: stackedData,
-                  barColors: stackedColors,
-                }}
-                width={chartWidth}
-                height={220}
-                chartConfig={chartConfig}
-                style={{ borderRadius: 16 }}
-              />
+            <View style={styles.focusChartRow}>
+              <View style={styles.focusYAxis}>
+                {[0, 0.5, 1].map((fraction) => {
+                  const value = maxHours * fraction;
+                  return (
+                    <View key={fraction} style={styles.yAxisLabelRow}>
+                      <Text style={styles.yAxisLabel}>{value.toFixed(1)}h</Text>
+                    </View>
+                  );
+                })}
+              </View>
+
+              <View style={styles.focusBarWrapper}>
+                <View style={styles.focusBarBackground}>
+                  {activityTypeRatio.map((row) => (
+                    <View
+                      key={row.key}
+                      style={{
+                        flex: row.hours || 0.0001,
+                        backgroundColor: row.color,
+                      }}
+                    />
+                  ))}
+                </View>
+              </View>
             </View>
           )}
         </View>
@@ -613,7 +473,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   scrollContent: {
-    padding: spacing.lg,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.lg,
     paddingBottom: spacing.xl,
   },
   title: {
@@ -684,41 +545,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: colors.textPrimary,
   },
-  taskFilterRow: {
-    marginBottom: spacing.sm,
-  },
-  taskFilterLabel: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    marginBottom: spacing.xs,
-  },
-  taskFilterScroll: {
-    paddingHorizontal: spacing.xs,
-  },
-  taskFilterPill: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    borderRadius: 999,
-    backgroundColor: colors.surface,
-    marginHorizontal: spacing.xs,
-    maxWidth: 160,
-  },
-  taskFilterPillActive: {
-    backgroundColor: colors.accent,
-  },
-  taskFilterPillLabel: {
-    fontSize: 12,
-    color: colors.textSecondary,
-  },
-  taskFilterPillLabelActive: {
-    color: colors.background,
-    fontWeight: '600',
-  },
-  proHint: {
-    marginTop: spacing.sm,
-    color: colors.textSecondary,
-    fontSize: 13,
-  },
   placeholderCard: {
     borderRadius: 16,
     padding: spacing.lg,
@@ -734,15 +560,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.textSecondary,
   },
-  chart: {
-    borderRadius: 16,
-  },
-  chartCaption: {
-    marginTop: spacing.xs,
-    color: colors.textSecondary,
-    textAlign: 'center',
-    fontSize: 12,
-  },
   emptyText: {
     color: colors.textSecondary,
     fontSize: 13,
@@ -751,8 +568,10 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: colors.surface,
     borderRadius: 24,
-    padding: spacing.lg,
+    paddingVertical: spacing.lg,
+    paddingHorizontal: spacing.lg,
     marginBottom: spacing.lg,
+    width: '100%',
   },
   cardTitle: {
     fontSize: 18,
@@ -770,13 +589,12 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  totalMetric: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  totalColumn: {
+    flex: 1,
   },
   tomatoIcon: {
-    width: 32,
-    height: 32,
+    width: 28,
+    height: 28,
     marginRight: spacing.sm,
   },
   tomatoIconSmall: {
@@ -787,11 +605,16 @@ const styles = StyleSheet.create({
   totalLabel: {
     color: colors.textSecondary,
     fontSize: 13,
+    marginBottom: spacing.xs,
   },
   totalValue: {
     color: colors.textPrimary,
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: '700',
+  },
+  totalValueRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   focusMetricsRow: {
     flexDirection: 'row',
@@ -804,11 +627,39 @@ const styles = StyleSheet.create({
   },
   focusMetricValue: {
     color: colors.textPrimary,
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: '700',
   },
-  chartContainerCard: {
+  focusChartRow: {
+    flexDirection: 'row',
+    alignItems: 'stretch',
     marginTop: spacing.sm,
+  },
+  focusYAxis: {
+    justifyContent: 'space-between',
+    marginRight: spacing.md,
+  },
+  yAxisLabelRow: {
+    flex: 1,
+    justifyContent: 'flex-end',
+  },
+  yAxisLabel: {
+    fontSize: 11,
+    color: colors.textSecondary,
+  },
+  focusBarWrapper: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  focusBarBackground: {
+    width: 36,
+    height: 160,
+    borderRadius: 18,
+    overflow: 'hidden',
+    backgroundColor: colors.background,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+    flexDirection: 'column',
   },
   ratioList: {
     marginTop: spacing.sm,
