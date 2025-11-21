@@ -242,11 +242,7 @@ const ActivityTypeModal: React.FC<ActivityTypeModalProps> = ({
           </View>
           <View style={styles.modalField}>
             <Text style={styles.modalLabel}>Color</Text>
-            <Text style={styles.modalHint}>
-              {isPro
-                ? 'Choose a color for this activity type.'
-                : 'Free users can choose between red and green.'}
-            </Text>
+            <Text style={styles.modalHint}>Choose the desired color for your activity type.</Text>
 
             <View style={styles.colorGrid}>
               {ACTIVITY_COLORS.map((c) => {
@@ -301,7 +297,7 @@ const ActivityTypeModal: React.FC<ActivityTypeModalProps> = ({
 
           {isPro && (
             <View style={styles.modalField}>
-              <Text style={styles.modalSubLabel}>Custom hex (optional)</Text>
+              <Text style={styles.modalSubLabel}>Hex color code (Pro)</Text>
               <TextInput
                 style={styles.input}
                 placeholder="#FF5A5F"
