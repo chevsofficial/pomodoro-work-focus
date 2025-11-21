@@ -197,7 +197,8 @@ export const AnalyticsScreen: React.FC = () => {
   }, [filteredWorkIntervals, rangeEnd, rangeStart]);
 
   const lifetimeCompletedWork = useMemo(
-    () => filteredWorkIntervals.filter((i) => !i.wasSkipped).length,
+    () =>
+      filteredWorkIntervals.filter((i) => !i.wasSkipped && i.endedAt).length,
     [filteredWorkIntervals],
   );
 
@@ -212,7 +213,8 @@ export const AnalyticsScreen: React.FC = () => {
   const lifetimeFocusHours = lifetimeFocusSeconds / 3600;
 
   const rangeCompletedWork = useMemo(
-    () => workIntervalsInRange.filter((i) => !i.wasSkipped).length,
+    () =>
+      workIntervalsInRange.filter((i) => !i.wasSkipped && i.endedAt).length,
     [workIntervalsInRange],
   );
 
@@ -255,6 +257,8 @@ export const AnalyticsScreen: React.FC = () => {
     >();
 
     for (const interval of workIntervalsInRange) {
+      if (interval.wasSkipped || !interval.endedAt) continue;
+
       const started = new Date(interval.startedAt);
       const dateKey = started.toISOString().slice(0, 10);
       const label = started
