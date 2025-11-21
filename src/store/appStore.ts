@@ -65,6 +65,7 @@ const defaultSettings: PomodoroSettings = {
   soundEnabled: true,
   vibrationEnabled: true,
   notificationsEnabled: true,
+  notificationSoundKey: 'chime1',
   defaultActivityTypeId: undefined,
 };
 
@@ -113,14 +114,16 @@ const useAppStore = create<AppStore>((set, get) => {
       const stored = await AsyncStorage.getItem(STORAGE_KEY);
       if (stored) {
         const parsed = JSON.parse(stored) as Partial<AppStateSnapshot>;
-                set((state) => {
-          const nextProStatus = parsed.proStatus ?? state.proStatus;
+        set((state) => {
+          const nextProStatus = parsed.proStatus ? { ...state.proStatus, ...parsed.proStatus } : state.proStatus;
+          const nextSettings = { ...state.settings, ...(parsed.settings ?? {}) };
+
           return {
             ...state,
             tasks: parsed.tasks ?? state.tasks,
             intervals: parsed.intervals ?? state.intervals,
             activityTypes: parsed.activityTypes ?? state.activityTypes,
-            settings: parsed.settings ?? state.settings,
+            settings: nextSettings,
             proStatus: nextProStatus,
             isPro: nextProStatus.isPro,
           };

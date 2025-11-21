@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { IntervalType } from '../models';
 import { cancelScheduledNotification, scheduleIntervalCompletionNotification } from '../utils/notificationService';
+import { playIntervalEndSound, triggerIntervalHaptics } from '../utils/soundService';
 import useAppStore from './appStore';
 
 const ONE_MINUTE_IN_SECONDS = 60;
@@ -320,6 +321,9 @@ export const useTimerStore = create<TimerState>((set, get) => {
         intervalStartTime: undefined,
         plannedEndTime: undefined,
       });
+
+            void playIntervalEndSound();
+      triggerIntervalHaptics();
 
       if (appStore.settings.autoStartNextInterval) {
         get().startTimer();

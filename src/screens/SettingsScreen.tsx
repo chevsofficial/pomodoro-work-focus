@@ -20,6 +20,7 @@ import { colors } from '../theme/colors';
 import { spacing } from '../theme/spacing';
 import { FREE_ACTIVITY_TYPE_LIMIT } from '../config/proFeatures';
 import { requestNotificationPermissions } from '../utils/notificationService';
+import { playIntervalEndSound } from '../utils/soundService';
 
 const parsePositiveInt = (value: string, fallback: number) => {
   const parsed = parseInt(value, 10);
@@ -29,6 +30,12 @@ const parsePositiveInt = (value: string, fallback: number) => {
 
   return Math.max(1, parsed);
 };
+
+const SOUND_OPTIONS = [
+  { key: 'chime1', label: 'Chime 1' },
+  { key: 'chime2', label: 'Chime 2' },
+  { key: 'chime3', label: 'Chime 3' },
+];
 
 const SettingInputRow: React.FC<{
   label: string;
@@ -446,6 +453,33 @@ export const SettingsScreen: React.FC = () => {
             value={settings.autoStartNextInterval}
             onValueChange={handleToggleChange('autoStartNextInterval')}
           />
+                    <View style={styles.soundSectionHeader}>
+            <Text style={styles.settingLabel}>Notification sound</Text>
+            <TouchableOpacity style={styles.testSoundButton} onPress={() => void playIntervalEndSound()}>
+              <Text style={styles.testSoundButtonLabel}>Test sound</Text>
+            </TouchableOpacity>
+          </View>
+          <View style={styles.soundOptionsRow}>
+            {SOUND_OPTIONS.map((option) => (
+              <TouchableOpacity
+                key={option.key}
+                style={[
+                  styles.soundOption,
+                  settings.notificationSoundKey === option.key && styles.soundOptionActive,
+                ]}
+                onPress={() => updateSettings({ notificationSoundKey: option.key })}
+              >
+                <Text
+                  style={[
+                    styles.soundOptionLabel,
+                    settings.notificationSoundKey === option.key && styles.soundOptionLabelActive,
+                  ]}
+                >
+                  {option.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
           <SettingToggleRow
             label="Sound enabled"
             value={settings.soundEnabled}
@@ -566,6 +600,50 @@ const styles = StyleSheet.create({
     fontSize: 16,
     flex: 1,
     paddingRight: spacing.md,
+  },
+  soundSectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: spacing.sm,
+  },
+  soundOptionsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginHorizontal: -spacing.xs,
+    marginBottom: spacing.md,
+  },
+  soundOption: {
+    borderRadius: 16,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderWidth: 1,
+    borderColor: colors.textSecondary,
+    marginHorizontal: spacing.xs,
+    marginVertical: spacing.xs,
+  },
+  soundOptionActive: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  soundOptionLabel: {
+    fontSize: 12,
+    color: colors.textSecondary,
+  },
+  soundOptionLabelActive: {
+    color: colors.background,
+    fontWeight: '600',
+  },
+  testSoundButton: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: 12,
+    backgroundColor: colors.primary,
+  },
+  testSoundButtonLabel: {
+    color: colors.background,
+    fontWeight: '600',
+    fontSize: 12,
   },
   input: {
     backgroundColor: colors.background,

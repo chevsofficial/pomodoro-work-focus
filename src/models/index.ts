@@ -41,6 +41,7 @@ export interface PomodoroSettings {
   soundEnabled: boolean;
   vibrationEnabled: boolean;
   notificationsEnabled: boolean;
+  notificationSoundKey: string;
   defaultActivityTypeId?: string;
 }
 
