@@ -25,15 +25,33 @@ const ActivityTypeChip: React.FC<{
   selected: boolean;
   onPress: () => void;
 }> = ({ type, selected, onPress }) => {
+  const fallbackColor = type.color ?? colors.accent;
+
   return (
     <TouchableOpacity
       style={[
         styles.activityTypeOption,
-        selected && styles.activityTypeOptionSelected,
+        selected && {
+          backgroundColor: fallbackColor,
+          borderColor: fallbackColor,
+        },
       ]}
       onPress={onPress}
     >
-      <Text style={styles.activityTypeOptionText}>{type.name}</Text>
+      <View
+        style={[
+          styles.activityTypeColorDot,
+          { backgroundColor: fallbackColor },
+        ]}
+      />
+      <Text
+        style={[
+          styles.activityTypeOptionText,
+          selected && styles.activityTypeOptionTextSelected,
+        ]}
+      >
+        {type.name}
+      </Text>
     </TouchableOpacity>
   );
 };
@@ -247,7 +265,12 @@ export const TasksScreen: React.FC = () => {
             {task.title}
           </Text>
           {activityType && (
-            <View style={styles.activityBadge}>
+            <View
+              style={[
+                styles.activityBadge,
+                { backgroundColor: activityType.color ?? colors.surface },
+              ]}
+            >
               <Text style={styles.activityBadgeText}>{activityType.name}</Text>
             </View>
           )}
@@ -522,6 +545,8 @@ const styles = StyleSheet.create({
     marginHorizontal: -spacing.xs,
   },
   activityTypeOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
     borderRadius: 16,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
@@ -534,10 +559,19 @@ const styles = StyleSheet.create({
     backgroundColor: colors.accent,
     borderColor: colors.accent,
   },
+  activityTypeColorDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    marginRight: spacing.xs,
+  },
   activityTypeOptionText: {
     color: colors.textPrimary,
     fontWeight: '600',
     fontSize: 12,
+  },
+  activityTypeOptionTextSelected: {
+    color: colors.background,
   },
   modalActions: {
     flexDirection: 'row',
