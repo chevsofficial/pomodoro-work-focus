@@ -14,7 +14,13 @@ import { useNavigation } from '@react-navigation/native';
 import { ScreenContainer } from '../components/ScreenContainer';
 import { RootStackParamList } from '../navigation/RootNavigator';
 import { ActivityType, Task } from '../models';
-import useAppStore, { useActivityTypes, useTasks } from '../store/appStore';
+import useAppStore, {
+  selectCanCreateTask,
+  selectIsProEffective,
+  selectRemainingFreeTasks,
+  useActivityTypes,
+  useTasks,
+} from '../store/appStore';
 import { colors } from '../theme/colors';
 import { spacing } from '../theme/spacing';
 
@@ -165,6 +171,9 @@ export const TasksScreen: React.FC = () => {
   const navigation = useNavigation<TasksNavigation>();
   const [isModalVisible, setModalVisible] = useState(false);
   const [activeTab, setActiveTab] = useState<'todo' | 'done'>('todo');
+  const canCreateTask = useAppStore(selectCanCreateTask);
+  const remainingFreeTasks = useAppStore(selectRemainingFreeTasks);
+  const isPro = useAppStore(selectIsProEffective);
 
   const activityTypeMap = useMemo(() => {
     const entries = activityTypes.map((type) => [type.id, type] as const);
@@ -231,8 +240,39 @@ export const TasksScreen: React.FC = () => {
     toggleTaskCompleted(taskId);
   };
 
+  const showUpgradeAlert = () => {
+    Alert.alert(
+      'Task limit reached',
+      'Free plan allows up to 10 active tasks. Upgrade to Pomodoro Focus Pro for unlimited tasks.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'View Pro',
+          onPress: () => {
+            navigation.navigate('Info');
+          },
+        },
+      ],
+    );
+  };
+
   const handleAddTask = (payload: { title: string; description?: string; activityTypeId?: string }) => {
+    if (!selectCanCreateTask(useAppStore.getState())) {
+      showUpgradeAlert();
+      setModalVisible(false);
+      return;
+    }
+
     addTask(payload);
+  };
+
+  const handleAddTaskPress = () => {
+    if (!canCreateTask) {
+      showUpgradeAlert();
+      return;
+    }
+
+    setModalVisible(true);
   };
 
   const handleOpenTaskDetail = (taskId: string) => {
@@ -342,7 +382,15 @@ export const TasksScreen: React.FC = () => {
         </ScrollView>
       )}
 
-      <TouchableOpacity style={styles.fab} onPress={() => setModalVisible(true)}>
+      {!isPro && (
+        <Text style={styles.planNote}>{remainingFreeTasks} tasks left on the free plan.</Text>
+      )}
+
+      <TouchableOpacity
+        style={[styles.fab, !canCreateTask && styles.fabDisabled]}
+        onPress={handleAddTaskPress}
+        disabled={!canCreateTask}
+      >
         <Text style={styles.fabIcon}>＋</Text>
       </TouchableOpacity>
 
@@ -480,6 +528,12 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     marginBottom: spacing.xs,
   },
+  planNote: {
+    marginTop: spacing.sm,
+    color: colors.textSecondary,
+    fontSize: 12,
+    textAlign: 'right',
+  },
   fab: {
     position: 'absolute',
     right: spacing.lg,
@@ -495,6 +549,9 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
+  },
+  fabDisabled: {
+    opacity: 0.5,
   },
   fabIcon: {
     color: colors.background,

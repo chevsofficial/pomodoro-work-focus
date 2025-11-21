@@ -5,9 +5,28 @@ import { AppStateSnapshot, ActivityType, IntervalSession, IntervalType, Pomodoro
 // Toggle this during development to unlock everything
 const FORCE_ALL_PRO_FEATURES = __DEV__ && true; // Set to false before shipping
 
+export const FREE_TASK_LIMIT = 10;
+
 export const selectIsProEffective = (state: AppStore): boolean => {
   if (FORCE_ALL_PRO_FEATURES) return true;
   return state.isPro;
+};
+
+export const selectActiveTaskCount = (state: AppStore): number =>
+  state.tasks.filter((t) => !t.deletedAt).length;
+
+export const selectRemainingFreeTasks = (state: AppStore): number => {
+  const isPro = selectIsProEffective(state);
+  if (isPro) return Infinity;
+  return Math.max(0, FREE_TASK_LIMIT - selectActiveTaskCount(state));
+};
+
+export const selectCanCreateTask = (state: AppStore): boolean => {
+  const isPro = selectIsProEffective(state);
+  if (isPro) return true;
+
+  const activeTasksCount = selectActiveTaskCount(state);
+  return activeTasksCount < FREE_TASK_LIMIT;
 };
 
 type AddTaskPayload = {
