@@ -228,15 +228,6 @@ export const InfoScreen: React.FC = () => {
             <Text style={styles.upgradeButtonText}>View plans</Text>
           </TouchableOpacity>
         </View>
-
-        {__DEV__ && (
-          <TouchableOpacity
-            style={styles.debugToggle}
-            onPress={() => setProStatus({ ...proStatus, isPro: !isPro })}
-          >
-            <Text style={styles.debugToggleText}>Toggle Pro (now: {isPro ? 'Pro' : 'Free'})</Text>
-          </TouchableOpacity>
-        )}
       </ScrollView>
 
       <Modal
@@ -368,17 +359,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     fontSize: 15,
     textTransform: 'uppercase',
-  },
-  debugToggle: {
-    marginTop: spacing.md,
-    backgroundColor: '#333',
-    padding: spacing.md,
-    borderRadius: 10,
-  },
-  debugToggleText: {
-    color: 'white',
-    fontWeight: 'bold',
-    textAlign: 'center',
   },
   modalBackdrop: {
     flex: 1,
