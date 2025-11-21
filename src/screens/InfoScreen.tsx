@@ -16,7 +16,7 @@ import {
 import { ScreenContainer } from '../components/ScreenContainer';
 import { APP_LINKS } from '../config/links';
 import { RootStackParamList } from '../navigation/RootNavigator';
-import useAppStore, { useIsPro } from '../store/appStore';
+import useAppStore, { useIsPro, useProStatus } from '../store/appStore';
 import { colors } from '../theme/colors';
 import { spacing } from '../theme/spacing';
 
@@ -58,7 +58,7 @@ const AnyView = View as any;
 export const InfoScreen: React.FC = () => {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const setProStatus = useAppStore((state) => state.setProStatus);
-  const setPro = useAppStore((state) => state.setPro);
+  const proStatus = useProStatus();
   const isPro = useIsPro();
   const [isRedeemModalVisible, setRedeemModalVisible] = useState(false);
   const [redeemCode, setRedeemCode] = useState('');
@@ -232,7 +232,7 @@ export const InfoScreen: React.FC = () => {
         {__DEV__ && (
           <TouchableOpacity
             style={styles.debugToggle}
-            onPress={() => setPro(!isPro)}
+            onPress={() => setProStatus({ ...proStatus, isPro: !isPro })}
           >
             <Text style={styles.debugToggleText}>Toggle Pro (now: {isPro ? 'Pro' : 'Free'})</Text>
           </TouchableOpacity>
