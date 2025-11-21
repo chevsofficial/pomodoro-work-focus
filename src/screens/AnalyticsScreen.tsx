@@ -260,7 +260,7 @@ export const AnalyticsScreen: React.FC = () => {
   const maxHours = Math.max(totalRangeHours, 0.1);
 
   return (
-    <ScreenContainer style={styles.screenContainer}>
+    <ScreenContainer>
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
@@ -363,7 +363,7 @@ export const AnalyticsScreen: React.FC = () => {
           ) : (
             <View style={styles.focusChartRow}>
               <View style={styles.focusYAxis}>
-                {[0, 0.5, 1].map((fraction) => {
+                {[1, 0.5, 0].map((fraction) => {
                   const value = maxHours * fraction;
                   return (
                     <View key={fraction} style={styles.yAxisLabelRow}>
@@ -468,13 +468,8 @@ export const AnalyticsScreen: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
-  screenContainer: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
   scrollContent: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.lg,
+    flexGrow: 1,
     paddingBottom: spacing.xl,
   },
   title: {
@@ -572,6 +567,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     marginBottom: spacing.lg,
     width: '100%',
+    alignSelf: 'stretch',
   },
   cardTitle: {
     fontSize: 18,
