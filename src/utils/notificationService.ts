@@ -54,6 +54,7 @@ type ScheduleArgs = {
   intervalType: IntervalType;
   nextIntervalType?: IntervalType;
   soundEnabled: boolean;
+  vibrationEnabled?: boolean;
 };
 
 export const scheduleIntervalCompletionNotification = async ({
