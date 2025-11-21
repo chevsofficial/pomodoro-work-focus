@@ -496,11 +496,24 @@ export const SettingsScreen: React.FC = () => {
     }
   };
 
+  const handleToggleTheme = (enabled: boolean) => {
+    updateSettings({ theme: enabled ? 'light' : 'dark' });
+  };
+
   return (
     <ScreenContainer>
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <Text style={styles.title}>Settings</Text>
         <Text style={styles.subtitle}>Customize your Pomodoro workflow.</Text>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Appearance</Text>
+          <SettingToggleRow
+            label="Light Mode"
+            value={settings.theme === 'light'}
+            onValueChange={handleToggleTheme}
+          />
+        </View>
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Durations</Text>
