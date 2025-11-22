@@ -1,7 +1,10 @@
 import React, { useMemo, useState } from 'react';
 import { Alert, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import { NavigationProp, useNavigation } from '@react-navigation/native';
 import { ScreenContainer } from '../components/ScreenContainer';
+import { RootStackParamList } from '../navigation/RootNavigator';
+import { navigateToProUpsell } from '../navigation/proNavigation';
 import { IntervalSession } from '../models';
 import useAppStore, { useIsPro } from '../store/appStore';
 import { colors } from '../theme/colors';
@@ -150,6 +153,7 @@ export const AnalyticsScreen: React.FC = () => {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [pickerDate, setPickerDate] = useState<Date>(new Date());
 
+  const navigation = useNavigation<NavigationProp<RootStackParamList>>();
   const isPro = useIsPro();
   const intervals = useAppStore((state) => state.intervals);
   const tasks = useAppStore((state) => state.tasks);
@@ -161,6 +165,13 @@ export const AnalyticsScreen: React.FC = () => {
         Alert.alert(
           'Pro feature',
           'Custom date range is available in Pomodoro Focus Pro.',
+          [
+            { text: 'Not now', style: 'cancel' },
+            {
+              text: 'View Pro',
+              onPress: () => navigateToProUpsell(navigation),
+            },
+          ],
         );
         return;
       }

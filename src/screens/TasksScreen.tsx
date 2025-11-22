@@ -13,6 +13,7 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { ScreenContainer } from '../components/ScreenContainer';
 import { RootStackParamList } from '../navigation/RootNavigator';
+import { navigateToProUpsell } from '../navigation/proNavigation';
 import { ActivityType, Task } from '../models';
 import useAppStore, {
   selectCanCreateTask,
@@ -245,12 +246,10 @@ export const TasksScreen: React.FC = () => {
       'Task limit reached',
       'Free plan allows up to 10 active tasks. Upgrade to Pomodoro Focus Pro for unlimited tasks.',
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: 'Not now', style: 'cancel' },
         {
           text: 'View Pro',
-          onPress: () => {
-            navigation.navigate('Info');
-          },
+          onPress: () => navigateToProUpsell(navigation),
         },
       ],
     );
@@ -387,8 +386,7 @@ export const TasksScreen: React.FC = () => {
       )}
 
       <TouchableOpacity
-        accessibilityState={{ disabled: !canCreateTask }}
-        style={[styles.fab, !canCreateTask && styles.fabDisabled]}
+        style={[styles.fab, !canCreateTask && !isPro && styles.fabLimitReached]}
         onPress={handleAddTaskPress}
       >
         <Text style={styles.fabIcon}>＋</Text>
@@ -551,8 +549,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 4,
   },
-  fabDisabled: {
-    opacity: 0.5,
+  fabLimitReached: {
+    opacity: 0.7,
   },
   fabIcon: {
     color: colors.background,
