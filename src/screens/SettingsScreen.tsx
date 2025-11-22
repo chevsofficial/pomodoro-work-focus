@@ -1,5 +1,4 @@
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useNavigation } from '@react-navigation/native';
+import { NavigationProp, useNavigation } from '@react-navigation/native';
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   Alert,
@@ -136,6 +135,7 @@ type ActivityTypeModalProps = {
   initialValues?: ActivityType;
   onSubmit: (payload: Omit<ActivityType, 'id'>) => void;
   onDelete?: () => void;
+  onLockedColorPress?: () => void;
 };
 
 const buildFormState = (
@@ -170,6 +170,7 @@ const ActivityTypeModal: React.FC<ActivityTypeModalProps> = ({
   initialValues,
   onSubmit,
   onDelete,
+  onLockedColorPress,
 }) => {
   const [formValues, setFormValues] = useState<ActivityTypeFormValues>(() => buildFormState(defaults, initialValues));
   const isPro = useIsPro();
@@ -253,7 +254,7 @@ const ActivityTypeModal: React.FC<ActivityTypeModalProps> = ({
 
                 const handlePress = () => {
                   if (isLocked) {
-                    navigateToProUpsell(navigation);
+                    onLockedColorPress?.();
                     return;
                   }
 
@@ -374,7 +375,7 @@ const ActivityTypeModal: React.FC<ActivityTypeModalProps> = ({
   );
 };
 
-type SettingsNavigation = NativeStackNavigationProp<RootStackParamList>;
+type SettingsNavigation = NavigationProp<RootStackParamList>;
 
 type NumericSettingKey =
   | 'workDurationMinutes'
@@ -393,6 +394,12 @@ export const SettingsScreen: React.FC = () => {
   const navigation = useNavigation<SettingsNavigation>();
   const handleUpgradePress = () => {
     navigateToProUpsell(navigation);
+  };
+
+  const handleLockedColorPress = () => {
+    if (!isPro) {
+      navigateToProUpsell(navigation);
+    }
   };
 
   const hasReachedFreeActivityLimit = !isPro && activityTypes.length >= FREE_ACTIVITY_TYPE_LIMIT;
@@ -620,6 +627,7 @@ export const SettingsScreen: React.FC = () => {
         initialValues={editingType}
         onSubmit={handleSubmitActivityType}
         onDelete={editingType ? handleDeleteActivityType : undefined}
+        onLockedColorPress={handleLockedColorPress}
       />
     </ScreenContainer>
   );
