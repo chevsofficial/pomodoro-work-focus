@@ -253,17 +253,7 @@ const ActivityTypeModal: React.FC<ActivityTypeModalProps> = ({
 
                 const handlePress = () => {
                   if (isLocked) {
-                    Alert.alert(
-                      'Pro feature',
-                      'Additional colors are available in the Pro version.',
-                      [
-                        { text: 'Not now', style: 'cancel' },
-                        {
-                          text: 'View Pro',
-                          onPress: () => navigateToProUpsell(navigation),
-                        },
-                      ],
-                    );
+                    navigateToProUpsell(navigation);
                     return;
                   }
 
@@ -479,14 +469,7 @@ export const SettingsScreen: React.FC = () => {
 
   const openAddModal = () => {
     if (hasReachedFreeActivityLimit) {
-      Alert.alert(
-        'Pro feature',
-        `Free accounts can create up to ${FREE_ACTIVITY_TYPE_LIMIT} activity types.`,
-        [
-          { text: 'Not now', style: 'cancel' },
-          { text: 'View Pro', onPress: () => navigateToProUpsell(navigation) },
-        ],
-      );
+      navigateToProUpsell(navigation);
       return;
     }
     setEditingType(undefined);

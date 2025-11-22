@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Alert, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { NavigationProp, useNavigation } from '@react-navigation/native';
 import { ScreenContainer } from '../components/ScreenContainer';
@@ -162,17 +162,7 @@ export const AnalyticsScreen: React.FC = () => {
   const handleSelectRange = (key: AnalyticsRangeKey) => {
     if (key === 'custom') {
       if (!isPro) {
-        Alert.alert(
-          'Pro feature',
-          'Custom date range is available in Pomodoro Focus Pro.',
-          [
-            { text: 'Not now', style: 'cancel' },
-            {
-              text: 'View Pro',
-              onPress: () => navigateToProUpsell(navigation),
-            },
-          ],
-        );
+        navigateToProUpsell(navigation);
         return;
       }
 
@@ -370,7 +360,10 @@ export const AnalyticsScreen: React.FC = () => {
             <TouchableOpacity
               style={styles.dateValueButton}
               onPress={() => {
-                if (!isPro || selectedRangeKey !== 'custom') return;
+                if (!isPro || selectedRangeKey !== 'custom') {
+                  navigateToProUpsell(navigation);
+                  return;
+                }
                 const base = customStartDate ?? new Date();
                 setPickerDate(base);
                 setActiveCustomField('start');
@@ -392,7 +385,10 @@ export const AnalyticsScreen: React.FC = () => {
             <TouchableOpacity
               style={styles.dateValueButton}
               onPress={() => {
-                if (!isPro || selectedRangeKey !== 'custom') return;
+                if (!isPro || selectedRangeKey !== 'custom') {
+                  navigateToProUpsell(navigation);
+                  return;
+                }
                 const base = customEndDate ?? customStartDate ?? new Date();
                 setPickerDate(base);
                 setActiveCustomField('end');
