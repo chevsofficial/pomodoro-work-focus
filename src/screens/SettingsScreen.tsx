@@ -229,7 +229,13 @@ const ActivityTypeModal: React.FC<ActivityTypeModalProps> = ({
   };
 
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+    <Modal
+      visible={visible}
+      transparent
+      animationType="fade"
+      onRequestClose={onClose}
+      onDismiss={onClose}
+    >
       <View style={styles.modalBackdrop}>
         <View style={styles.modalContent}>
           <Text style={styles.modalTitle}>{initialValues ? 'Edit Activity Type' : 'Add Activity Type'}</Text>
@@ -397,9 +403,14 @@ export const SettingsScreen: React.FC = () => {
   };
 
   const handleLockedColorPress = () => {
-    if (!isPro) {
-      navigateToProUpsell(navigation);
+    if (isPro) {
+      return;
     }
+
+    setModalVisible(false);
+    setTimeout(() => {
+      navigateToProUpsell(navigation);
+    }, 0);
   };
 
   const hasReachedFreeActivityLimit = !isPro && activityTypes.length >= FREE_ACTIVITY_TYPE_LIMIT;
