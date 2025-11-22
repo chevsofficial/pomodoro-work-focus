@@ -17,7 +17,7 @@ export type RootTabParamList = {
   Pomodoro: { taskId?: string } | undefined;
   Analytics: undefined;
   Settings: undefined;
-  Info: undefined;
+  Info: { highlightPro?: boolean } | undefined;
 };
 
 export type RootStackParamList = {

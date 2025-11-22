@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { ScreenContainer } from '../components/ScreenContainer';
 import { RootStackParamList } from '../navigation/RootNavigator';
+import { navigateToProUpsell } from '../navigation/proNavigation';
 import { ActivityType, PomodoroSettings } from '../models';
 import useAppStore, { useActivityTypes, useIsPro, useSettings } from '../store/appStore';
 import { colors } from '../theme/colors';
@@ -255,6 +256,13 @@ const ActivityTypeModal: React.FC<ActivityTypeModalProps> = ({
                     Alert.alert(
                       'Pro feature',
                       'Additional colors are available in the Pro version.',
+                      [
+                        { text: 'Not now', style: 'cancel' },
+                        {
+                          text: 'View Pro',
+                          onPress: () => navigateToProUpsell(navigation),
+                        },
+                      ],
                     );
                     return;
                   }
@@ -394,7 +402,7 @@ export const SettingsScreen: React.FC = () => {
   const deleteActivityType = useAppStore((state) => state.deleteActivityType);
   const navigation = useNavigation<SettingsNavigation>();
   const handleUpgradePress = () => {
-    navigation.navigate('Paywall');
+    navigateToProUpsell(navigation);
   };
 
   const hasReachedFreeActivityLimit = !isPro && activityTypes.length >= FREE_ACTIVITY_TYPE_LIMIT;
@@ -471,6 +479,14 @@ export const SettingsScreen: React.FC = () => {
 
   const openAddModal = () => {
     if (hasReachedFreeActivityLimit) {
+      Alert.alert(
+        'Pro feature',
+        `Free accounts can create up to ${FREE_ACTIVITY_TYPE_LIMIT} activity types.`,
+        [
+          { text: 'Not now', style: 'cancel' },
+          { text: 'View Pro', onPress: () => navigateToProUpsell(navigation) },
+        ],
+      );
       return;
     }
     setEditingType(undefined);
@@ -580,7 +596,7 @@ export const SettingsScreen: React.FC = () => {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Activity Types</Text>
-            <TouchableOpacity onPress={openAddModal} disabled={hasReachedFreeActivityLimit}>
+            <TouchableOpacity onPress={openAddModal}>
               <Text
                 style={[
                   styles.sectionAction,
