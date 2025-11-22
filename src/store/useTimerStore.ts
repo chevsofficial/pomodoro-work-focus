@@ -2,15 +2,19 @@ import { create } from 'zustand';
 import { IntervalType } from '../models';
 import { cancelScheduledNotification, scheduleIntervalCompletionNotification } from '../utils/notificationService';
 import { playIntervalEndSound, triggerIntervalHaptics } from '../utils/soundService';
-import useAppStore from './appStore';
+import useAppStore, { selectEffectiveSettings, selectIsProEffective } from './appStore';
 
 const ONE_MINUTE_IN_SECONDS = 60;
 
-const getSettings = () => useAppStore.getState().settings;
+const getSettings = () => {
+  const state = useAppStore.getState();
+  return selectEffectiveSettings(state);
+};
 
 const getTimingConfigForTask = (taskId?: string) => {
   const appState = useAppStore.getState();
-  const { settings, tasks, activityTypes } = appState;
+  const settings = selectEffectiveSettings(appState);
+  const { tasks, activityTypes } = appState;
 
   if (!taskId) {
     return {
@@ -102,6 +106,7 @@ interface TimerState {
   intervalStartTime?: number;
   plannedEndTime?: number;
   scheduledNotificationId?: string;
+  scheduledMicroNotificationId?: string;
   setCurrentTask: (taskId?: string) => void;
   setIntervalType: (type: IntervalType) => void;
   startTimer: () => void;
@@ -116,22 +121,31 @@ interface TimerState {
 export const useTimerStore = create<TimerState>((set, get) => {
   const cancelScheduledNotificationIfNeeded = () => {
     const notificationId = get().scheduledNotificationId;
+    const microNotificationId = get().scheduledMicroNotificationId;
     if (!notificationId) {
+      if (microNotificationId) {
+        void cancelScheduledNotification(microNotificationId);
+        set({ scheduledMicroNotificationId: undefined });
+      }
       return;
     }
 
     void cancelScheduledNotification(notificationId);
-    set({ scheduledNotificationId: undefined });
+    if (microNotificationId) {
+      void cancelScheduledNotification(microNotificationId);
+    }
+    set({ scheduledNotificationId: undefined, scheduledMicroNotificationId: undefined });
   };
 
   const scheduleNotificationIfEnabled = (secondsFromNow: number, type: IntervalType) => {
-    const settings = getSettings();
+    const state = get();
+    const appStoreState = useAppStore.getState();
+    const settings = selectEffectiveSettings(appStoreState);
+    const isPro = selectIsProEffective(appStoreState);
     if (!settings.notificationsEnabled || secondsFromNow <= 0) {
       cancelScheduledNotificationIfNeeded();
       return;
     }
-
-    const state = get();
 
     let nextIntervalType: IntervalType | undefined;
 
@@ -162,6 +176,28 @@ export const useTimerStore = create<TimerState>((set, get) => {
 
       set({ scheduledNotificationId: identifier });
     });
+
+    if (isPro && type === 'work' && settings.microBreakEnabled && (settings.microBreakSeconds ?? 0) > 0) {
+      const midPoint = Math.floor(secondsFromNow / 2);
+      const fireIn = Math.max(1, Math.min(midPoint, secondsFromNow - 1));
+
+      void scheduleIntervalCompletionNotification({
+        secondsFromNow: fireIn,
+        intervalType: 'micro_break',
+        soundEnabled: settings.soundEnabled ?? true,
+      }).then((identifier) => {
+        if (!identifier) {
+          return;
+        }
+
+        const latest = get();
+        if (!latest.isRunning) {
+          return;
+        }
+
+        set({ scheduledMicroNotificationId: identifier });
+      });
+    }
   };
 
   return {
@@ -174,6 +210,7 @@ export const useTimerStore = create<TimerState>((set, get) => {
     intervalStartTime: undefined,
     plannedEndTime: undefined,
     scheduledNotificationId: undefined,
+    scheduledMicroNotificationId: undefined,
 
     setCurrentTask: (taskId) =>
       set((state) => {
@@ -325,7 +362,11 @@ export const useTimerStore = create<TimerState>((set, get) => {
             void playIntervalEndSound();
       triggerIntervalHaptics();
 
-      if (appStore.settings.autoStartNextInterval) {
+      const effectiveSettings = selectEffectiveSettings(appStore);
+      const isPro = selectIsProEffective(appStore);
+      const autoStart = isPro ? effectiveSettings.autoStartNextInterval : false;
+
+      if (autoStart) {
         get().startTimer();
       }
     },
@@ -363,7 +404,11 @@ export const useTimerStore = create<TimerState>((set, get) => {
         plannedEndTime: undefined,
       });
 
-      if (appStore.settings.autoStartNextInterval) {
+      const effectiveSettings = selectEffectiveSettings(appStore);
+      const isPro = selectIsProEffective(appStore);
+      const autoStart = isPro ? effectiveSettings.autoStartNextInterval : false;
+
+      if (autoStart) {
         get().startTimer();
       }
     },

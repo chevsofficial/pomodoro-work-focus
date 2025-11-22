@@ -2,7 +2,9 @@ import { NavigationProp, useNavigation } from '@react-navigation/native';
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   Alert,
+  ActionSheetIOS,
   Modal,
+  Platform,
   ScrollView,
   StyleSheet,
   Switch,
@@ -15,7 +17,7 @@ import { ScreenContainer } from '../components/ScreenContainer';
 import { RootStackParamList } from '../navigation/RootNavigator';
 import { navigateToProUpsell } from '../navigation/proNavigation';
 import { ActivityType, PomodoroSettings } from '../models';
-import useAppStore, { useActivityTypes, useIsPro, useSettings } from '../store/appStore';
+import useAppStore, { useActivityTypes, useEffectiveSettings, useIsPro } from '../store/appStore';
 import { colors } from '../theme/colors';
 import { spacing } from '../theme/spacing';
 import { FREE_ACTIVITY_TYPE_LIMIT } from '../config/proFeatures';
@@ -36,6 +38,8 @@ const SOUND_OPTIONS = [
   { key: 'chime2', label: 'Chime 2' },
   { key: 'chime3', label: 'Chime 3' },
 ];
+
+const MICRO_BREAK_OPTIONS = [15, 30, 45];
 
 const ACTIVITY_COLORS = [
   { key: 'red', label: 'Red', value: '#FF5A5F' },
@@ -390,7 +394,7 @@ type NumericSettingKey =
   | 'intervalsBeforeLongBreak';
 
 export const SettingsScreen: React.FC = () => {
-  const settings = useSettings();
+  const settings = useEffectiveSettings();
   const activityTypes = useActivityTypes();
   const isPro = useIsPro();
   const updateSettings = useAppStore((state) => state.updateSettings);
@@ -398,8 +402,9 @@ export const SettingsScreen: React.FC = () => {
   const updateActivityType = useAppStore((state) => state.updateActivityType);
   const deleteActivityType = useAppStore((state) => state.deleteActivityType);
   const navigation = useNavigation<SettingsNavigation>();
+  const goToPro = () => navigateToProUpsell(navigation);
   const handleUpgradePress = () => {
-    navigateToProUpsell(navigation);
+    goToPro();
   };
 
   const handleLockedColorPress = () => {
@@ -409,7 +414,7 @@ export const SettingsScreen: React.FC = () => {
 
     setModalVisible(false);
     setTimeout(() => {
-      navigateToProUpsell(navigation);
+      goToPro();
     }, 0);
   };
 
@@ -437,6 +442,11 @@ export const SettingsScreen: React.FC = () => {
   ]);
 
   const handleNumericChange = (key: NumericSettingKey, value: string) => {
+    if (!isPro) {
+      goToPro();
+      return;
+    }
+
     setNumericValues((prev) => ({ ...prev, [key]: value }));
     const parsed = parseInt(value, 10);
     if (!Number.isNaN(parsed)) {
@@ -444,11 +454,62 @@ export const SettingsScreen: React.FC = () => {
     }
   };
 
-  const handleToggleChange = (key: keyof Pick<
-    PomodoroSettings,
-    'autoStartNextInterval' | 'soundEnabled' | 'vibrationEnabled'
-  >) => {
+  const handleToggleChange = (key: keyof Pick<PomodoroSettings, 'soundEnabled' | 'vibrationEnabled'>) => {
     return (value: boolean) => updateSettings({ [key]: value });
+  };
+
+  const handleToggleAutoStart = (value: boolean) => {
+    if (!isPro) {
+      goToPro();
+      return;
+    }
+
+    updateSettings({ autoStartNextInterval: value });
+  };
+
+  const handleToggleMicroBreaks = () => {
+    if (!isPro) {
+      goToPro();
+      return;
+    }
+
+    updateSettings({ microBreakEnabled: !settings.microBreakEnabled });
+  };
+
+  const handleSelectMicroBreakSeconds = () => {
+    if (!isPro) {
+      goToPro();
+      return;
+    }
+
+    const handleSelect = (seconds: number) => updateSettings({ microBreakSeconds: seconds });
+
+    if (Platform.OS === 'ios') {
+      const options = [...MICRO_BREAK_OPTIONS.map((value) => `${value} seconds`), 'Cancel'];
+      ActionSheetIOS.showActionSheetWithOptions(
+        { options, cancelButtonIndex: options.length - 1 },
+        (buttonIndex) => {
+          if (buttonIndex === undefined || buttonIndex === options.length - 1) {
+            return;
+          }
+
+          const selection = MICRO_BREAK_OPTIONS[buttonIndex];
+          if (selection) {
+            handleSelect(selection);
+          }
+        },
+      );
+      return;
+    }
+
+    Alert.alert(
+      'Micro-break length',
+      'Choose how long your micro-break reminder should last.',
+      [
+        ...MICRO_BREAK_OPTIONS.map((value) => ({ text: `${value} seconds`, onPress: () => handleSelect(value) })),
+        { text: 'Cancel', style: 'cancel' },
+      ],
+    );
   };
 
   const handleToggleNotifications = async (enabled: boolean) => {
@@ -548,9 +609,18 @@ export const SettingsScreen: React.FC = () => {
           <SettingToggleRow
             label="Auto-start next interval"
             value={settings.autoStartNextInterval}
-            onValueChange={handleToggleChange('autoStartNextInterval')}
+            onValueChange={handleToggleAutoStart}
           />
-                    <View style={styles.soundSectionHeader}>
+          <SettingToggleRow
+            label="Enable micro-breaks (Pro)"
+            value={!!settings.microBreakEnabled}
+            onValueChange={handleToggleMicroBreaks}
+          />
+          <TouchableOpacity style={styles.settingRow} onPress={handleSelectMicroBreakSeconds}>
+            <Text style={styles.settingLabel}>Micro-break length</Text>
+            <Text style={styles.settingValue}>{(settings.microBreakSeconds ?? 15)}s</Text>
+          </TouchableOpacity>
+          <View style={styles.soundSectionHeader}>
             <Text style={styles.settingLabel}>Notification sound</Text>
             <TouchableOpacity style={styles.testSoundButton} onPress={() => void playIntervalEndSound()}>
               <Text style={styles.testSoundButtonLabel}>Test sound</Text>
@@ -698,6 +768,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
     flex: 1,
     paddingRight: spacing.md,
+  },
+  settingValue: {
+    color: colors.textSecondary,
+    fontWeight: '600',
   },
   soundSectionHeader: {
     flexDirection: 'row',
