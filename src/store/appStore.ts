@@ -7,6 +7,9 @@ const FORCE_ALL_PRO_FEATURES = __DEV__ && false; // Set to true for local testin
 
 export const FREE_TASK_LIMIT = 10;
 
+// How far back free users can see analytics
+const FREE_ANALYTICS_MAX_DAYS = 14;
+
 export const selectIsProEffective = (state: AppStore): boolean => {
   if (FORCE_ALL_PRO_FEATURES) return true;
   return state.isPro;
@@ -28,6 +31,19 @@ export const selectCanCreateTask = (state: AppStore): boolean => {
   const activeTasksCount = selectActiveTaskCount(state);
   return activeTasksCount < FREE_TASK_LIMIT;
 };
+
+export const selectAnalyticsMinDate = (state: AppStore): Date | null => {
+  const isPro = selectIsProEffective(state);
+  if (isPro) return null; // no limit
+
+  const now = new Date();
+  const min = new Date(now);
+  min.setDate(now.getDate() - FREE_ANALYTICS_MAX_DAYS + 1);
+  min.setHours(0, 0, 0, 0);
+  return min;
+};
+
+export const useAnalyticsMinDate = () => useAppStore(selectAnalyticsMinDate);
 
 // ---- Pro-aware settings helpers ----
 

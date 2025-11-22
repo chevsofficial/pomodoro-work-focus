@@ -6,7 +6,10 @@ import { ScreenContainer } from '../components/ScreenContainer';
 import { RootStackParamList } from '../navigation/RootNavigator';
 import { navigateToProUpsell } from '../navigation/proNavigation';
 import { IntervalSession } from '../models';
-import useAppStore, { useIsPro } from '../store/appStore';
+import useAppStore, {
+  useAnalyticsMinDate,
+  useIsPro,
+} from '../store/appStore';
 import { colors } from '../theme/colors';
 import { spacing } from '../theme/spacing';
 
@@ -21,6 +24,16 @@ type AnalyticsRangeKey =
   | 'previous_year'
   | 'all_time'
   | 'custom';
+
+const PRO_ONLY_RANGE_KEYS: AnalyticsRangeKey[] = [
+  'previous_week',
+  'this_month',
+  'previous_month',
+  'this_year',
+  'previous_year',
+  'all_time',
+  'custom',
+];
 
 const DATE_RANGE_OPTIONS: { key: AnalyticsRangeKey; label: string }[] = [
   { key: 'custom', label: 'Custom' },
@@ -155,17 +168,18 @@ export const AnalyticsScreen: React.FC = () => {
 
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
   const isPro = useIsPro();
+  const analyticsMinDate = useAnalyticsMinDate();
   const intervals = useAppStore((state) => state.intervals);
   const tasks = useAppStore((state) => state.tasks);
   const activityTypes = useAppStore((state) => state.activityTypes);
 
   const handleSelectRange = (key: AnalyticsRangeKey) => {
-    if (key === 'custom') {
-      if (!isPro) {
-        navigateToProUpsell(navigation);
-        return;
-      }
+    if (!isPro && PRO_ONLY_RANGE_KEYS.includes(key)) {
+      navigateToProUpsell(navigation);
+      return;
+    }
 
+    if (key === 'custom') {
       if (!customStartDate || !customEndDate) {
         const today = new Date();
         setCustomStartDate(today);
@@ -193,6 +207,15 @@ export const AnalyticsScreen: React.FC = () => {
     return computePresetRange(selectedRangeKey, intervals ?? []);
   }, [customEndDate, customStartDate, intervals, selectedRangeKey]);
 
+  const { effectiveRangeStart, effectiveRangeEnd } = useMemo(() => {
+    let effectiveStart = rangeStart;
+    if (analyticsMinDate && rangeStart < analyticsMinDate) {
+      effectiveStart = analyticsMinDate;
+    }
+
+    return { effectiveRangeStart: effectiveStart, effectiveRangeEnd: rangeEnd };
+  }, [analyticsMinDate, rangeEnd, rangeStart]);
+
   const labelStart = useMemo(() => formatRangeDateLabel(rangeStart), [rangeStart]);
   const labelEnd = useMemo(() => formatRangeDateLabel(rangeEnd), [rangeEnd]);
 
@@ -202,16 +225,18 @@ export const AnalyticsScreen: React.FC = () => {
     [intervals],
   );
 
-  const workIntervalsInRange = useMemo(() => {
-    if (!rangeStart || !rangeEnd) return [] as IntervalSession[];
-    const startTime = rangeStart.getTime();
-    const endTime = rangeEnd.getTime();
+  const filteredIntervals = useMemo(() => {
+    if (!effectiveRangeStart || !effectiveRangeEnd) return [] as IntervalSession[];
 
-    return workIntervals.filter((i) => {
-      const started = new Date(i.startedAt).getTime();
-      return started >= startTime && started < endTime;
+    return (intervals ?? []).filter((interval) => {
+      const startedAt = new Date(interval.startedAt);
+      return startedAt >= effectiveRangeStart && startedAt <= effectiveRangeEnd;
     });
-  }, [rangeEnd, rangeStart, workIntervals]);
+  }, [effectiveRangeEnd, effectiveRangeStart, intervals]);
+
+  const workIntervalsInRange = useMemo(() => {
+    return filteredIntervals.filter((i) => i.type === 'work' && !!i.startedAt);
+  }, [filteredIntervals]);
 
   const lifetimeCompletedWork = useMemo(
     () =>
