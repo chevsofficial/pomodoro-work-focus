@@ -1,3 +1,4 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useNavigation } from '@react-navigation/native';
 import React, { useState } from 'react';
@@ -16,7 +17,7 @@ import {
 import { ScreenContainer } from '../components/ScreenContainer';
 import { APP_LINKS } from '../config/links';
 import { RootStackParamList } from '../navigation/RootNavigator';
-import useAppStore, { useIsPro, useProStatus } from '../store/appStore';
+import useAppStore, { STORAGE_KEY, useIsPro, useProStatus } from '../store/appStore';
 import { colors } from '../theme/colors';
 import { spacing } from '../theme/spacing';
 
@@ -188,6 +189,16 @@ export const InfoScreen: React.FC = () => {
     navigation.navigate('Paywall');
   };
 
+  const clearLocalData = async () => {
+    try {
+      await AsyncStorage.removeItem(STORAGE_KEY);
+      Alert.alert('Cleared', 'Local state cleared. Restart the app.');
+    } catch (error) {
+      console.error('Failed to clear local data', error);
+      Alert.alert('Clear Data', 'Something went wrong while clearing local data.');
+    }
+  };
+
   return (
     <ScreenContainer>
       <ScrollView
@@ -228,6 +239,17 @@ export const InfoScreen: React.FC = () => {
             <Text style={styles.upgradeButtonText}>View plans</Text>
           </TouchableOpacity>
         </View>
+
+        {__DEV__ && (
+          <View style={styles.debugCard}>
+            <Text style={styles.debugTitle}>DEBUG PRO STATE</Text>
+            <Text style={styles.debugText}>isProEffective: {String(isPro)}</Text>
+            <Text style={styles.debugText}>proStatus.isPro: {String(proStatus.isPro)}</Text>
+            <TouchableOpacity style={styles.clearButton} onPress={clearLocalData}>
+              <Text style={styles.clearButtonText}>Clear Local App Data</Text>
+            </TouchableOpacity>
+          </View>
+        )}
       </ScrollView>
 
       <Modal
@@ -359,6 +381,33 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     fontSize: 15,
     textTransform: 'uppercase',
+  },
+  debugCard: {
+    marginTop: spacing.xl,
+    padding: spacing.lg,
+    borderRadius: 12,
+    backgroundColor: '#333',
+  },
+  debugTitle: {
+    color: 'white',
+    fontWeight: '700',
+    marginBottom: spacing.xs,
+  },
+  debugText: {
+    color: 'white',
+    marginBottom: spacing.xs,
+  },
+  clearButton: {
+    marginTop: spacing.sm,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    borderRadius: 8,
+    backgroundColor: '#902222',
+    alignSelf: 'flex-start',
+  },
+  clearButtonText: {
+    color: 'white',
+    fontWeight: '700',
   },
   modalBackdrop: {
     flex: 1,
