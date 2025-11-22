@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { NavigationProp, useNavigation } from '@react-navigation/native';
 import { ScreenContainer } from '../components/ScreenContainer';
@@ -36,7 +37,6 @@ const PRO_ONLY_RANGE_KEYS: AnalyticsRangeKey[] = [
 ];
 
 const DATE_RANGE_OPTIONS: { key: AnalyticsRangeKey; label: string }[] = [
-  { key: 'custom', label: 'Custom' },
   { key: 'today', label: 'Today' },
   { key: 'yesterday', label: 'Yesterday' },
   { key: 'this_week', label: 'This week' },
@@ -46,6 +46,7 @@ const DATE_RANGE_OPTIONS: { key: AnalyticsRangeKey; label: string }[] = [
   { key: 'this_year', label: 'This year' },
   { key: 'previous_year', label: 'Previous year' },
   { key: 'all_time', label: 'All data' },
+  { key: 'custom', label: 'Custom' },
 ];
 
 const DEFAULT_ACTIVITY_COLOR = '#4A5568';
@@ -351,7 +352,8 @@ export const AnalyticsScreen: React.FC = () => {
             >
               {DATE_RANGE_OPTIONS.map((opt) => {
                 const isActive = selectedRangeKey === opt.key;
-                const isCustom = opt.key === 'custom';
+                const isLocked = !isPro && PRO_ONLY_RANGE_KEYS.includes(opt.key);
+                const iconColor = isActive ? colors.background : colors.textSecondary;
 
                 return (
                   <TouchableOpacity
@@ -359,7 +361,7 @@ export const AnalyticsScreen: React.FC = () => {
                     style={[
                       styles.rangePill,
                       isActive && styles.rangePillActive,
-                      isCustom && !isPro && styles.rangePillLocked,
+                      isLocked && styles.rangePillLocked,
                     ]}
                     onPress={() => handleSelectRange(opt.key)}
                   >
@@ -370,8 +372,13 @@ export const AnalyticsScreen: React.FC = () => {
                       ]}
                     >
                       {opt.label}
-                      {isCustom && !isPro ? ' 🔒' : ''}
                     </Text>
+
+                    {isLocked && (
+                      <View style={styles.lockIconContainer}>
+                        <Ionicons name="lock-closed" size={12} color={iconColor} />
+                      </View>
+                    )}
                   </TouchableOpacity>
                 );
               })}
@@ -643,12 +650,17 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     backgroundColor: colors.surface,
     marginHorizontal: spacing.xs,
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   rangePillActive: {
     backgroundColor: colors.primary,
   },
   rangePillLocked: {
     opacity: 0.6,
+  },
+  lockIconContainer: {
+    marginLeft: 4,
   },
   rangePillLabel: {
     fontSize: 12,
