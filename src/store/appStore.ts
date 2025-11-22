@@ -76,7 +76,7 @@ export interface AppStore extends AppStateSnapshot {
   setPro: (value: boolean) => void;
 }
 
-const STORAGE_KEY = 'POMODORO_APP_STATE_V1';
+export const STORAGE_KEY = 'POMODORO_APP_STATE_V1';
 const PERSIST_DEBOUNCE_MS = 500;
 
 const nowIso = () => new Date().toISOString();
