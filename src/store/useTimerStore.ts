@@ -106,7 +106,6 @@ interface TimerState {
   intervalStartTime?: number;
   plannedEndTime?: number;
   scheduledNotificationId?: string;
-  scheduledMicroNotificationId?: string;
   setCurrentTask: (taskId?: string) => void;
   setIntervalType: (type: IntervalType) => void;
   startTimer: () => void;
@@ -121,27 +120,18 @@ interface TimerState {
 export const useTimerStore = create<TimerState>((set, get) => {
   const cancelScheduledNotificationIfNeeded = () => {
     const notificationId = get().scheduledNotificationId;
-    const microNotificationId = get().scheduledMicroNotificationId;
     if (!notificationId) {
-      if (microNotificationId) {
-        void cancelScheduledNotification(microNotificationId);
-        set({ scheduledMicroNotificationId: undefined });
-      }
       return;
     }
 
     void cancelScheduledNotification(notificationId);
-    if (microNotificationId) {
-      void cancelScheduledNotification(microNotificationId);
-    }
-    set({ scheduledNotificationId: undefined, scheduledMicroNotificationId: undefined });
+    set({ scheduledNotificationId: undefined });
   };
 
   const scheduleNotificationIfEnabled = (secondsFromNow: number, type: IntervalType) => {
     const state = get();
     const appStoreState = useAppStore.getState();
     const settings = selectEffectiveSettings(appStoreState);
-    const isPro = selectIsProEffective(appStoreState);
     if (!settings.notificationsEnabled || secondsFromNow <= 0) {
       cancelScheduledNotificationIfNeeded();
       return;
@@ -176,28 +166,6 @@ export const useTimerStore = create<TimerState>((set, get) => {
 
       set({ scheduledNotificationId: identifier });
     });
-
-    if (isPro && type === 'work' && settings.microBreakEnabled && (settings.microBreakSeconds ?? 0) > 0) {
-      const midPoint = Math.floor(secondsFromNow / 2);
-      const fireIn = Math.max(1, Math.min(midPoint, secondsFromNow - 1));
-
-      void scheduleIntervalCompletionNotification({
-        secondsFromNow: fireIn,
-        intervalType: 'micro_break',
-        soundEnabled: settings.soundEnabled ?? true,
-      }).then((identifier) => {
-        if (!identifier) {
-          return;
-        }
-
-        const latest = get();
-        if (!latest.isRunning) {
-          return;
-        }
-
-        set({ scheduledMicroNotificationId: identifier });
-      });
-    }
   };
 
   return {
@@ -210,7 +178,6 @@ export const useTimerStore = create<TimerState>((set, get) => {
     intervalStartTime: undefined,
     plannedEndTime: undefined,
     scheduledNotificationId: undefined,
-    scheduledMicroNotificationId: undefined,
 
     setCurrentTask: (taskId) =>
       set((state) => {

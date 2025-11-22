@@ -71,10 +71,7 @@ export const scheduleIntervalCompletionNotification = async ({
     let title = '';
     let body = '';
 
-    if (intervalType === 'micro_break') {
-      title = 'Micro-break reminder';
-      body = 'Take a few seconds to rest your eyes and stretch.';
-    } else if (intervalType === 'work') {
+    if (intervalType === 'work') {
       if (nextIntervalType === 'long_break') {
         title = 'Work interval completed';
         body = 'Great job! Time for a long break.';
