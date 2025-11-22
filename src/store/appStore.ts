@@ -12,32 +12,6 @@ export const selectIsProEffective = (state: AppStore): boolean => {
   return state.isPro;
 };
 
-const FREE_DEFAULT_WORK_MIN = 25;
-const FREE_DEFAULT_SHORT_MIN = 5;
-const FREE_DEFAULT_LONG_MIN = 15;
-const FREE_DEFAULT_INTERVALS_BEFORE_LONG = 4;
-const FREE_DEFAULT_AUTOSTART = false;
-
-export const selectEffectiveSettings = (state: AppStore): PomodoroSettings => {
-  const raw = state.settings;
-  const isPro = selectIsProEffective(state);
-
-  if (isPro) {
-    return raw;
-  }
-
-  return {
-    ...raw,
-    workDurationMinutes: FREE_DEFAULT_WORK_MIN,
-    shortBreakMinutes: FREE_DEFAULT_SHORT_MIN,
-    longBreakMinutes: FREE_DEFAULT_LONG_MIN,
-    intervalsBeforeLongBreak: FREE_DEFAULT_INTERVALS_BEFORE_LONG,
-    autoStartNextInterval: FREE_DEFAULT_AUTOSTART,
-    microBreakEnabled: false,
-    microBreakSeconds: raw.microBreakSeconds ?? 15,
-  };
-};
-
 export const selectActiveTaskCount = (state: AppStore): number =>
   state.tasks.filter((t) => !t.deletedAt).length;
 
@@ -53,6 +27,36 @@ export const selectCanCreateTask = (state: AppStore): boolean => {
 
   const activeTasksCount = selectActiveTaskCount(state);
   return activeTasksCount < FREE_TASK_LIMIT;
+};
+
+// ---- Pro-aware settings helpers ----
+
+// Defaults for free plan behavior
+const FREE_DEFAULT_WORK_MIN = 25;
+const FREE_DEFAULT_SHORT_MIN = 5;
+const FREE_DEFAULT_LONG_MIN = 15;
+const FREE_DEFAULT_INTERVALS_BEFORE_LONG = 4;
+const FREE_DEFAULT_AUTOSTART = false;
+
+export const selectEffectiveSettings = (state: AppStore): PomodoroSettings => {
+  const raw = state.settings;
+  const isPro = selectIsProEffective(state);
+
+  if (isPro) {
+    return raw;
+  }
+
+  // Free users: enforce fixed behavior
+  return {
+    ...raw,
+    workDurationMinutes: FREE_DEFAULT_WORK_MIN,
+    shortBreakMinutes: FREE_DEFAULT_SHORT_MIN,
+    longBreakMinutes: FREE_DEFAULT_LONG_MIN,
+    intervalsBeforeLongBreak: FREE_DEFAULT_INTERVALS_BEFORE_LONG,
+    autoStartNextInterval: FREE_DEFAULT_AUTOSTART,
+    microBreakEnabled: false,
+    microBreakSeconds: raw.microBreakSeconds ?? 15,
+  };
 };
 
 type AddTaskPayload = {
