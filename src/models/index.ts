@@ -1,4 +1,4 @@
-export type IntervalType = 'work' | 'short_break' | 'long_break' | 'micro_break';
+export type IntervalType = 'work' | 'short_break' | 'long_break';
 
 export interface Task {
   id: string;
@@ -43,10 +43,6 @@ export interface PomodoroSettings {
   notificationsEnabled: boolean;
   notificationSoundKey: string;
   defaultActivityTypeId?: string;
-
-  // Pro-only micro-break settings
-  microBreakEnabled?: boolean;
-  microBreakSeconds?: number;
 }
 
 export interface ProStatus {

@@ -54,8 +54,6 @@ export const selectEffectiveSettings = (state: AppStore): PomodoroSettings => {
     longBreakMinutes: FREE_DEFAULT_LONG_MIN,
     intervalsBeforeLongBreak: FREE_DEFAULT_INTERVALS_BEFORE_LONG,
     autoStartNextInterval: FREE_DEFAULT_AUTOSTART,
-    microBreakEnabled: false,
-    microBreakSeconds: raw.microBreakSeconds ?? 15,
   };
 };
 
@@ -124,9 +122,6 @@ const defaultSettings: PomodoroSettings = {
   notificationsEnabled: true,
   notificationSoundKey: 'chime1',
   defaultActivityTypeId: undefined,
-
-  microBreakEnabled: false,
-  microBreakSeconds: 15,
 };
 
 const defaultProStatus: ProStatus = {
