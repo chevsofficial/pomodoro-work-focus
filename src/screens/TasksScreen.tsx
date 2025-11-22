@@ -241,23 +241,10 @@ export const TasksScreen: React.FC = () => {
     toggleTaskCompleted(taskId);
   };
 
-  const showUpgradeAlert = () => {
-    Alert.alert(
-      'Task limit reached',
-      'Free plan allows up to 10 active tasks. Upgrade to Pomodoro Focus Pro for unlimited tasks.',
-      [
-        { text: 'Not now', style: 'cancel' },
-        {
-          text: 'View Pro',
-          onPress: () => navigateToProUpsell(navigation),
-        },
-      ],
-    );
-  };
-
   const handleAddTask = (payload: { title: string; description?: string; activityTypeId?: string }) => {
-    if (!selectCanCreateTask(useAppStore.getState())) {
-      showUpgradeAlert();
+    const canAddAnotherTask = selectCanCreateTask(useAppStore.getState());
+    if (!canAddAnotherTask && !isPro) {
+      navigateToProUpsell(navigation);
       setModalVisible(false);
       return;
     }
@@ -266,8 +253,8 @@ export const TasksScreen: React.FC = () => {
   };
 
   const handleAddTaskPress = () => {
-    if (!canCreateTask) {
-      showUpgradeAlert();
+    if (!canCreateTask && !isPro) {
+      navigateToProUpsell(navigation);
       return;
     }
 
