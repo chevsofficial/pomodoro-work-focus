@@ -1,34 +1,35 @@
 import React, { useMemo, useState } from 'react';
 import { Alert, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { ScreenContainer } from '../components/ScreenContainer';
 import { IntervalSession } from '../models';
 import useAppStore, { useIsPro } from '../store/appStore';
 import { colors } from '../theme/colors';
 import { spacing } from '../theme/spacing';
 
-type DateRangeKey =
-  | 'custom'
+type AnalyticsRangeKey =
   | 'today'
   | 'yesterday'
-  | 'thisWeek'
-  | 'previousWeek'
-  | 'thisMonth'
-  | 'previousMonth'
-  | 'thisYear'
-  | 'previousYear'
-  | 'all';
+  | 'this_week'
+  | 'previous_week'
+  | 'this_month'
+  | 'previous_month'
+  | 'this_year'
+  | 'previous_year'
+  | 'all_time'
+  | 'custom';
 
-const DATE_RANGE_OPTIONS: { key: DateRangeKey; label: string }[] = [
+const DATE_RANGE_OPTIONS: { key: AnalyticsRangeKey; label: string }[] = [
   { key: 'custom', label: 'Custom' },
   { key: 'today', label: 'Today' },
   { key: 'yesterday', label: 'Yesterday' },
-  { key: 'thisWeek', label: 'This week' },
-  { key: 'previousWeek', label: 'Previous week' },
-  { key: 'thisMonth', label: 'This month' },
-  { key: 'previousMonth', label: 'Previous month' },
-  { key: 'thisYear', label: 'This year' },
-  { key: 'previousYear', label: 'Previous year' },
-  { key: 'all', label: 'All data' },
+  { key: 'this_week', label: 'This week' },
+  { key: 'previous_week', label: 'Previous week' },
+  { key: 'this_month', label: 'This month' },
+  { key: 'previous_month', label: 'Previous month' },
+  { key: 'this_year', label: 'This year' },
+  { key: 'previous_year', label: 'Previous year' },
+  { key: 'all_time', label: 'All data' },
 ];
 
 const DEFAULT_ACTIVITY_COLOR = '#4A5568';
@@ -63,92 +64,136 @@ const formatRangeDateLabel = (d: Date) =>
     year: 'numeric',
   });
 
-const getRangeBounds = (
-  range: DateRangeKey,
+const endOfDay = (d: Date) => {
+  const copy = new Date(d);
+  copy.setHours(23, 59, 59, 999);
+  return copy;
+};
+
+const computePresetRange = (
+  range: AnalyticsRangeKey,
   intervals: IntervalSession[],
-): {
-  startMs: number;
-  endMs: number;
-  labelStart: string;
-  labelEnd: string;
-} => {
+): { rangeStart: Date; rangeEnd: Date } => {
   const now = new Date();
   const todayStart = startOfDay(now);
-  const tomorrowStart = addDays(todayStart, 1);
-
-  let start = todayStart;
-  let end = tomorrowStart;
 
   if (range === 'today') {
-    // already todayStart -> tomorrowStart
-  } else if (range === 'yesterday') {
-    start = addDays(todayStart, -1);
-    end = todayStart;
-  } else if (range === 'thisWeek') {
-    start = startOfWeek(now);
-    end = addDays(todayStart, 1);
-  } else if (range === 'previousWeek') {
+    return { rangeStart: todayStart, rangeEnd: endOfDay(todayStart) };
+  }
+
+  if (range === 'yesterday') {
+    const start = addDays(todayStart, -1);
+    return { rangeStart: start, rangeEnd: endOfDay(start) };
+  }
+
+  if (range === 'this_week') {
+    const start = startOfWeek(now);
+    return { rangeStart: start, rangeEnd: endOfDay(todayStart) };
+  }
+
+  if (range === 'previous_week') {
     const thisWeekStart = startOfWeek(now);
     const prevWeekStart = addDays(thisWeekStart, -7);
-    const prevWeekEnd = thisWeekStart;
-    start = prevWeekStart;
-    end = prevWeekEnd;
-  } else if (range === 'thisMonth') {
-    start = startOfMonth(now);
-    end = addDays(todayStart, 1);
-  } else if (range === 'previousMonth') {
+    const prevWeekEnd = addDays(prevWeekStart, 6);
+    return { rangeStart: prevWeekStart, rangeEnd: endOfDay(prevWeekEnd) };
+  }
+
+  if (range === 'this_month') {
+    const start = startOfMonth(now);
+    return { rangeStart: start, rangeEnd: endOfDay(todayStart) };
+  }
+
+  if (range === 'previous_month') {
     const thisMonthStart = startOfMonth(now);
-    const prevMonthEnd = thisMonthStart;
     const prevMonthStart = new Date(
       thisMonthStart.getFullYear(),
       thisMonthStart.getMonth() - 1,
       1,
     );
-    start = prevMonthStart;
-    end = prevMonthEnd;
-  } else if (range === 'thisYear') {
-    start = startOfYear(now);
-    end = addDays(todayStart, 1);
-  } else if (range === 'previousYear') {
+    const prevMonthEnd = addDays(thisMonthStart, -1);
+    return { rangeStart: prevMonthStart, rangeEnd: endOfDay(prevMonthEnd) };
+  }
+
+  if (range === 'this_year') {
+    const start = startOfYear(now);
+    return { rangeStart: start, rangeEnd: endOfDay(todayStart) };
+  }
+
+  if (range === 'previous_year') {
     const thisYearStart = startOfYear(now);
     const prevYearStart = new Date(thisYearStart.getFullYear() - 1, 0, 1);
-    const prevYearEnd = thisYearStart;
-    start = prevYearStart;
-    end = prevYearEnd;
-  } else if (range === 'all' || range === 'custom') {
-    // For now, custom behaves like all (eventual PRO date pickers here)
+    const prevYearEnd = new Date(thisYearStart.getFullYear() - 1, 11, 31);
+    return { rangeStart: prevYearStart, rangeEnd: endOfDay(prevYearEnd) };
+  }
+
+  if (range === 'all_time' || range === 'custom') {
     if (intervals.length > 0) {
       const times = intervals.map((i) => new Date(i.startedAt).getTime());
       const minTime = Math.min(...times);
       const maxTime = Math.max(...times);
-      start = startOfDay(new Date(minTime));
-      end = addDays(startOfDay(new Date(maxTime)), 1);
+      const start = startOfDay(new Date(minTime));
+      const end = endOfDay(new Date(maxTime));
+      return { rangeStart: start, rangeEnd: end };
     }
+    return { rangeStart: todayStart, rangeEnd: endOfDay(todayStart) };
   }
 
-  return {
-    startMs: start.getTime(),
-    endMs: end.getTime(),
-    labelStart: formatRangeDateLabel(start),
-    labelEnd: formatRangeDateLabel(addDays(end, -1)), // last included day
-  };
+  return { rangeStart: todayStart, rangeEnd: endOfDay(todayStart) };
 };
 
 // IMPORTANT: named export must be called AnalyticsScreen
 export const AnalyticsScreen: React.FC = () => {
-  const [range, setRange] = useState<DateRangeKey>('thisWeek');
+  const [selectedRangeKey, setSelectedRangeKey] = useState<AnalyticsRangeKey>('this_week');
+  const [customStartDate, setCustomStartDate] = useState<Date | null>(null);
+  const [customEndDate, setCustomEndDate] = useState<Date | null>(null);
+  const [activeCustomField, setActiveCustomField] = useState<'start' | 'end' | null>(null);
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [pickerDate, setPickerDate] = useState<Date>(new Date());
+
   const isPro = useIsPro();
   const intervals = useAppStore((state) => state.intervals);
   const tasks = useAppStore((state) => state.tasks);
   const activityTypes = useAppStore((state) => state.activityTypes);
 
-  const { startMs, endMs, labelStart, labelEnd } = useMemo(
-    () => getRangeBounds(range, intervals ?? []),
-    [intervals, range],
-  );
+  const handleSelectRange = (key: AnalyticsRangeKey) => {
+    if (key === 'custom') {
+      if (!isPro) {
+        Alert.alert(
+          'Pro feature',
+          'Custom date range is available in Pomodoro Focus Pro.',
+        );
+        return;
+      }
 
-  const rangeStart = useMemo(() => new Date(startMs), [startMs]);
-  const rangeEnd = useMemo(() => new Date(endMs), [endMs]);
+      if (!customStartDate || !customEndDate) {
+        const today = new Date();
+        setCustomStartDate(today);
+        setCustomEndDate(today);
+      }
+
+      setSelectedRangeKey('custom');
+      return;
+    }
+
+    setSelectedRangeKey(key);
+  };
+
+  const { rangeStart, rangeEnd } = useMemo(() => {
+    if (selectedRangeKey === 'custom' && customStartDate && customEndDate) {
+      const start = new Date(customStartDate);
+      start.setHours(0, 0, 0, 0);
+
+      const end = new Date(customEndDate);
+      end.setHours(23, 59, 59, 999);
+
+      return { rangeStart: start, rangeEnd: end };
+    }
+
+    return computePresetRange(selectedRangeKey, intervals ?? []);
+  }, [customEndDate, customStartDate, intervals, selectedRangeKey]);
+
+  const labelStart = useMemo(() => formatRangeDateLabel(rangeStart), [rangeStart]);
+  const labelEnd = useMemo(() => formatRangeDateLabel(rangeEnd), [rangeEnd]);
 
   const workIntervals = useMemo(
     () =>
@@ -279,16 +324,8 @@ export const AnalyticsScreen: React.FC = () => {
               contentContainerStyle={styles.rangeScrollContent}
             >
               {DATE_RANGE_OPTIONS.map((opt) => {
-                const isActive = range === opt.key;
+                const isActive = selectedRangeKey === opt.key;
                 const isCustom = opt.key === 'custom';
-
-                const handlePress = () => {
-                  if (isCustom && !isPro) {
-                    Alert.alert('Pro feature', 'Custom date ranges are available in Pro.');
-                    return;
-                  }
-                  setRange(opt.key);
-                };
 
                 return (
                   <TouchableOpacity
@@ -298,7 +335,7 @@ export const AnalyticsScreen: React.FC = () => {
                       isActive && styles.rangePillActive,
                       isCustom && !isPro && styles.rangePillLocked,
                     ]}
-                    onPress={handlePress}
+                    onPress={() => handleSelectRange(opt.key)}
                   >
                     <Text
                       style={[
@@ -316,14 +353,49 @@ export const AnalyticsScreen: React.FC = () => {
           </View>
         </View>
 
-        <View style={styles.dateTabsRow}>
-          <View style={styles.dateTab}>
-            <Text style={styles.dateTabLabel}>Start date</Text>
-            <Text style={styles.dateTabValue}>{labelStart}</Text>
+        <View style={styles.dateRow}>
+          <View style={styles.dateColumn}>
+            <Text style={styles.dateLabel}>Start</Text>
+            <TouchableOpacity
+              style={styles.dateValueButton}
+              onPress={() => {
+                if (!isPro || selectedRangeKey !== 'custom') return;
+                const base = customStartDate ?? new Date();
+                setPickerDate(base);
+                setActiveCustomField('start');
+                setShowDatePicker(true);
+              }}
+            >
+              <Text style={styles.dateValueText}>
+                {selectedRangeKey === 'custom'
+                  ? customStartDate
+                    ? customStartDate.toLocaleDateString()
+                    : '-- / -- / --'
+                  : labelStart}
+              </Text>
+            </TouchableOpacity>
           </View>
-          <View style={styles.dateTab}>
-            <Text style={styles.dateTabLabel}>End date</Text>
-            <Text style={styles.dateTabValue}>{labelEnd}</Text>
+
+          <View style={styles.dateColumn}>
+            <Text style={styles.dateLabel}>End</Text>
+            <TouchableOpacity
+              style={styles.dateValueButton}
+              onPress={() => {
+                if (!isPro || selectedRangeKey !== 'custom') return;
+                const base = customEndDate ?? customStartDate ?? new Date();
+                setPickerDate(base);
+                setActiveCustomField('end');
+                setShowDatePicker(true);
+              }}
+            >
+              <Text style={styles.dateValueText}>
+                {selectedRangeKey === 'custom'
+                  ? customEndDate
+                    ? customEndDate.toLocaleDateString()
+                    : '-- / -- / --'
+                  : labelEnd}
+              </Text>
+            </TouchableOpacity>
           </View>
         </View>
 
@@ -468,6 +540,37 @@ export const AnalyticsScreen: React.FC = () => {
           </View>
         </View>
       </ScrollView>
+
+      {showDatePicker && activeCustomField && (
+        <DateTimePicker
+          mode="date"
+          display="default"
+          value={pickerDate}
+          onChange={(event, date) => {
+            if (event.type === 'dismissed' || !date) {
+              setShowDatePicker(false);
+              setActiveCustomField(null);
+              return;
+            }
+
+            if (activeCustomField === 'start') {
+              setCustomStartDate(date);
+              if (!customEndDate || customEndDate < date) {
+                setCustomEndDate(date);
+              }
+            } else if (activeCustomField === 'end') {
+              if (customStartDate && date < customStartDate) {
+                setCustomEndDate(customStartDate);
+              } else {
+                setCustomEndDate(date);
+              }
+            }
+
+            setShowDatePicker(false);
+            setActiveCustomField(null);
+          }}
+        />
+      )}
     </ScreenContainer>
   );
 };
@@ -522,25 +625,27 @@ const styles = StyleSheet.create({
   rangePillLabelActive: {
     color: colors.background,
   },
-  dateTabsRow: {
+  dateRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginBottom: spacing.md,
   },
-  dateTab: {
+  dateColumn: {
     flex: 1,
-    borderRadius: 12,
-    backgroundColor: colors.surface,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
     marginHorizontal: spacing.xs,
   },
-  dateTabLabel: {
+  dateLabel: {
     fontSize: 11,
     color: colors.textSecondary,
     marginBottom: 2,
   },
-  dateTabValue: {
+  dateValueButton: {
+    borderRadius: 12,
+    backgroundColor: colors.surface,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+  },
+  dateValueText: {
     fontSize: 13,
     fontWeight: '600',
     color: colors.textPrimary,
