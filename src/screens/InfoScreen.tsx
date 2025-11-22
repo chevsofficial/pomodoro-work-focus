@@ -17,6 +17,7 @@ import {
 import { ScreenContainer } from '../components/ScreenContainer';
 import { APP_LINKS } from '../config/links';
 import { RootStackParamList } from '../navigation/RootNavigator';
+import { navigateToProUpsell } from '../navigation/proNavigation';
 import useAppStore, { STORAGE_KEY, useIsPro, useProStatus } from '../store/appStore';
 import { colors } from '../theme/colors';
 import { spacing } from '../theme/spacing';
@@ -159,7 +160,7 @@ export const InfoScreen: React.FC = () => {
         {
           title: 'Upgrade to Pro',
           description: 'See all premium focus perks',
-          onPress: () => navigation.navigate('Paywall'),
+          onPress: () => navigateToProUpsell(navigation),
         },
       ],
     },
@@ -186,7 +187,7 @@ export const InfoScreen: React.FC = () => {
   ];
 
   const handleUpgradePress = () => {
-    navigation.navigate('Paywall');
+    navigateToProUpsell(navigation);
   };
 
   const clearLocalData = async () => {

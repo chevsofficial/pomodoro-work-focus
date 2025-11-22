@@ -4,8 +4,5 @@ import { RootStackParamList } from './RootNavigator';
 export const navigateToProUpsell = (
   navigation: NavigationProp<RootStackParamList>,
 ) => {
-  navigation.navigate('RootTabs', {
-    screen: 'Info',
-    params: { highlightPro: true },
-  });
+  navigation.navigate('Paywall');
 };
