@@ -119,7 +119,7 @@ export const useTimerStore = create<TimerState>((set, get) => {
       return;
     }
 
-    void cancelScheduledNotification(notificationId);
+    cancelScheduledNotification(notificationId);
     set({ scheduledNotificationId: undefined });
   };
 
@@ -144,7 +144,7 @@ export const useTimerStore = create<TimerState>((set, get) => {
       nextIntervalType = nextType;
     }
 
-    void scheduleIntervalCompletionNotification({
+    scheduleIntervalCompletionNotification({
       secondsFromNow,
       intervalType: type,
       nextIntervalType,
@@ -321,7 +321,7 @@ export const useTimerStore = create<TimerState>((set, get) => {
         plannedEndTime: undefined,
       });
 
-            void playIntervalEndSound();
+      playIntervalEndSound();
       triggerIntervalHaptics();
 
       const effectiveSettings = selectEffectiveSettings(appStore);

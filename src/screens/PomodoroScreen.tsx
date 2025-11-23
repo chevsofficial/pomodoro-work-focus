@@ -229,7 +229,7 @@ export const PomodoroScreen: React.FC = () => {
           style={styles.taskSelectorButton}
           onPress={() => setTaskPickerVisible(true)}
         >
-          <View style={{ flex: 1 }}>
+          <View style={styles.taskSelectorContent}>
             <Text style={styles.taskSelectorValue} numberOfLines={1}>
               {selectedTask ? selectedTask.title : 'No task selected'}
             </Text>
@@ -353,6 +353,9 @@ function createStyles(colors: ReturnType<typeof useThemeColors>) {
       paddingVertical: spacing.md,
       flexDirection: 'row',
       alignItems: 'center',
+    },
+    taskSelectorContent: {
+      flex: 1,
     },
     taskSelectorValue: {
       fontSize: 16,
