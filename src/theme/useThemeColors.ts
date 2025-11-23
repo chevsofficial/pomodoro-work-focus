@@ -1,17 +1,11 @@
-const colors = {
-  primary: '#FF5A5F',
-  accent: '#00A896',
-  background: '#121417',
-  surface: '#1E2126',
-  textPrimary: '#FFFFFF',
-  textSecondary: '#A0A5B1',
-  border: 'rgba(255, 255, 255, 0.08)',
-} as const;
+import useAppStore from '../store/appStore';
+import { THEMES, ThemeId, AppColors } from './themes';
 
-export type AppColors = typeof colors;
+const FALLBACK_THEME_ID: ThemeId = 'dark';
 
-export function useThemeColors() {
-  return colors;
+export function useThemeColors(): AppColors {
+  const themeId = useAppStore((state) => state.settings.themeId ?? FALLBACK_THEME_ID);
+  return THEMES[themeId]?.colors ?? THEMES[FALLBACK_THEME_ID].colors;
 }
 
-export { colors };
+export { THEMES, ThemeId, AppColors };

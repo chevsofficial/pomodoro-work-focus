@@ -1,3 +1,5 @@
+import { ThemeId } from '../theme/themes';
+
 export type IntervalType = 'work' | 'short_break' | 'long_break';
 
 export interface Task {
@@ -43,6 +45,7 @@ export interface PomodoroSettings {
   notificationsEnabled: boolean;
   notificationSoundKey: string;
   defaultActivityTypeId?: string;
+  themeId?: ThemeId;
 }
 
 export interface ProStatus {
