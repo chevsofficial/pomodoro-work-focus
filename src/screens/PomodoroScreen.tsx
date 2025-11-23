@@ -14,7 +14,7 @@ import { RootTabParamList } from '../navigation/RootNavigator';
 import { IntervalType, Task } from '../models';
 import { useTasks } from '../store/appStore';
 import { useTimerStore } from '../store/useTimerStore';
-import { colors } from '../theme/colors';
+import { useThemeColors } from '../theme/useThemeColors';
 import { spacing } from '../theme/spacing';
 
 const intervalLabels: Record<string, string> = {
@@ -38,7 +38,8 @@ const TaskPickerModal: React.FC<{
   selectedTaskId?: string;
   onSelect: (taskId?: string) => void;
   onClose: () => void;
-}> = ({ visible, tasks, selectedTaskId, onSelect, onClose }) => {
+  styles: ReturnType<typeof createStyles>;
+}> = ({ visible, tasks, selectedTaskId, onSelect, onClose, styles }) => {
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <View style={styles.modalBackdrop}>
@@ -94,11 +95,13 @@ const TaskPickerModal: React.FC<{
 
 export const PomodoroScreen: React.FC = () => {
   const route = useRoute<RouteProp<RootTabParamList, 'Pomodoro'>>();
+  const colors = useThemeColors();
   const tasks = useTasks();
   const visibleTasks = useMemo(
     () => tasks.filter((task) => !task.deletedAt && !task.completedAt),
     [tasks],
   );
+  const styles = useMemo(() => createStyles(colors), [colors]);
 
   const {
     currentIntervalType,
@@ -268,200 +271,203 @@ export const PomodoroScreen: React.FC = () => {
         selectedTaskId={currentTaskId}
         onSelect={setCurrentTask}
         onClose={() => setTaskPickerVisible(false)}
+        styles={styles}
       />
     </ScreenContainer>
   );
 };
 
-const styles = StyleSheet.create({
-  header: {
-    marginBottom: spacing.lg,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: colors.textPrimary,
-  },
-  subtitle: {
-    color: colors.textSecondary,
-    marginTop: spacing.xs,
-  },
-  segmentedControl: {
-    flexDirection: 'row',
-    backgroundColor: colors.surface,
-    borderRadius: 16,
-    padding: spacing.xs,
-    marginBottom: spacing.lg,
-  },
-  segment: {
-    flex: 1,
-    paddingVertical: spacing.sm,
-    borderRadius: 12,
-    alignItems: 'center',
-  },
-  segmentActive: {
-    backgroundColor: colors.primary,
-  },
-  segmentLabel: {
-    fontWeight: '600',
-    color: colors.textSecondary,
-  },
-  segmentLabelActive: {
-    color: colors.background,
-  },
-  timerCard: {
-    borderRadius: 24,
-    backgroundColor: colors.surface,
-    paddingVertical: spacing.xl,
-    paddingHorizontal: spacing.lg,
-    alignItems: 'center',
-    marginBottom: spacing.lg,
-  },
-  intervalName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.textSecondary,
-    marginBottom: spacing.sm,
-  },
-  timerValue: {
-    fontSize: 72,
-    fontWeight: '800',
-    color: colors.textPrimary,
-  },
-  intervalCounter: {
-    marginTop: spacing.sm,
-    color: colors.textSecondary,
-    fontSize: 16,
-  },
-  taskSelector: {
-    marginBottom: spacing.lg,
-  },
-  taskSelectorLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.textSecondary,
-    marginBottom: spacing.xs,
-  },
-  taskSelectorButton: {
-    borderRadius: 16,
-    backgroundColor: colors.surface,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  taskSelectorValue: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.textPrimary,
-  },
-  taskSelectorHint: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    marginTop: 4,
-  },
-  taskSelectorAction: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: colors.primary,
-    marginLeft: spacing.md,
-  },
-  controlsRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginBottom: spacing.md,
-  },
-  primaryButton: {
-    borderRadius: 20,
-    paddingHorizontal: spacing.xl,
-    paddingVertical: spacing.md,
-  },
-  startButton: {
-    backgroundColor: colors.primary,
-  },
-  pauseButton: {
-    backgroundColor: colors.accent,
-  },
-  primaryButtonText: {
-    color: colors.background,
-    fontSize: 18,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-  },
-  secondaryControls: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-  },
-  secondaryButton: {
-    flex: 1,
-    borderRadius: 16,
-    paddingVertical: spacing.sm,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: colors.textSecondary,
-    marginHorizontal: spacing.xs,
-  },
-  secondaryButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.textPrimary,
-  },
-  skipButton: {
-    backgroundColor: colors.surface,
-  },
-  modalBackdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    justifyContent: 'center',
-    padding: spacing.lg,
-  },
-  modalCard: {
-    backgroundColor: colors.surface,
-    borderRadius: 20,
-    padding: spacing.lg,
-    maxHeight: '80%',
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: colors.textPrimary,
-    marginBottom: spacing.md,
-  },
-  modalList: {
-    marginBottom: spacing.md,
-  },
-  modalTaskRow: {
-    borderRadius: 16,
-    padding: spacing.md,
-    borderWidth: 1,
-    borderColor: 'transparent',
-    marginBottom: spacing.sm,
-    backgroundColor: colors.background,
-  },
-  modalTaskRowSelected: {
-    borderColor: colors.primary,
-  },
-  modalTaskTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.textPrimary,
-  },
-  modalTaskSubtitle: {
-    marginTop: spacing.xs,
-    fontSize: 13,
-    color: colors.textSecondary,
-  },
-  modalButton: {
-    borderRadius: 16,
-    paddingVertical: spacing.sm,
-    alignItems: 'center',
-  },
-  modalCloseButton: {
-    backgroundColor: colors.primary,
-  },
-  modalButtonText: {
-    color: colors.background,
-    fontWeight: '700',
-  },
-});
+function createStyles(colors: ReturnType<typeof useThemeColors>) {
+  return StyleSheet.create({
+    header: {
+      marginBottom: spacing.lg,
+    },
+    title: {
+      fontSize: 28,
+      fontWeight: '700',
+      color: colors.textPrimary,
+    },
+    subtitle: {
+      color: colors.textSecondary,
+      marginTop: spacing.xs,
+    },
+    segmentedControl: {
+      flexDirection: 'row',
+      backgroundColor: colors.surface,
+      borderRadius: 16,
+      padding: spacing.xs,
+      marginBottom: spacing.lg,
+    },
+    segment: {
+      flex: 1,
+      paddingVertical: spacing.sm,
+      borderRadius: 12,
+      alignItems: 'center',
+    },
+    segmentActive: {
+      backgroundColor: colors.primary,
+    },
+    segmentLabel: {
+      fontWeight: '600',
+      color: colors.textSecondary,
+    },
+    segmentLabelActive: {
+      color: colors.background,
+    },
+    timerCard: {
+      borderRadius: 24,
+      backgroundColor: colors.surface,
+      paddingVertical: spacing.xl,
+      paddingHorizontal: spacing.lg,
+      alignItems: 'center',
+      marginBottom: spacing.lg,
+    },
+    intervalName: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: colors.textSecondary,
+      marginBottom: spacing.sm,
+    },
+    timerValue: {
+      fontSize: 72,
+      fontWeight: '800',
+      color: colors.textPrimary,
+    },
+    intervalCounter: {
+      marginTop: spacing.sm,
+      color: colors.textSecondary,
+      fontSize: 16,
+    },
+    taskSelector: {
+      marginBottom: spacing.lg,
+    },
+    taskSelectorLabel: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: colors.textSecondary,
+      marginBottom: spacing.xs,
+    },
+    taskSelectorButton: {
+      borderRadius: 16,
+      backgroundColor: colors.surface,
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.md,
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    taskSelectorValue: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: colors.textPrimary,
+    },
+    taskSelectorHint: {
+      fontSize: 12,
+      color: colors.textSecondary,
+      marginTop: 4,
+    },
+    taskSelectorAction: {
+      fontSize: 12,
+      fontWeight: '700',
+      color: colors.primary,
+      marginLeft: spacing.md,
+    },
+    controlsRow: {
+      flexDirection: 'row',
+      justifyContent: 'center',
+      marginBottom: spacing.md,
+    },
+    primaryButton: {
+      borderRadius: 20,
+      paddingHorizontal: spacing.xl,
+      paddingVertical: spacing.md,
+    },
+    startButton: {
+      backgroundColor: colors.primary,
+    },
+    pauseButton: {
+      backgroundColor: colors.accent,
+    },
+    primaryButtonText: {
+      color: colors.background,
+      fontSize: 18,
+      fontWeight: '700',
+      textTransform: 'uppercase',
+      letterSpacing: 1,
+    },
+    secondaryControls: {
+      flexDirection: 'row',
+      justifyContent: 'center',
+    },
+    secondaryButton: {
+      flex: 1,
+      borderRadius: 16,
+      paddingVertical: spacing.sm,
+      alignItems: 'center',
+      borderWidth: 1,
+      borderColor: colors.textSecondary,
+      marginHorizontal: spacing.xs,
+    },
+    secondaryButtonText: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: colors.textPrimary,
+    },
+    skipButton: {
+      backgroundColor: colors.surface,
+    },
+    modalBackdrop: {
+      flex: 1,
+      backgroundColor: `${colors.background}99`,
+      justifyContent: 'center',
+      padding: spacing.lg,
+    },
+    modalCard: {
+      backgroundColor: colors.surface,
+      borderRadius: 20,
+      padding: spacing.lg,
+      maxHeight: '80%',
+    },
+    modalTitle: {
+      fontSize: 18,
+      fontWeight: '700',
+      color: colors.textPrimary,
+      marginBottom: spacing.md,
+    },
+    modalList: {
+      marginBottom: spacing.md,
+    },
+    modalTaskRow: {
+      borderRadius: 16,
+      padding: spacing.md,
+      borderWidth: 1,
+      borderColor: 'transparent',
+      marginBottom: spacing.sm,
+      backgroundColor: colors.background,
+    },
+    modalTaskRowSelected: {
+      borderColor: colors.primary,
+    },
+    modalTaskTitle: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: colors.textPrimary,
+    },
+    modalTaskSubtitle: {
+      marginTop: spacing.xs,
+      fontSize: 13,
+      color: colors.textSecondary,
+    },
+    modalButton: {
+      borderRadius: 16,
+      paddingVertical: spacing.sm,
+      alignItems: 'center',
+    },
+    modalCloseButton: {
+      backgroundColor: colors.primary,
+    },
+    modalButtonText: {
+      color: colors.background,
+      fontWeight: '700',
+    },
+  });
+}
