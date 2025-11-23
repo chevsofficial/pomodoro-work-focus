@@ -104,20 +104,19 @@ export const PomodoroScreen: React.FC = () => {
   const styles = useMemo(() => createStyles(colors), [colors]);
 
   const {
-    currentIntervalType,
-    setIntervalType,
-    currentTaskId,
-    setCurrentTask,
-    remainingSeconds,
-    isRunning,
-    startTimer,
-    pauseTimer,
-    resetTimer,
-    tick,
-    handleIntervalCompletion,
-    skipCurrentInterval,
-    completedWorkIntervals,
-    syncWithCurrentTime,
+      currentIntervalType,
+      setIntervalType,
+      currentTaskId,
+      setCurrentTask,
+      remainingSeconds,
+      isRunning,
+      startTimer,
+      pauseTimer,
+      tick,
+      handleIntervalCompletion,
+      skipCurrentInterval,
+      completedWorkIntervals,
+      syncWithCurrentTime,
     activeIntervalId,
   } = useTimerStore((state) => state);
 

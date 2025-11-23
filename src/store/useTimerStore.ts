@@ -6,11 +6,6 @@ import useAppStore, { selectEffectiveSettings, selectIsProEffective } from './ap
 
 const ONE_MINUTE_IN_SECONDS = 60;
 
-const getSettings = () => {
-  const state = useAppStore.getState();
-  return selectEffectiveSettings(state);
-};
-
 const getTimingConfigForTask = (taskId?: string) => {
   const appState = useAppStore.getState();
   const settings = selectEffectiveSettings(appState);
@@ -396,7 +391,7 @@ export const useTimerStore = create<TimerState>((set, get) => {
 
 // Recalculate timer duration whenever the app store changes,
 // but only if the timer is idle (not running and no active interval).
-useAppStore.subscribe((state) => {
+useAppStore.subscribe(() => {
   const timerState = useTimerStore.getState();
   if (timerState.isRunning || timerState.activeIntervalId) {
     return;

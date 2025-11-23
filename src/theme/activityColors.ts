@@ -7,6 +7,8 @@ export const ACTIVITY_COLORS = [
   { key: 'orange', label: 'Orange', value: '#FF9800' },
 ] as const;
 
-export const FREE_COLOR_KEYS = ['red', 'green'] as const;
+export type ActivityColorKey = (typeof ACTIVITY_COLORS)[number]['key'];
+
+export const FREE_COLOR_KEYS: ActivityColorKey[] = ['red', 'green'];
 
 export const DEFAULT_ACTIVITY_COLOR = ACTIVITY_COLORS[0].value;

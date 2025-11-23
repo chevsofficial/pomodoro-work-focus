@@ -1,8 +1,8 @@
-import { NavigationProp } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from './RootNavigator';
 
 export const navigateToProUpsell = (
-  navigation: NavigationProp<RootStackParamList>,
+  navigation: NativeStackNavigationProp<RootStackParamList>,
 ) => {
   navigation.navigate('Paywall');
 };
