@@ -16,8 +16,8 @@ import { RootStackParamList } from '../navigation/RootNavigator';
 import { navigateToProUpsell } from '../navigation/proNavigation';
 import { ActivityType, PomodoroSettings } from '../models';
 import useAppStore, { useActivityTypes, useEffectiveSettings, useIsPro } from '../store/appStore';
-import { colors } from '../theme/colors';
 import { spacing } from '../theme/spacing';
+import { useThemeColors } from '../theme/useThemeColors';
 import { FREE_ACTIVITY_TYPE_LIMIT } from '../config/proFeatures';
 import { requestNotificationPermissions } from '../utils/notificationService';
 import { playIntervalEndSound } from '../utils/soundService';
@@ -50,11 +50,15 @@ const FREE_COLOR_KEYS = ['red', 'green'];
 
 const DEFAULT_ACTIVITY_COLOR = ACTIVITY_COLORS[0].value;
 
+type SettingsStyles = ReturnType<typeof createStyles>;
+
 const SettingInputRow: React.FC<{
   label: string;
   value: string;
   onChangeText: (text: string) => void;
-}> = ({ label, value, onChangeText }) => {
+  styles: SettingsStyles;
+  placeholderColor: string;
+}> = ({ label, value, onChangeText, styles, placeholderColor }) => {
   return (
     <View style={styles.settingRow}>
       <Text style={styles.settingLabel}>{label}</Text>
@@ -63,7 +67,7 @@ const SettingInputRow: React.FC<{
         value={value}
         onChangeText={onChangeText}
         keyboardType="numeric"
-        placeholderTextColor={colors.textSecondary}
+        placeholderTextColor={placeholderColor}
       />
     </View>
   );
@@ -73,7 +77,9 @@ const SettingToggleRow: React.FC<{
   label: string;
   value: boolean;
   onValueChange: (value: boolean) => void;
-}> = ({ label, value, onValueChange }) => {
+  styles: SettingsStyles;
+  colors: ReturnType<typeof useThemeColors>;
+}> = ({ label, value, onValueChange, styles, colors }) => {
   return (
     <View style={styles.settingRow}>
       <Text style={styles.settingLabel}>{label}</Text>
@@ -90,7 +96,9 @@ const SettingToggleRow: React.FC<{
 const ActivityTypeRow: React.FC<{
   type: ActivityType;
   onPress: () => void;
-}> = ({ type, onPress }) => {
+  styles: SettingsStyles;
+  colors: ReturnType<typeof useThemeColors>;
+}> = ({ type, onPress, styles, colors }) => {
   return (
     <TouchableOpacity style={styles.activityTypeRow} onPress={onPress}>
       <View style={styles.activityTypeColorWrapper}>
@@ -114,8 +122,6 @@ const ActivityTypeRow: React.FC<{
   );
 };
 
-const AnyActivityTypeRow = ActivityTypeRow as any;
-
 type ActivityTypeFormValues = {
   name: string;
   color: string;
@@ -136,6 +142,8 @@ type ActivityTypeModalProps = {
   onSubmit: (payload: Omit<ActivityType, 'id'>) => void;
   onDelete?: () => void;
   onLockedColorPress?: () => void;
+  colors: ReturnType<typeof useThemeColors>;
+  styles: SettingsStyles;
 };
 
 const buildFormState = (
@@ -171,6 +179,8 @@ const ActivityTypeModal: React.FC<ActivityTypeModalProps> = ({
   onSubmit,
   onDelete,
   onLockedColorPress,
+  colors,
+  styles,
 }) => {
   const [formValues, setFormValues] = useState<ActivityTypeFormValues>(() => buildFormState(defaults, initialValues));
   const isPro = useIsPro();
@@ -398,6 +408,8 @@ export const SettingsScreen: React.FC = () => {
   const updateActivityType = useAppStore((state) => state.updateActivityType);
   const deleteActivityType = useAppStore((state) => state.deleteActivityType);
   const navigation = useNavigation<SettingsNavigation>();
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const goToPro = () => navigateToProUpsell(navigation);
   const handleUpgradePress = () => {
     goToPro();
@@ -537,21 +549,29 @@ export const SettingsScreen: React.FC = () => {
             label="Work Duration (minutes)"
             value={numericValues.workDurationMinutes}
             onChangeText={(text) => handleNumericChange('workDurationMinutes', text)}
+            styles={styles}
+            placeholderColor={colors.textSecondary}
           />
           <SettingInputRow
             label="Short Break Duration (minutes)"
             value={numericValues.shortBreakMinutes}
             onChangeText={(text) => handleNumericChange('shortBreakMinutes', text)}
+            styles={styles}
+            placeholderColor={colors.textSecondary}
           />
           <SettingInputRow
             label="Long Break Duration (minutes)"
             value={numericValues.longBreakMinutes}
             onChangeText={(text) => handleNumericChange('longBreakMinutes', text)}
+            styles={styles}
+            placeholderColor={colors.textSecondary}
           />
           <SettingInputRow
             label="Intervals Before Long Break"
             value={numericValues.intervalsBeforeLongBreak}
             onChangeText={(text) => handleNumericChange('intervalsBeforeLongBreak', text)}
+            styles={styles}
+            placeholderColor={colors.textSecondary}
           />
         </View>
 
@@ -561,6 +581,8 @@ export const SettingsScreen: React.FC = () => {
             label="Auto-start next interval"
             value={settings.autoStartNextInterval}
             onValueChange={handleToggleAutoStart}
+            styles={styles}
+            colors={colors}
           />
           <View style={styles.soundSectionHeader}>
             <Text style={styles.settingLabel}>Notification sound</Text>
@@ -593,16 +615,22 @@ export const SettingsScreen: React.FC = () => {
             label="Sound enabled"
             value={settings.soundEnabled}
             onValueChange={handleToggleChange('soundEnabled')}
+            styles={styles}
+            colors={colors}
           />
           <SettingToggleRow
             label="Vibration enabled"
             value={settings.vibrationEnabled}
             onValueChange={handleToggleChange('vibrationEnabled')}
+            styles={styles}
+            colors={colors}
           />
           <SettingToggleRow
             label="Notifications enabled"
             value={settings.notificationsEnabled}
             onValueChange={handleToggleNotifications}
+            styles={styles}
+            colors={colors}
           />
         </View>
 
@@ -634,7 +662,13 @@ export const SettingsScreen: React.FC = () => {
             <Text style={styles.emptyStateText}>No custom activity types yet.</Text>
           )}
           {activityTypes.map((type) => (
-            <AnyActivityTypeRow key={type.id} type={type} onPress={() => handleSelectActivityType(type)} />
+            <ActivityTypeRow
+              key={type.id}
+              type={type}
+              onPress={() => handleSelectActivityType(type)}
+              styles={styles}
+              colors={colors}
+            />
           ))}
         </View>
 
@@ -651,12 +685,15 @@ export const SettingsScreen: React.FC = () => {
         onSubmit={handleSubmitActivityType}
         onDelete={editingType ? handleDeleteActivityType : undefined}
         onLockedColorPress={handleLockedColorPress}
+        colors={colors}
+        styles={styles}
       />
     </ScreenContainer>
   );
 };
 
-const styles = StyleSheet.create({
+function createStyles(colors: ReturnType<typeof useThemeColors>) {
+  return StyleSheet.create({
   scrollContent: {
     paddingBottom: spacing.xl,
   },
@@ -825,7 +862,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   upgradeText: {
-    color: '#fff',
+    color: colors.textPrimary,
     fontSize: 16,
     fontWeight: '700',
   },
@@ -945,7 +982,7 @@ const styles = StyleSheet.create({
     borderColor: colors.primary,
   },
   modalButtonPrimaryText: {
-    color: '#fff',
+    color: colors.textPrimary,
   },
   modalButtonSecondary: {
     backgroundColor: 'transparent',
@@ -961,7 +998,8 @@ const styles = StyleSheet.create({
     marginRight: 'auto',
   },
   modalDeleteText: {
-    color: '#FF6B6B',
+    color: colors.primary,
     fontWeight: '600',
   },
-});
+  });
+}
