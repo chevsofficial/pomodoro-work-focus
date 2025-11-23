@@ -73,7 +73,7 @@ export const TaskDetailScreen: React.FC = () => {
       setDescription(task.description ?? '');
       setActivityTypeId(task.activityTypeId);
     }
-  }, [task?.id, task?.title, task?.description, task?.activityTypeId]);
+  }, [task]);
 
   const sortedIntervals = useMemo(() => {
     return [...intervals].sort((a, b) => {

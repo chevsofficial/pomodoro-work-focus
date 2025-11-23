@@ -1,4 +1,5 @@
-import { NavigationProp, useNavigation } from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   Alert,
@@ -383,7 +384,7 @@ const ActivityTypeModal: React.FC<ActivityTypeModalProps> = ({
   );
 };
 
-type SettingsNavigation = NavigationProp<RootStackParamList>;
+type SettingsNavigation = NativeStackNavigationProp<RootStackParamList>;
 
 type NumericSettingKey =
   | 'workDurationMinutes'
