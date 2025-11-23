@@ -1,15 +1,17 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { ScreenContainer } from '../components/ScreenContainer';
 import { PRO_BENEFITS, PRO_DEV_UNLOCK_ENABLED, IAP_PRODUCT_IDS } from '../config/proFeatures';
 import useAppStore, { useIsPro, useProStatus } from '../store/appStore';
-import { colors } from '../theme/colors';
 import { spacing } from '../theme/spacing';
+import { useThemeColors } from '../theme/useThemeColors';
 
 export const PaywallScreen: React.FC = () => {
+  const colors = useThemeColors();
   const setProStatus = useAppStore((state) => state.setProStatus);
   const isPro = useIsPro();
   const proStatus = useProStatus();
+  const styles = useMemo(() => createStyles(colors), [colors]);
 
   const handleContinue = () => {
     if (isPro) {
@@ -75,91 +77,93 @@ export const PaywallScreen: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
-  content: {
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.xl,
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: '800',
-    color: colors.textPrimary,
-    marginBottom: spacing.sm,
-    textAlign: 'center',
-  },
-  description: {
-    fontSize: 16,
-    color: colors.textSecondary,
-    textAlign: 'center',
-    marginBottom: spacing.xl,
-    lineHeight: 22,
-  },
-  card: {
-    borderRadius: 16,
-    backgroundColor: colors.surface,
-    padding: spacing.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-    marginBottom: spacing.xl,
-  },
-  cardTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: colors.textPrimary,
-    marginBottom: spacing.md,
-  },
-  benefitRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: spacing.sm,
-  },
-  bullet: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: colors.primary,
-    marginRight: spacing.md,
-  },
-  benefitText: {
-    color: colors.textPrimary,
-    flex: 1,
-  },
-  primaryButton: {
-    backgroundColor: colors.primary,
-    borderRadius: 14,
-    paddingVertical: spacing.md,
-    alignItems: 'center',
-    marginBottom: spacing.sm,
-  },
-  primaryButtonDisabled: {
-    backgroundColor: colors.border,
-  },
-  primaryButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '700',
-  },
-  secondaryText: {
-    textAlign: 'center',
-    color: colors.textSecondary,
-    marginBottom: spacing.lg,
-  },
-  noteCard: {
-    borderRadius: 12,
-    backgroundColor: colors.background,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: spacing.md,
-  },
-  noteTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: colors.textPrimary,
-    marginBottom: spacing.xs,
-  },
-  noteBody: {
-    fontSize: 13,
-    color: colors.textSecondary,
-    lineHeight: 20,
-  },
-});
+function createStyles(colors: ReturnType<typeof useThemeColors>) {
+  return StyleSheet.create({
+    content: {
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.xl,
+    },
+    title: {
+      fontSize: 32,
+      fontWeight: '800',
+      color: colors.textPrimary,
+      marginBottom: spacing.sm,
+      textAlign: 'center',
+    },
+    description: {
+      fontSize: 16,
+      color: colors.textSecondary,
+      textAlign: 'center',
+      marginBottom: spacing.xl,
+      lineHeight: 22,
+    },
+    card: {
+      borderRadius: 16,
+      backgroundColor: colors.surface,
+      padding: spacing.lg,
+      borderWidth: 1,
+      borderColor: colors.border,
+      marginBottom: spacing.xl,
+    },
+    cardTitle: {
+      fontSize: 18,
+      fontWeight: '700',
+      color: colors.textPrimary,
+      marginBottom: spacing.md,
+    },
+    benefitRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: spacing.sm,
+    },
+    bullet: {
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+      backgroundColor: colors.primary,
+      marginRight: spacing.md,
+    },
+    benefitText: {
+      color: colors.textPrimary,
+      flex: 1,
+    },
+    primaryButton: {
+      backgroundColor: colors.primary,
+      borderRadius: 14,
+      paddingVertical: spacing.md,
+      alignItems: 'center',
+      marginBottom: spacing.sm,
+    },
+    primaryButtonDisabled: {
+      backgroundColor: colors.border,
+    },
+    primaryButtonText: {
+      color: colors.background,
+      fontSize: 16,
+      fontWeight: '700',
+    },
+    secondaryText: {
+      textAlign: 'center',
+      color: colors.textSecondary,
+      marginBottom: spacing.lg,
+    },
+    noteCard: {
+      borderRadius: 12,
+      backgroundColor: colors.background,
+      borderWidth: 1,
+      borderColor: colors.border,
+      padding: spacing.md,
+    },
+    noteTitle: {
+      fontSize: 14,
+      fontWeight: '700',
+      color: colors.textPrimary,
+      marginBottom: spacing.xs,
+    },
+    noteBody: {
+      fontSize: 13,
+      color: colors.textSecondary,
+      lineHeight: 20,
+    },
+  });
+}
