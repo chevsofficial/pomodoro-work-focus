@@ -173,7 +173,7 @@ const useAppStore = create<AppStore>((set, get) => {
   };
 
   const schedulePersist = debounce((snapshot: AppStateSnapshot) => {
-    void persistState(snapshot);
+    persistState(snapshot);
   }, PERSIST_DEBOUNCE_MS);
 
   const setStateAndPersist = (updater: (state: AppStore) => AppStateSnapshot | Partial<AppStore>) => {
@@ -206,7 +206,7 @@ const useAppStore = create<AppStore>((set, get) => {
     }
   };
 
-  void hydrate();
+  hydrate();
 
   return {
     tasks: [],

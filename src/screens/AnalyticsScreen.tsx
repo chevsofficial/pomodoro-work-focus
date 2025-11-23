@@ -521,7 +521,7 @@ export const AnalyticsScreen: React.FC = () => {
                       { backgroundColor: row.color },
                     ]}
                   />
-                  <View style={{ flex: 1 }}>
+                  <View style={styles.ratioContent}>
                     <Text style={styles.ratioLabel}>{row.label}</Text>
                     <Text style={styles.ratioSubLabel}>
                       {row.hours.toFixed(1)}h · {row.percent.toFixed(0)}%
@@ -822,6 +822,9 @@ function createStyles(colors: ReturnType<typeof useThemeColors>) {
       flexDirection: 'row',
       alignItems: 'center',
       marginBottom: spacing.sm,
+    },
+    ratioContent: {
+      flex: 1,
     },
     ratioColorDot: {
       width: 10,

@@ -33,6 +33,31 @@ type InfoSection = {
   items: InfoItem[];
 };
 
+type InfoStyles = ReturnType<typeof createStyles>;
+
+type InfoRowProps = InfoItem & {
+  isLast?: boolean;
+  styles: InfoStyles;
+};
+
+const InfoRow: React.FC<InfoRowProps> = ({
+  title,
+  description,
+  onPress,
+  isLast,
+  styles,
+}) => {
+  return (
+    <TouchableOpacity style={[styles.row, !isLast && styles.rowDivider]} onPress={onPress}>
+      <View style={styles.rowText}>
+        <Text style={styles.rowTitle}>{title}</Text>
+        {description ? <Text style={styles.rowDescription}>{description}</Text> : null}
+      </View>
+      <Text style={styles.rowAction}>›</Text>
+    </TouchableOpacity>
+  );
+};
+
 export const InfoScreen: React.FC = () => {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const colors = useThemeColors();
@@ -42,26 +67,6 @@ export const InfoScreen: React.FC = () => {
   const [isRedeemModalVisible, setRedeemModalVisible] = useState(false);
   const [redeemCode, setRedeemCode] = useState('');
   const styles = useMemo(() => createStyles(colors), [colors]);
-
-  const InfoRow: React.FC<InfoItem & { isLast?: boolean }> = ({
-    title,
-    description,
-    onPress,
-    isLast,
-  }) => {
-    return (
-      <TouchableOpacity
-        style={[styles.row, !isLast && styles.rowDivider]}
-        onPress={onPress}
-      >
-        <View style={styles.rowText}>
-          <Text style={styles.rowTitle}>{title}</Text>
-          {description ? <Text style={styles.rowDescription}>{description}</Text> : null}
-        </View>
-        <Text style={styles.rowAction}>›</Text>
-      </TouchableOpacity>
-    );
-  };
 
   const rateUrl =
     Platform.select({
@@ -220,6 +225,7 @@ export const InfoScreen: React.FC = () => {
                   description={item.description}
                   onPress={item.onPress}
                   isLast={index === section.items.length - 1}
+                  styles={styles}
                 />
               ))}
             </View>

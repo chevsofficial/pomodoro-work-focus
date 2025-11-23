@@ -37,6 +37,70 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 // NEW: relax types for Stack.Navigator as well
 const AnyStackNavigator = Stack.Navigator as any;
 
+type TabIconProps = {
+  color: string;
+  size: number;
+  name: string;
+};
+
+const TabIcon = ({ color, size, name }: TabIconProps) => (
+  <Ionicons name={name as any} size={size} color={color} />
+);
+
+type TabBarIconRenderer = ({
+  focused,
+  color,
+  size,
+}: {
+  focused: boolean;
+  color: string;
+  size: number;
+}) => JSX.Element;
+
+type TabBarIconProps = {
+  routeName: keyof RootTabParamList;
+  focused: boolean;
+  color: string;
+  size: number;
+};
+
+const TabBarIcon = ({ routeName, focused, color, size }: TabBarIconProps) => {
+  let iconName: string;
+
+  switch (routeName) {
+    case 'Tasks':
+      iconName = focused ? 'list' : 'list-outline';
+      break;
+    case 'Pomodoro':
+      iconName = focused ? 'timer' : 'timer-outline';
+      break;
+    case 'Analytics':
+      iconName = focused ? 'stats-chart' : 'stats-chart-outline';
+      break;
+    case 'Settings':
+      iconName = focused ? 'settings' : 'settings-outline';
+      break;
+    case 'Info':
+      iconName = focused ? 'information-circle' : 'information-circle-outline';
+      break;
+    default:
+      iconName = focused ? 'ellipse' : 'ellipse-outline';
+  }
+
+  return <TabIcon name={iconName} size={size} color={color} />;
+};
+
+const renderTabBarIcon = (routeName: keyof RootTabParamList): TabBarIconRenderer => {
+  return ({ focused, color, size }) => (
+    <TabBarIcon
+      routeName={routeName}
+      focused={focused}
+      color={color}
+      size={size}
+    />
+  );
+};
+
 function TabNavigator() {
   const colors = useThemeColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
@@ -55,41 +119,7 @@ function TabNavigator() {
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textSecondary,
         tabBarLabelStyle: styles.tabLabel,
-        tabBarIcon: ({
-          focused,
-          color,
-          size,
-        }: {
-          focused: boolean;
-          color: string;
-          size: number;
-        }) => {
-          let iconName: string;
-
-          switch (route.name) {
-            case 'Tasks':
-              iconName = focused ? 'list' : 'list-outline';
-              break;
-            case 'Pomodoro':
-              iconName = focused ? 'timer' : 'timer-outline';
-              break;
-            case 'Analytics':
-              iconName = focused ? 'stats-chart' : 'stats-chart-outline';
-              break;
-            case 'Settings':
-              iconName = focused ? 'settings' : 'settings-outline';
-              break;
-            case 'Info':
-              iconName = focused
-                ? 'information-circle'
-                : 'information-circle-outline';
-              break;
-            default:
-              iconName = focused ? 'ellipse' : 'ellipse-outline';
-          }
-
-          return <Ionicons name={iconName as any} size={size} color={color} />;
-        },
+        tabBarIcon: renderTabBarIcon(route.name as keyof RootTabParamList),
       })}
     >
       <Tab.Screen name="Tasks" component={TasksScreen} />

@@ -46,12 +46,12 @@ const App: React.FC = () => {
   );
 
   useEffect(() => {
-    void initializeNotifications();
+    initializeNotifications();
   }, []);
 
   useEffect(() => {
     if (settings.notificationsEnabled) {
-      void requestNotificationPermissions();
+      requestNotificationPermissions();
     }
   }, [settings.notificationsEnabled]);
 

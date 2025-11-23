@@ -98,10 +98,8 @@ const ActivityTypeRow: React.FC<{
         <View
           style={[
             styles.activityTypeColor,
-            {
-              backgroundColor: type.color ?? colors.border,
-              opacity: type.color ? 1 : 0.5,
-            },
+            { backgroundColor: type.color ?? colors.border },
+            type.color ? styles.activityTypeColorEnabled : styles.activityTypeColorDisabled,
           ]}
         />
       </View>
@@ -620,7 +618,7 @@ export const SettingsScreen: React.FC = () => {
           />
           <View style={styles.soundSectionHeader}>
             <Text style={styles.settingLabel}>Notification sound</Text>
-            <TouchableOpacity style={styles.testSoundButton} onPress={() => void playIntervalEndSound()}>
+            <TouchableOpacity style={styles.testSoundButton} onPress={() => playIntervalEndSound()}>
               <Text style={styles.testSoundButtonLabel}>Test sound</Text>
             </TouchableOpacity>
           </View>
@@ -893,6 +891,12 @@ function createStyles(colors: ReturnType<typeof useThemeColors>) {
     width: 20,
     height: 20,
     borderRadius: 10,
+  },
+  activityTypeColorEnabled: {
+    opacity: 1,
+  },
+  activityTypeColorDisabled: {
+    opacity: 0.5,
   },
   activityTypeContent: {
     flex: 1,
