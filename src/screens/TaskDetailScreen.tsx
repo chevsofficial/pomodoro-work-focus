@@ -6,8 +6,8 @@ import { ScreenContainer } from '../components/ScreenContainer';
 import { RootStackParamList } from '../navigation/RootNavigator';
 import { ActivityType, IntervalSession } from '../models';
 import useAppStore, { useActivityTypes, useIntervalsByTask, useTasks } from '../store/appStore';
-import { colors } from '../theme/colors';
 import { spacing } from '../theme/spacing';
+import { useThemeColors } from '../theme/useThemeColors';
 
 const formatDateTime = (value?: string) => {
   if (!value) {
@@ -51,6 +51,9 @@ export const TaskDetailScreen: React.FC = () => {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList, 'TaskDetail'>>();
   const route = useRoute<RouteProp<RootStackParamList, 'TaskDetail'>>();
   const { taskId } = route.params;
+
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
 
   const tasks = useTasks();
   const task = tasks.find((item) => item.id === taskId);
@@ -318,191 +321,193 @@ export const TaskDetailScreen: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
-  scrollContent: {
-    paddingBottom: spacing.xl,
-  },
-  headerTitle: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: colors.textPrimary,
-    marginBottom: spacing.lg,
-  },
-  section: {
-    marginBottom: spacing.lg,
-  },
-  sectionLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.textSecondary,
-    marginBottom: spacing.sm,
-  },
-  input: {
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: colors.textSecondary,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    color: colors.textPrimary,
-    backgroundColor: colors.background,
-  },
-  inputMultiline: {
-    minHeight: 120,
-    textAlignVertical: 'top',
-  },
-  activityTypeList: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginHorizontal: -spacing.xs,
-  },
-  activityTypeOption: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderRadius: 16,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    borderWidth: 1,
-    borderColor: colors.textSecondary,
-    marginHorizontal: spacing.xs,
-    marginVertical: spacing.xs,
-  },
-  activityTypeOptionSelected: {
-    backgroundColor: colors.accent,
-    borderColor: colors.accent,
-  },
-  activityTypeColorDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    marginRight: spacing.xs,
-  },
-  activityTypeOptionText: {
-    color: colors.textPrimary,
-    fontWeight: '600',
-    fontSize: 12,
-  },
-  activityTypeOptionTextSelected: {
-    color: colors.background,
-  },
-  activityTypeDescription: {
-    marginTop: spacing.sm,
-    color: colors.textSecondary,
-    fontSize: 12,
-  },
-  selectedActivityTypeRow: {
-    marginTop: spacing.sm,
-  },
-  selectedActivityTypePill: {
-    alignSelf: 'flex-start',
-    borderRadius: 999,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    marginBottom: spacing.xs,
-  },
-  selectedActivityTypeText: {
-    color: colors.background,
-    fontWeight: '700',
-    fontSize: 12,
-  },
-  sectionValue: {
-    color: colors.textPrimary,
-    fontSize: 16,
-    fontWeight: '500',
-  },
-  actionsRow: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-  },
-  focusButton: {
-    backgroundColor: colors.primary,
-    borderRadius: 16,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    marginBottom: spacing.lg,
-  },
-  focusButtonText: {
-    color: colors.background,
-    fontWeight: '700',
-    fontSize: 16,
-  },
-  focusButtonSubtitle: {
-    marginTop: spacing.xs,
-    color: colors.background,
-    fontSize: 13,
-  },
-  modalButton: {
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
-    borderRadius: 12,
-    marginLeft: spacing.sm,
-  },
-  modalButtonSecondary: {
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.textSecondary,
-  },
-  modalButtonPrimary: {
-    backgroundColor: colors.primary,
-  },
-  modalButtonText: {
-    fontWeight: '600',
-    color: colors.textPrimary,
-  },
-  modalButtonPrimaryText: {
-    color: colors.background,
-  },
-  intervalList: {
-    marginTop: spacing.sm,
-  },
-  intervalRow: {
-    borderRadius: 12,
-    padding: spacing.md,
-    backgroundColor: colors.surface,
-    marginBottom: spacing.sm,
-  },
-  intervalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: spacing.sm,
-  },
-  intervalType: {
-    fontWeight: '700',
-    color: colors.textPrimary,
-  },
-  intervalStatus: {
-    color: colors.textSecondary,
-    fontWeight: '600',
-  },
-  intervalDetail: {
-    color: colors.textSecondary,
-    marginTop: spacing.xs,
-    fontSize: 13,
-  },
-  intervalValue: {
-    color: colors.textPrimary,
-    fontWeight: '600',
-  },
-  emptyIntervals: {
-    color: colors.textSecondary,
-    fontStyle: 'italic',
-  },
-  missingTaskContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: spacing.lg,
-  },
-  missingTaskTitle: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: colors.textPrimary,
-    marginBottom: spacing.md,
-  },
-  missingTaskSubtitle: {
-    color: colors.textSecondary,
-    textAlign: 'center',
-    marginBottom: spacing.lg,
-  },
-});
+function createStyles(colors: ReturnType<typeof useThemeColors>) {
+  return StyleSheet.create({
+    scrollContent: {
+      paddingBottom: spacing.xl,
+    },
+    headerTitle: {
+      fontSize: 28,
+      fontWeight: '700',
+      color: colors.textPrimary,
+      marginBottom: spacing.lg,
+    },
+    section: {
+      marginBottom: spacing.lg,
+    },
+    sectionLabel: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: colors.textSecondary,
+      marginBottom: spacing.sm,
+    },
+    input: {
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: colors.textSecondary,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+      color: colors.textPrimary,
+      backgroundColor: colors.background,
+    },
+    inputMultiline: {
+      minHeight: 120,
+      textAlignVertical: 'top',
+    },
+    activityTypeList: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      marginHorizontal: -spacing.xs,
+    },
+    activityTypeOption: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      borderRadius: 16,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.xs,
+      borderWidth: 1,
+      borderColor: colors.textSecondary,
+      marginHorizontal: spacing.xs,
+      marginVertical: spacing.xs,
+    },
+    activityTypeOptionSelected: {
+      backgroundColor: colors.accent,
+      borderColor: colors.accent,
+    },
+    activityTypeColorDot: {
+      width: 10,
+      height: 10,
+      borderRadius: 5,
+      marginRight: spacing.xs,
+    },
+    activityTypeOptionText: {
+      color: colors.textPrimary,
+      fontWeight: '600',
+      fontSize: 12,
+    },
+    activityTypeOptionTextSelected: {
+      color: colors.background,
+    },
+    activityTypeDescription: {
+      marginTop: spacing.sm,
+      color: colors.textSecondary,
+      fontSize: 12,
+    },
+    selectedActivityTypeRow: {
+      marginTop: spacing.sm,
+    },
+    selectedActivityTypePill: {
+      alignSelf: 'flex-start',
+      borderRadius: 999,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.xs,
+      marginBottom: spacing.xs,
+    },
+    selectedActivityTypeText: {
+      color: colors.background,
+      fontWeight: '700',
+      fontSize: 12,
+    },
+    sectionValue: {
+      color: colors.textPrimary,
+      fontSize: 16,
+      fontWeight: '500',
+    },
+    actionsRow: {
+      flexDirection: 'row',
+      justifyContent: 'flex-end',
+    },
+    focusButton: {
+      backgroundColor: colors.primary,
+      borderRadius: 16,
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.md,
+      marginBottom: spacing.lg,
+    },
+    focusButtonText: {
+      color: colors.background,
+      fontWeight: '700',
+      fontSize: 16,
+    },
+    focusButtonSubtitle: {
+      marginTop: spacing.xs,
+      color: colors.background,
+      fontSize: 13,
+    },
+    modalButton: {
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.sm,
+      borderRadius: 12,
+      marginLeft: spacing.sm,
+    },
+    modalButtonSecondary: {
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.textSecondary,
+    },
+    modalButtonPrimary: {
+      backgroundColor: colors.primary,
+    },
+    modalButtonText: {
+      fontWeight: '600',
+      color: colors.textPrimary,
+    },
+    modalButtonPrimaryText: {
+      color: colors.background,
+    },
+    intervalList: {
+      marginTop: spacing.sm,
+    },
+    intervalRow: {
+      borderRadius: 12,
+      padding: spacing.md,
+      backgroundColor: colors.surface,
+      marginBottom: spacing.sm,
+    },
+    intervalHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      marginBottom: spacing.sm,
+    },
+    intervalType: {
+      fontWeight: '700',
+      color: colors.textPrimary,
+    },
+    intervalStatus: {
+      color: colors.textSecondary,
+      fontWeight: '600',
+    },
+    intervalDetail: {
+      color: colors.textSecondary,
+      marginTop: spacing.xs,
+      fontSize: 13,
+    },
+    intervalValue: {
+      color: colors.textPrimary,
+      fontWeight: '600',
+    },
+    emptyIntervals: {
+      color: colors.textSecondary,
+      fontStyle: 'italic',
+    },
+    missingTaskContainer: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: spacing.lg,
+    },
+    missingTaskTitle: {
+      fontSize: 22,
+      fontWeight: '700',
+      color: colors.textPrimary,
+      marginBottom: spacing.md,
+    },
+    missingTaskSubtitle: {
+      color: colors.textSecondary,
+      textAlign: 'center',
+      marginBottom: spacing.lg,
+    },
+  });
+}
 
 export default TaskDetailScreen;
