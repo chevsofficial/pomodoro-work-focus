@@ -11,8 +11,8 @@ import useAppStore, {
   useAnalyticsMinDate,
   useIsPro,
 } from '../store/appStore';
-import { colors } from '../theme/colors';
 import { spacing } from '../theme/spacing';
+import { useThemeColors } from '../theme/useThemeColors';
 
 type AnalyticsRangeKey =
   | 'today'
@@ -49,7 +49,6 @@ const DATE_RANGE_OPTIONS: { key: AnalyticsRangeKey; label: string }[] = [
   { key: 'custom', label: 'Custom' },
 ];
 
-const DEFAULT_ACTIVITY_COLOR = '#4A5568';
 const DEFAULT_ACTIVITY_NAME = 'No activity type';
 
 const startOfDay = (d: Date) =>
@@ -173,6 +172,9 @@ export const AnalyticsScreen: React.FC = () => {
   const intervals = useAppStore((state) => state.intervals);
   const tasks = useAppStore((state) => state.tasks);
   const activityTypes = useAppStore((state) => state.activityTypes);
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+  const defaultActivityColor = colors.textSecondary;
 
   const handleSelectRange = (key: AnalyticsRangeKey) => {
     if (!isPro && PRO_ONLY_RANGE_KEYS.includes(key)) {
@@ -317,13 +319,13 @@ export const AnalyticsScreen: React.FC = () => {
         return {
           key,
           label: type?.name ?? DEFAULT_ACTIVITY_NAME,
-          color: type?.color ?? DEFAULT_ACTIVITY_COLOR,
+          color: type?.color ?? defaultActivityColor,
           hours,
           percent: (hours / totalHours) * 100,
         };
       })
       .sort((a, b) => b.hours - a.hours);
-  }, [activityTypeMap, taskMap, workIntervalsInRange]);
+  }, [activityTypeMap, defaultActivityColor, taskMap, workIntervalsInRange]);
 
   const totalRangeHours = useMemo(
     () => activityTypeRatio.reduce((sum, row) => sum + row.hours, 0),
@@ -614,255 +616,257 @@ export const AnalyticsScreen: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
-  scrollContent: {
-    flexGrow: 1,
-    paddingBottom: spacing.xl,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: colors.textPrimary,
-    marginBottom: spacing.xs,
-  },
-  subtitle: {
-    color: colors.textSecondary,
-    marginBottom: spacing.lg,
-  },
-  section: {
-    marginBottom: spacing.lg,
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.textPrimary,
-    marginBottom: spacing.sm,
-  },
-  rangeRow: {
-    marginBottom: spacing.sm,
-  },
-  rangeScrollContent: {
-    paddingHorizontal: spacing.xs,
-  },
-  rangePill: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    borderRadius: 999,
-    backgroundColor: colors.surface,
-    marginHorizontal: spacing.xs,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  rangePillActive: {
-    backgroundColor: colors.primary,
-  },
-  rangePillLocked: {
-    opacity: 0.6,
-  },
-  lockIconContainer: {
-    marginLeft: 4,
-  },
-  rangePillLabel: {
-    fontSize: 12,
-    color: colors.textSecondary,
-  },
-  rangePillLabelActive: {
-    color: colors.background,
-  },
-  dateRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: spacing.md,
-  },
-  dateColumn: {
-    flex: 1,
-    marginHorizontal: spacing.xs,
-  },
-  dateLabel: {
-    fontSize: 11,
-    color: colors.textSecondary,
-    marginBottom: 2,
-  },
-  dateValueButton: {
-    borderRadius: 12,
-    backgroundColor: colors.surface,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-  },
-  dateValueText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: colors.textPrimary,
-  },
-  placeholderCard: {
-    borderRadius: 16,
-    padding: spacing.lg,
-    backgroundColor: colors.surface,
-  },
-  placeholderTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.textPrimary,
-    marginBottom: spacing.sm,
-  },
-  placeholderText: {
-    fontSize: 14,
-    color: colors.textSecondary,
-  },
-  emptyText: {
-    color: colors.textSecondary,
-    fontSize: 13,
-    marginTop: spacing.sm,
-  },
-  card: {
-    backgroundColor: colors.surface,
-    borderRadius: 24,
-    paddingVertical: spacing.lg,
-    paddingHorizontal: spacing.lg,
-    marginBottom: spacing.lg,
-    width: '100%',
-    alignSelf: 'stretch',
-  },
-  cardTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: colors.textPrimary,
-    marginBottom: spacing.sm,
-  },
-  cardSubtitle: {
-    color: colors.textSecondary,
-    fontSize: 13,
-    marginBottom: spacing.sm,
-  },
-  totalRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  totalColumn: {
-    flex: 1,
-  },
-  tomatoIconSmall: {
-    width: 28,
-    height: 28,
-    marginRight: spacing.xs,
-  },
-  tomatoIconLarge: {
-    width: 48,
-    height: 48,
-    marginRight: spacing.sm,
-  },
-  totalLabel: {
-    color: colors.textSecondary,
-    fontSize: 13,
-    marginBottom: spacing.xs,
-  },
-  totalValue: {
-    color: colors.textPrimary,
-    fontSize: 24,
-    fontWeight: '700',
-  },
-  totalValueRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  focusMetricsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: spacing.md,
-  },
-  focusMetricLabel: {
-    color: colors.textSecondary,
-    fontSize: 12,
-  },
-  focusMetricValue: {
-    color: colors.textPrimary,
-    fontSize: 20,
-    fontWeight: '700',
-  },
-  focusChartRow: {
-    flexDirection: 'row',
-    alignItems: 'stretch',
-    marginTop: spacing.sm,
-  },
-  focusYAxis: {
-    justifyContent: 'space-between',
-    marginRight: spacing.md,
-  },
-  yAxisLabelRow: {
-    flex: 1,
-    justifyContent: 'flex-end',
-  },
-  yAxisLabel: {
-    fontSize: 11,
-    color: colors.textSecondary,
-  },
-  focusBarWrapper: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  focusBarBackground: {
-    width: 36,
-    height: 160,
-    borderRadius: 18,
-    overflow: 'hidden',
-    backgroundColor: colors.background,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
-    flexDirection: 'column',
-  },
-  ratioList: {
-    marginTop: spacing.sm,
-  },
-  ratioRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: spacing.sm,
-  },
-  ratioColorDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    marginRight: spacing.sm,
-  },
-  ratioLabel: {
-    color: colors.textPrimary,
-    fontSize: 14,
-  },
-  ratioSubLabel: {
-    color: colors.textSecondary,
-    fontSize: 12,
-  },
-  pomoStatsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: spacing.md,
-  },
-  pomoStat: {
-    flex: 1,
-  },
-  pomoStatHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  pomoStatLabel: {
-    color: colors.textSecondary,
-    fontSize: 13,
-  },
-  pomoStatValue: {
-    color: colors.textPrimary,
-    fontSize: 22,
-    fontWeight: '700',
-    marginTop: spacing.xs,
-  },
-  tomatoGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginTop: spacing.sm,
-  },
-  tomatoGridIcon: {
-    width: 32,
-    height: 32,
-    margin: 4,
-  },
-});
+function createStyles(colors: ReturnType<typeof useThemeColors>) {
+  return StyleSheet.create({
+    scrollContent: {
+      flexGrow: 1,
+      paddingBottom: spacing.xl,
+    },
+    title: {
+      fontSize: 24,
+      fontWeight: '700',
+      color: colors.textPrimary,
+      marginBottom: spacing.xs,
+    },
+    subtitle: {
+      color: colors.textSecondary,
+      marginBottom: spacing.lg,
+    },
+    section: {
+      marginBottom: spacing.lg,
+    },
+    sectionTitle: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: colors.textPrimary,
+      marginBottom: spacing.sm,
+    },
+    rangeRow: {
+      marginBottom: spacing.sm,
+    },
+    rangeScrollContent: {
+      paddingHorizontal: spacing.xs,
+    },
+    rangePill: {
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.xs,
+      borderRadius: 999,
+      backgroundColor: colors.surface,
+      marginHorizontal: spacing.xs,
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    rangePillActive: {
+      backgroundColor: colors.primary,
+    },
+    rangePillLocked: {
+      opacity: 0.6,
+    },
+    lockIconContainer: {
+      marginLeft: 4,
+    },
+    rangePillLabel: {
+      fontSize: 12,
+      color: colors.textSecondary,
+    },
+    rangePillLabelActive: {
+      color: colors.background,
+    },
+    dateRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      marginBottom: spacing.md,
+    },
+    dateColumn: {
+      flex: 1,
+      marginHorizontal: spacing.xs,
+    },
+    dateLabel: {
+      fontSize: 11,
+      color: colors.textSecondary,
+      marginBottom: 2,
+    },
+    dateValueButton: {
+      borderRadius: 12,
+      backgroundColor: colors.surface,
+      paddingVertical: spacing.sm,
+      paddingHorizontal: spacing.md,
+    },
+    dateValueText: {
+      fontSize: 13,
+      fontWeight: '600',
+      color: colors.textPrimary,
+    },
+    placeholderCard: {
+      borderRadius: 16,
+      padding: spacing.lg,
+      backgroundColor: colors.surface,
+    },
+    placeholderTitle: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: colors.textPrimary,
+      marginBottom: spacing.sm,
+    },
+    placeholderText: {
+      fontSize: 14,
+      color: colors.textSecondary,
+    },
+    emptyText: {
+      color: colors.textSecondary,
+      fontSize: 13,
+      marginTop: spacing.sm,
+    },
+    card: {
+      backgroundColor: colors.surface,
+      borderRadius: 24,
+      paddingVertical: spacing.lg,
+      paddingHorizontal: spacing.lg,
+      marginBottom: spacing.lg,
+      width: '100%',
+      alignSelf: 'stretch',
+    },
+    cardTitle: {
+      fontSize: 18,
+      fontWeight: '700',
+      color: colors.textPrimary,
+      marginBottom: spacing.sm,
+    },
+    cardSubtitle: {
+      color: colors.textSecondary,
+      fontSize: 13,
+      marginBottom: spacing.sm,
+    },
+    totalRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    totalColumn: {
+      flex: 1,
+    },
+    tomatoIconSmall: {
+      width: 28,
+      height: 28,
+      marginRight: spacing.xs,
+    },
+    tomatoIconLarge: {
+      width: 48,
+      height: 48,
+      marginRight: spacing.sm,
+    },
+    totalLabel: {
+      color: colors.textSecondary,
+      fontSize: 13,
+      marginBottom: spacing.xs,
+    },
+    totalValue: {
+      color: colors.textPrimary,
+      fontSize: 24,
+      fontWeight: '700',
+    },
+    totalValueRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    focusMetricsRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      marginBottom: spacing.md,
+    },
+    focusMetricLabel: {
+      color: colors.textSecondary,
+      fontSize: 12,
+    },
+    focusMetricValue: {
+      color: colors.textPrimary,
+      fontSize: 20,
+      fontWeight: '700',
+    },
+    focusChartRow: {
+      flexDirection: 'row',
+      alignItems: 'stretch',
+      marginTop: spacing.sm,
+    },
+    focusYAxis: {
+      justifyContent: 'space-between',
+      marginRight: spacing.md,
+    },
+    yAxisLabelRow: {
+      flex: 1,
+      justifyContent: 'flex-end',
+    },
+    yAxisLabel: {
+      fontSize: 11,
+      color: colors.textSecondary,
+    },
+    focusBarWrapper: {
+      flex: 1,
+      alignItems: 'center',
+    },
+    focusBarBackground: {
+      width: 36,
+      height: 160,
+      borderRadius: 18,
+      overflow: 'hidden',
+      backgroundColor: colors.background,
+      borderWidth: 1,
+      borderColor: colors.border,
+      flexDirection: 'column',
+    },
+    ratioList: {
+      marginTop: spacing.sm,
+    },
+    ratioRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: spacing.sm,
+    },
+    ratioColorDot: {
+      width: 10,
+      height: 10,
+      borderRadius: 5,
+      marginRight: spacing.sm,
+    },
+    ratioLabel: {
+      color: colors.textPrimary,
+      fontSize: 14,
+    },
+    ratioSubLabel: {
+      color: colors.textSecondary,
+      fontSize: 12,
+    },
+    pomoStatsRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      marginBottom: spacing.md,
+    },
+    pomoStat: {
+      flex: 1,
+    },
+    pomoStatHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    pomoStatLabel: {
+      color: colors.textSecondary,
+      fontSize: 13,
+    },
+    pomoStatValue: {
+      color: colors.textPrimary,
+      fontSize: 22,
+      fontWeight: '700',
+      marginTop: spacing.xs,
+    },
+    tomatoGrid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      marginTop: spacing.sm,
+    },
+    tomatoGridIcon: {
+      width: 32,
+      height: 32,
+      margin: 4,
+    },
+  });
+}
