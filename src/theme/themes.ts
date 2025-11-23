@@ -1,4 +1,4 @@
-export type ThemeId = 'dark' | 'forest' | 'ocean' | 'sunset' | 'winter';
+export type ThemeId = 'dark' | 'light' | 'forest' | 'ocean' | 'sunset' | 'winter';
 
 export type AppColors = {
   primary: string;
@@ -20,6 +20,20 @@ type ThemeDefinition = {
 };
 
 const THEMES: Record<ThemeId, ThemeDefinition> = {
+  light: {
+    id: 'light',
+    name: 'Light',
+    colors: {
+      primary: '#E05255',
+      accent: '#1E88E5',
+      background: '#F7F8FB',
+      surface: '#FFFFFF',
+      textPrimary: '#0F172A',
+      textSecondary: '#475569',
+      border: 'rgba(15, 23, 42, 0.12)',
+    },
+    previewColors: ['#FFFFFF', '#F7F8FB', '#E05255'],
+  },
   dark: {
     id: 'dark',
     name: 'Midnight',
