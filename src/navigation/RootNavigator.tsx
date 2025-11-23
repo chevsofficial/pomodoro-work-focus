@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { NavigatorScreenParams, RouteProp } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
+import { StyleSheet } from 'react-native';
 import { AnalyticsScreen } from '../screens/AnalyticsScreen';
 import { InfoScreen } from '../screens/InfoScreen';
 import { PomodoroScreen } from '../screens/PomodoroScreen';
@@ -10,7 +11,7 @@ import { SettingsScreen } from '../screens/SettingsScreen';
 import { TasksScreen } from '../screens/TasksScreen';
 import { TaskDetailScreen } from '../screens/TaskDetailScreen';
 import { PaywallScreen } from '../screens/PaywallScreen';
-import { colors } from '../theme/colors';
+import { useThemeColors } from '../theme/useThemeColors';
 
 export type RootTabParamList = {
   Tasks: undefined;
@@ -37,6 +38,9 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 const AnyStackNavigator = Stack.Navigator as any;
 
 function TabNavigator() {
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   return (
     <AnyTabNavigator
       screenOptions={({
@@ -45,12 +49,12 @@ function TabNavigator() {
         route: RouteProp<RootTabParamList, keyof RootTabParamList>;
       }) => ({
         headerShown: false,
-        headerStyle: { backgroundColor: colors.surface },
+        headerStyle: styles.header,
         headerTintColor: colors.textPrimary,
-        tabBarStyle: { backgroundColor: colors.surface },
+        tabBarStyle: styles.tabBar,
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textSecondary,
-        tabBarLabelStyle: { fontSize: 12, fontWeight: '500' },
+        tabBarLabelStyle: styles.tabLabel,
         tabBarIcon: ({
           focused,
           color,
@@ -98,12 +102,15 @@ function TabNavigator() {
 }
 
 export function RootNavigator() {
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   return (
     <AnyStackNavigator
       screenOptions={{
-        headerStyle: { backgroundColor: colors.surface },
+        headerStyle: styles.header,
         headerTintColor: colors.textPrimary,
-        contentStyle: { backgroundColor: colors.background },
+        contentStyle: styles.stackContent,
       }}
     >
       <Stack.Screen
@@ -127,4 +134,13 @@ export function RootNavigator() {
       />
     </AnyStackNavigator>
   );
+}
+
+function createStyles(colors: ReturnType<typeof useThemeColors>) {
+  return StyleSheet.create({
+    header: { backgroundColor: colors.surface },
+    tabBar: { backgroundColor: colors.surface },
+    tabLabel: { fontSize: 12, fontWeight: '500' },
+    stackContent: { backgroundColor: colors.background },
+  });
 }
