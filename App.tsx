@@ -6,6 +6,7 @@ import { StatusBar } from 'expo-status-bar';
 import { RootNavigator } from './src/navigation/RootNavigator';
 import type { RootStackParamList } from './src/navigation/RootNavigator';
 import { colors } from './src/theme/colors';
+import { ThemeProvider } from './src/theme/ThemeProvider';
 import { useSettings } from './src/store/appStore';
 import { initializeNotifications, requestNotificationPermissions } from './src/utils/notificationService';
 
@@ -43,10 +44,12 @@ const App: React.FC = () => {
 
   return (
     <SafeAreaProvider>
-      <NavigationContainer theme={navigationTheme}>
-        <StatusBar style="light" />
-        <RootNavigator />
-      </NavigationContainer>
+      <ThemeProvider>
+        <NavigationContainer theme={navigationTheme}>
+          <StatusBar style="light" />
+          <RootNavigator />
+        </NavigationContainer>
+      </ThemeProvider>
     </SafeAreaProvider>
   );
 };
