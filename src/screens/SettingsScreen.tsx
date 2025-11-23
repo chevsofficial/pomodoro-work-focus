@@ -18,6 +18,11 @@ import { ActivityType, PomodoroSettings } from '../models';
 import useAppStore, { useActivityTypes, useEffectiveSettings, useIsPro } from '../store/appStore';
 import { spacing } from '../theme/spacing';
 import { useThemeColors } from '../theme/useThemeColors';
+import {
+  ACTIVITY_COLORS,
+  DEFAULT_ACTIVITY_COLOR,
+  FREE_COLOR_KEYS,
+} from '../theme/activityColors';
 import { FREE_ACTIVITY_TYPE_LIMIT } from '../config/proFeatures';
 import { requestNotificationPermissions } from '../utils/notificationService';
 import { playIntervalEndSound } from '../utils/soundService';
@@ -36,19 +41,6 @@ const SOUND_OPTIONS = [
   { key: 'chime2', label: 'Chime 2' },
   { key: 'chime3', label: 'Chime 3' },
 ];
-
-const ACTIVITY_COLORS = [
-  { key: 'red', label: 'Red', value: '#FF5A5F' },
-  { key: 'green', label: 'Green', value: '#4CAF50' },
-  { key: 'blue', label: 'Blue', value: '#2196F3' },
-  { key: 'yellow', label: 'Yellow', value: '#FFC107' },
-  { key: 'purple', label: 'Purple', value: '#9C27B0' },
-  { key: 'orange', label: 'Orange', value: '#FF9800' },
-];
-
-const FREE_COLOR_KEYS = ['red', 'green'];
-
-const DEFAULT_ACTIVITY_COLOR = ACTIVITY_COLORS[0].value;
 
 type SettingsStyles = ReturnType<typeof createStyles>;
 
@@ -315,7 +307,7 @@ const ActivityTypeModal: React.FC<ActivityTypeModalProps> = ({
               <Text style={styles.modalSubLabel}>Hex color code (Pro)</Text>
               <TextInput
                 style={styles.input}
-                placeholder="#FF5A5F"
+                placeholder={DEFAULT_ACTIVITY_COLOR}
                 placeholderTextColor={colors.textSecondary}
                 value={formValues.color}
                 onChangeText={(text) => handleChange('color', text)}
@@ -868,7 +860,7 @@ function createStyles(colors: ReturnType<typeof useThemeColors>) {
   },
   modalBackdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.6)',
+    backgroundColor: `${colors.background}99`,
     justifyContent: 'center',
     alignItems: 'center',
     padding: spacing.lg,
@@ -938,7 +930,7 @@ function createStyles(colors: ReturnType<typeof useThemeColors>) {
     height: 32,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.3)',
+    borderColor: `${colors.textPrimary}4d`,
     alignItems: 'center',
     justifyContent: 'center',
   },
