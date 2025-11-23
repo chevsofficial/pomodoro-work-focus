@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useNavigation } from '@react-navigation/native';
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   Alert,
   Linking,
@@ -19,8 +19,8 @@ import { APP_LINKS } from '../config/links';
 import { RootStackParamList } from '../navigation/RootNavigator';
 import { navigateToProUpsell } from '../navigation/proNavigation';
 import useAppStore, { STORAGE_KEY, useIsPro, useProStatus } from '../store/appStore';
-import { colors } from '../theme/colors';
 import { spacing } from '../theme/spacing';
+import { useThemeColors } from '../theme/useThemeColors';
 
 type InfoItem = {
   title: string;
@@ -33,37 +33,35 @@ type InfoSection = {
   items: InfoItem[];
 };
 
-const InfoRow: React.FC<InfoItem & { isLast?: boolean }> = ({
-  title,
-  description,
-  onPress,
-  isLast,
-}) => {
-  return (
-    <TouchableOpacity
-      style={[styles.row, !isLast && styles.rowDivider]}
-      onPress={onPress}
-    >
-      <View style={styles.rowText}>
-        <Text style={styles.rowTitle}>{title}</Text>
-        {description ? <Text style={styles.rowDescription}>{description}</Text> : null}
-      </View>
-      <Text style={styles.rowAction}>›</Text>
-    </TouchableOpacity>
-  );
-};
-
-// Relax typing so we can safely pass `key` in JSX without TS complaining
-const AnyInfoRow = InfoRow as any;
-const AnyView = View as any;
-
 export const InfoScreen: React.FC = () => {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const colors = useThemeColors();
   const setProStatus = useAppStore((state) => state.setProStatus);
   const proStatus = useProStatus();
   const isPro = useIsPro();
   const [isRedeemModalVisible, setRedeemModalVisible] = useState(false);
   const [redeemCode, setRedeemCode] = useState('');
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
+  const InfoRow: React.FC<InfoItem & { isLast?: boolean }> = ({
+    title,
+    description,
+    onPress,
+    isLast,
+  }) => {
+    return (
+      <TouchableOpacity
+        style={[styles.row, !isLast && styles.rowDivider]}
+        onPress={onPress}
+      >
+        <View style={styles.rowText}>
+          <Text style={styles.rowTitle}>{title}</Text>
+          {description ? <Text style={styles.rowDescription}>{description}</Text> : null}
+        </View>
+        <Text style={styles.rowAction}>›</Text>
+      </TouchableOpacity>
+    );
+  };
 
   const rateUrl =
     Platform.select({
@@ -212,11 +210,11 @@ export const InfoScreen: React.FC = () => {
         </Text>
 
         {sections.map((section) => (
-          <AnyView key={section.title} style={styles.section}>
+          <View key={section.title} style={styles.section}>
             <Text style={styles.sectionLabel}>{section.title}</Text>
             <View style={styles.card}>
               {section.items.map((item, index) => (
-                <AnyInfoRow
+                <InfoRow
                   key={item.title}
                   title={item.title}
                   description={item.description}
@@ -225,7 +223,7 @@ export const InfoScreen: React.FC = () => {
                 />
               ))}
             </View>
-          </AnyView>
+          </View>
         ))}
 
         <View style={styles.upgradeCard}>
@@ -289,187 +287,189 @@ export const InfoScreen: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
-  scrollContent: {
-    paddingBottom: spacing.xl,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: colors.textPrimary,
-    marginBottom: spacing.xs,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: colors.textSecondary,
-    marginBottom: spacing.lg,
-  },
-  section: {
-    marginBottom: spacing.xl,
-  },
-  sectionLabel: {
-    fontSize: 13,
-    fontWeight: '600',
-    textTransform: 'uppercase',
-    color: colors.textSecondary,
-    marginBottom: spacing.sm,
-    letterSpacing: 0.6,
-  },
-  card: {
-    borderRadius: 16,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-  },
-  rowDivider: {
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
-  },
-  rowText: {
-    flex: 1,
-  },
-  rowTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.textPrimary,
-  },
-  rowDescription: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    marginTop: spacing.xs,
-  },
-  rowAction: {
-    fontSize: 20,
-    color: colors.textSecondary,
-    marginLeft: spacing.sm,
-  },
-  upgradeCard: {
-    backgroundColor: colors.surface,
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: spacing.lg,
-  },
-  upgradeTextWrapper: {
-    marginBottom: spacing.md,
-  },
-  upgradeTitle: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: colors.textPrimary,
-    marginBottom: spacing.xs,
-  },
-  upgradeDescription: {
-    fontSize: 15,
-    color: colors.textSecondary,
-    lineHeight: 22,
-  },
-  upgradeButton: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
-    borderRadius: 999,
-    backgroundColor: colors.primary,
-  },
-  upgradeButtonText: {
-    color: colors.textPrimary,
-    fontWeight: '600',
-    fontSize: 15,
-    textTransform: 'uppercase',
-  },
-  debugCard: {
-    marginTop: spacing.xl,
-    padding: spacing.lg,
-    borderRadius: 12,
-    backgroundColor: '#333',
-  },
-  debugTitle: {
-    color: 'white',
-    fontWeight: '700',
-    marginBottom: spacing.xs,
-  },
-  debugText: {
-    color: 'white',
-    marginBottom: spacing.xs,
-  },
-  clearButton: {
-    marginTop: spacing.sm,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-    borderRadius: 8,
-    backgroundColor: '#902222',
-    alignSelf: 'flex-start',
-  },
-  clearButtonText: {
-    color: 'white',
-    fontWeight: '700',
-  },
-  modalBackdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: spacing.lg,
-  },
-  modalCard: {
-    width: '100%',
-    backgroundColor: colors.surface,
-    borderRadius: 16,
-    padding: spacing.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: colors.textPrimary,
-    marginBottom: spacing.xs,
-  },
-  modalDescription: {
-    fontSize: 15,
-    color: colors.textSecondary,
-    marginBottom: spacing.md,
-  },
-  modalInput: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 12,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    color: colors.textPrimary,
-    fontSize: 16,
-    marginBottom: spacing.lg,
-  },
-  modalActions: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-  },
-  modalSecondaryButton: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-  },
-  modalSecondaryButtonText: {
-    color: colors.textSecondary,
-    fontWeight: '600',
-    fontSize: 15,
-  },
-  modalPrimaryButton: {
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
-    borderRadius: 999,
-    backgroundColor: colors.primary,
-    marginLeft: spacing.sm,
-  },
-  modalPrimaryButtonText: {
-    color: colors.textPrimary,
-    fontWeight: '700',
-    fontSize: 15,
-    textTransform: 'uppercase',
-  },
-});
+function createStyles(colors: ReturnType<typeof useThemeColors>) {
+  return StyleSheet.create({
+    scrollContent: {
+      paddingBottom: spacing.xl,
+    },
+    title: {
+      fontSize: 28,
+      fontWeight: '700',
+      color: colors.textPrimary,
+      marginBottom: spacing.xs,
+    },
+    subtitle: {
+      fontSize: 16,
+      color: colors.textSecondary,
+      marginBottom: spacing.lg,
+    },
+    section: {
+      marginBottom: spacing.xl,
+    },
+    sectionLabel: {
+      fontSize: 13,
+      fontWeight: '600',
+      textTransform: 'uppercase',
+      color: colors.textSecondary,
+      marginBottom: spacing.sm,
+      letterSpacing: 0.6,
+    },
+    card: {
+      borderRadius: 16,
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    row: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.md,
+    },
+    rowDivider: {
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: colors.border,
+    },
+    rowText: {
+      flex: 1,
+    },
+    rowTitle: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: colors.textPrimary,
+    },
+    rowDescription: {
+      fontSize: 14,
+      color: colors.textSecondary,
+      marginTop: spacing.xs,
+    },
+    rowAction: {
+      fontSize: 20,
+      color: colors.textSecondary,
+      marginLeft: spacing.sm,
+    },
+    upgradeCard: {
+      backgroundColor: colors.surface,
+      borderRadius: 18,
+      borderWidth: 1,
+      borderColor: colors.border,
+      padding: spacing.lg,
+    },
+    upgradeTextWrapper: {
+      marginBottom: spacing.md,
+    },
+    upgradeTitle: {
+      fontSize: 22,
+      fontWeight: '700',
+      color: colors.textPrimary,
+      marginBottom: spacing.xs,
+    },
+    upgradeDescription: {
+      fontSize: 15,
+      color: colors.textSecondary,
+      lineHeight: 22,
+    },
+    upgradeButton: {
+      alignSelf: 'flex-start',
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.sm,
+      borderRadius: 999,
+      backgroundColor: colors.primary,
+    },
+    upgradeButtonText: {
+      color: colors.textPrimary,
+      fontWeight: '600',
+      fontSize: 15,
+      textTransform: 'uppercase',
+    },
+    debugCard: {
+      marginTop: spacing.xl,
+      padding: spacing.lg,
+      borderRadius: 12,
+      backgroundColor: colors.surface,
+    },
+    debugTitle: {
+      color: colors.textPrimary,
+      fontWeight: '700',
+      marginBottom: spacing.xs,
+    },
+    debugText: {
+      color: colors.textSecondary,
+      marginBottom: spacing.xs,
+    },
+    clearButton: {
+      marginTop: spacing.sm,
+      paddingVertical: spacing.sm,
+      paddingHorizontal: spacing.md,
+      borderRadius: 8,
+      backgroundColor: colors.primary,
+      alignSelf: 'flex-start',
+    },
+    clearButtonText: {
+      color: colors.textPrimary,
+      fontWeight: '700',
+    },
+    modalBackdrop: {
+      flex: 1,
+      backgroundColor: `${colors.background}CC`,
+      justifyContent: 'center',
+      alignItems: 'center',
+      padding: spacing.lg,
+    },
+    modalCard: {
+      width: '100%',
+      backgroundColor: colors.surface,
+      borderRadius: 16,
+      padding: spacing.lg,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    modalTitle: {
+      fontSize: 20,
+      fontWeight: '700',
+      color: colors.textPrimary,
+      marginBottom: spacing.xs,
+    },
+    modalDescription: {
+      fontSize: 15,
+      color: colors.textSecondary,
+      marginBottom: spacing.md,
+    },
+    modalInput: {
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 12,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+      color: colors.textPrimary,
+      fontSize: 16,
+      marginBottom: spacing.lg,
+    },
+    modalActions: {
+      flexDirection: 'row',
+      justifyContent: 'flex-end',
+    },
+    modalSecondaryButton: {
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+    },
+    modalSecondaryButtonText: {
+      color: colors.textSecondary,
+      fontWeight: '600',
+      fontSize: 15,
+    },
+    modalPrimaryButton: {
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.sm,
+      borderRadius: 999,
+      backgroundColor: colors.primary,
+      marginLeft: spacing.sm,
+    },
+    modalPrimaryButtonText: {
+      color: colors.textPrimary,
+      fontWeight: '700',
+      fontSize: 15,
+      textTransform: 'uppercase',
+    },
+  });
+}
