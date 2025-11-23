@@ -17,7 +17,7 @@ import { navigateToProUpsell } from '../navigation/proNavigation';
 import { ActivityType, PomodoroSettings } from '../models';
 import useAppStore, { useActivityTypes, useEffectiveSettings, useIsPro } from '../store/appStore';
 import { spacing } from '../theme/spacing';
-import { useThemeColors } from '../theme/useThemeColors';
+import { THEMES, ThemeId, useThemeColors } from '../theme/useThemeColors';
 import {
   ACTIVITY_COLORS,
   DEFAULT_ACTIVITY_COLOR,
@@ -393,6 +393,7 @@ type NumericSettingKey =
 
 export const SettingsScreen: React.FC = () => {
   const settings = useEffectiveSettings();
+  const storeSettings = useAppStore((state) => state.settings);
   const activityTypes = useActivityTypes();
   const isPro = useIsPro();
   const updateSettings = useAppStore((state) => state.updateSettings);
@@ -403,6 +404,7 @@ export const SettingsScreen: React.FC = () => {
   const colors = useThemeColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const goToPro = () => navigateToProUpsell(navigation);
+  const currentThemeId: ThemeId = storeSettings.themeId ?? 'dark';
   const handleUpgradePress = () => {
     goToPro();
   };
@@ -483,6 +485,15 @@ export const SettingsScreen: React.FC = () => {
     updateSettings({ notificationsEnabled: enabled });
   };
 
+  const handleSelectTheme = (themeId: ThemeId) => {
+    if (THEMES[themeId].isProOnly && !isPro) {
+      navigateToProUpsell(navigation);
+      return;
+    }
+
+    updateSettings({ themeId });
+  };
+
   const [isModalVisible, setModalVisible] = useState(false);
   const [editingType, setEditingType] = useState<ActivityType | undefined>(undefined);
 
@@ -534,6 +545,36 @@ export const SettingsScreen: React.FC = () => {
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <Text style={styles.title}>Settings</Text>
         <Text style={styles.subtitle}>Customize your Pomodoro workflow.</Text>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Themes</Text>
+          {Object.values(THEMES).map((theme) => {
+            const isSelected = currentThemeId === theme.id;
+            return (
+              <TouchableOpacity
+                key={theme.id}
+                style={[styles.themeOption, isSelected && styles.themeOptionSelected]}
+                onPress={() => handleSelectTheme(theme.id)}
+              >
+                <View style={styles.themeHeader}>
+                  <Text style={styles.themeName}>
+                    {theme.name}
+                    {theme.isSeasonal ? ' 🎄' : ''}
+                  </Text>
+                  {theme.isProOnly && <Text style={styles.themeLockLabel}>Pro</Text>}
+                </View>
+                <View style={styles.themePreviewRow}>
+                  {theme.previewColors.map((color, index) => (
+                    <View
+                      key={`${theme.id}-${color}-${index}`}
+                      style={[styles.themePreviewSwatch, { backgroundColor: color }]}
+                    />
+                  ))}
+                </View>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Durations</Text>
@@ -705,6 +746,45 @@ function createStyles(colors: ReturnType<typeof useThemeColors>) {
     borderRadius: 16,
     padding: spacing.lg,
     marginBottom: spacing.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  themeOption: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 12,
+    padding: spacing.md,
+    marginBottom: spacing.sm,
+    backgroundColor: colors.background,
+  },
+  themeOptionSelected: {
+    borderColor: colors.primary,
+  },
+  themeHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.sm,
+  },
+  themeName: {
+    color: colors.textPrimary,
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  themeLockLabel: {
+    color: '#FF5A5F',
+    fontWeight: '700',
+    fontSize: 12,
+  },
+  themePreviewRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  themePreviewSwatch: {
+    width: 36,
+    height: 16,
+    borderRadius: 8,
+    marginRight: spacing.xs,
     borderWidth: 1,
     borderColor: colors.border,
   },
