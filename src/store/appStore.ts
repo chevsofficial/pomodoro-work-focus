@@ -207,43 +207,61 @@ const getWeekStartKey = (date: Date): string => {
   return d.toISOString().slice(0, 10);
 };
 
+const normalizeFreezeUsage = (
+  prev: StreakState,
+  referenceIso: string,
+): StreakState => {
+  const thisWeekStartKey = getWeekStartKey(new Date(referenceIso));
+
+  if (prev.lastFreezeWeekStart && prev.lastFreezeWeekStart === thisWeekStartKey) {
+    return prev;
+  }
+
+  return {
+    ...prev,
+    freezeUsesThisWeek: 0,
+    lastFreezeWeekStart: thisWeekStartKey,
+  };
+};
+
 const computeStreakAfterCompletion = (
   prev: StreakState,
   completedAtIso: string,
   isPro: boolean,
 ): StreakState => {
   const dayKey = toDateKey(completedAtIso);
+  const normalizedPrev = normalizeFreezeUsage(prev, completedAtIso);
 
-  if (prev.lastActiveDate === dayKey) {
-    return prev;
+  if (normalizedPrev.lastActiveDate === dayKey) {
+    return normalizedPrev;
   }
 
-  if (!prev.lastActiveDate) {
+  if (!normalizedPrev.lastActiveDate) {
     const currentStreak = 1;
     return {
-      ...prev,
+      ...normalizedPrev,
       currentStreak,
-      bestStreak: Math.max(prev.bestStreak, currentStreak),
+      bestStreak: Math.max(normalizedPrev.bestStreak, currentStreak),
       lastActiveDate: dayKey,
     };
   }
 
-  const gapDays = differenceInDays(prev.lastActiveDate, dayKey);
+  const gapDays = differenceInDays(normalizedPrev.lastActiveDate, dayKey);
 
   if (gapDays === 1) {
-    const currentStreak = prev.currentStreak + 1;
+    const currentStreak = normalizedPrev.currentStreak + 1;
     return {
-      ...prev,
+      ...normalizedPrev,
       currentStreak,
-      bestStreak: Math.max(prev.bestStreak, currentStreak),
+      bestStreak: Math.max(normalizedPrev.bestStreak, currentStreak),
       lastActiveDate: dayKey,
     };
   }
 
   let currentStreak = 1;
-  let frozenDates = prev.frozenDates;
-  let freezeUsesThisWeek = prev.freezeUsesThisWeek;
-  let lastFreezeWeekStart = prev.lastFreezeWeekStart;
+  let frozenDates = normalizedPrev.frozenDates;
+  let freezeUsesThisWeek = normalizedPrev.freezeUsesThisWeek;
+  let lastFreezeWeekStart = normalizedPrev.lastFreezeWeekStart;
 
   if (gapDays === 2 && isPro) {
     const now = new Date(completedAtIso);
@@ -255,20 +273,20 @@ const computeStreakAfterCompletion = (
     }
 
     if (freezeUsesThisWeek < 1) {
-      const missingDate = new Date(prev.lastActiveDate);
+      const missingDate = new Date(normalizedPrev.lastActiveDate);
       missingDate.setDate(missingDate.getDate() + 1);
       const missingKey = missingDate.toISOString().slice(0, 10);
 
-      currentStreak = prev.currentStreak + 1;
+      currentStreak = normalizedPrev.currentStreak + 1;
       frozenDates = [...frozenDates, missingKey];
       freezeUsesThisWeek += 1;
     }
   }
 
-  const bestStreak = Math.max(prev.bestStreak, currentStreak);
+  const bestStreak = Math.max(normalizedPrev.bestStreak, currentStreak);
 
   return {
-    ...prev,
+    ...normalizedPrev,
     currentStreak,
     bestStreak,
     lastActiveDate: dayKey,
@@ -301,7 +319,10 @@ const useAppStore = create<AppStore>((set, get) => {
         set((state) => {
           const nextProStatus = parsed.proStatus ? { ...state.proStatus, ...parsed.proStatus } : state.proStatus;
           const nextSettings = { ...state.settings, ...(parsed.settings ?? {}) };
-          const nextStreak = parsed.streak ? { ...defaultStreakState, ...parsed.streak } : { ...defaultStreakState };
+          const hydratedStreak = parsed.streak
+            ? { ...defaultStreakState, ...parsed.streak }
+            : { ...defaultStreakState };
+          const nextStreak = normalizeFreezeUsage(hydratedStreak, nowIso());
 
           return {
             ...state,
