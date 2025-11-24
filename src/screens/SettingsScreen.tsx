@@ -493,15 +493,6 @@ export const SettingsScreen: React.FC = () => {
     updateSettings({ notificationsEnabled: enabled });
   };
 
-  const handleSelectTheme = (themeId: ThemeId) => {
-    if (THEMES[themeId].isProOnly && !isPro) {
-      navigateToProUpsell(navigation);
-      return;
-    }
-
-    updateSettings({ themeId });
-  };
-
   const [isModalVisible, setModalVisible] = useState(false);
   const [isThemeModalVisible, setThemeModalVisible] = useState(false);
   const [editingType, setEditingType] = useState<ActivityType | undefined>(undefined);
@@ -687,7 +678,12 @@ export const SettingsScreen: React.FC = () => {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>App Theme</Text>
 
-          <TouchableOpacity style={styles.themeRow} onPress={() => setThemeModalVisible(true)}>
+          <TouchableOpacity
+            style={styles.themeRow}
+            onPress={() => {
+              setThemeModalVisible(true);
+            }}
+          >
             <View>
               <Text style={styles.themeRowTitle}>Theme</Text>
               <Text style={styles.themeRowValue}>{currentThemeName}</Text>
@@ -743,10 +739,16 @@ export const SettingsScreen: React.FC = () => {
                     key={theme.id}
                     style={[styles.themeOption, isSelected && styles.themeOptionSelected]}
                     onPress={() => {
-                      handleSelectTheme(theme.id);
-                      if (!isLocked) {
+                      const isLocked = theme.isProOnly && !isPro;
+
+                      if (isLocked) {
                         setThemeModalVisible(false);
+                        navigateToProUpsell(navigation);
+                        return;
                       }
+
+                      updateSettings({ themeId: theme.id });
+                      setThemeModalVisible(false);
                     }}
                   >
                     <View
