@@ -55,10 +55,20 @@ export interface ProStatus {
   source?: 'purchase' | 'code' | 'promo';
 }
 
+export interface StreakState {
+  currentStreak: number;
+  bestStreak: number;
+  lastActiveDate?: string;
+  frozenDates: string[];
+  lastFreezeWeekStart?: string;
+  freezeUsesThisWeek: number;
+}
+
 export interface AppStateSnapshot {
   tasks: Task[];
   intervals: IntervalSession[];
   activityTypes: ActivityType[];
   settings: PomodoroSettings;
   proStatus: ProStatus;
+  streak: StreakState;
 }
