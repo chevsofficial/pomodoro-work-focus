@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import useAppStore, { useIsPro } from '../store/appStore';
 import { THEMES } from './themes';
 
@@ -9,16 +9,26 @@ type ThemeProviderProps = {
 };
 
 export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
-  const themeId = useAppStore((state) => state.settings.themeId);
+  const settings = useAppStore((state) => state.settings);
   const updateSettings = useAppStore((state) => state.updateSettings);
   const isPro = useIsPro();
 
-  useEffect(() => {
-    const requestedTheme = themeId ? THEMES[themeId] : undefined;
-    if (!isPro && requestedTheme?.isProOnly) {
-      updateSettings({ themeId: FALLBACK_THEME_ID });
+  const theme = useMemo(() => {
+    const requestedId = settings.themeId ?? FALLBACK_THEME_ID;
+    const requested = THEMES[requestedId] ?? THEMES[FALLBACK_THEME_ID];
+
+    if (!isPro && requested.isProOnly) {
+      return THEMES[FALLBACK_THEME_ID];
     }
-  }, [isPro, themeId, updateSettings]);
+
+    return requested;
+  }, [settings.themeId, isPro]);
+
+  useEffect(() => {
+    if (settings.themeId && theme.id !== settings.themeId) {
+      updateSettings({ themeId: theme.id });
+    }
+  }, [settings.themeId, theme.id, updateSettings]);
 
   return <>{children}</>;
 };
