@@ -404,6 +404,15 @@ export const SettingsScreen: React.FC = () => {
   const styles = useMemo(() => createStyles(colors), [colors]);
   const goToPro = () => navigateToProUpsell(navigation);
   const currentThemeId: ThemeId = storeSettings.themeId ?? 'dark';
+  const currentTheme = useMemo(() => {
+    const requested = THEMES[currentThemeId] ?? THEMES.dark;
+    if (!isPro && requested.isProOnly) {
+      return THEMES.dark;
+    }
+
+    return requested;
+  }, [currentThemeId, isPro]);
+  const currentThemeName = currentTheme.name;
   const handleUpgradePress = () => {
     goToPro();
   };
@@ -494,6 +503,7 @@ export const SettingsScreen: React.FC = () => {
   };
 
   const [isModalVisible, setModalVisible] = useState(false);
+  const [isThemeModalVisible, setThemeModalVisible] = useState(false);
   const [editingType, setEditingType] = useState<ActivityType | undefined>(undefined);
 
   const durationDefaults = useMemo(
@@ -544,36 +554,6 @@ export const SettingsScreen: React.FC = () => {
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <Text style={styles.title}>Settings</Text>
         <Text style={styles.subtitle}>Customize your Pomodoro workflow.</Text>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Themes</Text>
-          {Object.values(THEMES).map((theme) => {
-            const isSelected = currentThemeId === theme.id;
-            return (
-              <TouchableOpacity
-                key={theme.id}
-                style={[styles.themeOption, isSelected && styles.themeOptionSelected]}
-                onPress={() => handleSelectTheme(theme.id)}
-              >
-                <View style={styles.themeHeader}>
-                  <Text style={styles.themeName}>
-                    {theme.name}
-                    {theme.isSeasonal ? ' 🎄' : ''}
-                  </Text>
-                  {theme.isProOnly && <Text style={styles.themeLockLabel}>Pro</Text>}
-                </View>
-                <View style={styles.themePreviewRow}>
-                  {theme.previewColors.map((color, index) => (
-                    <View
-                      key={`${theme.id}-${color}-${index}`}
-                      style={[styles.themePreviewSwatch, { backgroundColor: color }]}
-                    />
-                  ))}
-                </View>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Durations</Text>
@@ -704,6 +684,24 @@ export const SettingsScreen: React.FC = () => {
           ))}
         </View>
 
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>App Theme</Text>
+
+          <TouchableOpacity style={styles.themeRow} onPress={() => setThemeModalVisible(true)}>
+            <View>
+              <Text style={styles.themeRowTitle}>Theme</Text>
+              <Text style={styles.themeRowValue}>{currentThemeName}</Text>
+            </View>
+
+            <View style={styles.themeRowPreview}>
+              <View
+                style={[styles.themeRowColorDot, { backgroundColor: currentTheme.colors.primary }]}
+              />
+              <View style={[styles.themeRowColorDot, { backgroundColor: currentTheme.colors.accent }]} />
+            </View>
+          </TouchableOpacity>
+        </View>
+
         <TouchableOpacity style={styles.upgradeButton} onPress={handleUpgradePress}>
           <Text style={styles.upgradeText}>Upgrade to Pro</Text>
         </TouchableOpacity>
@@ -720,6 +718,78 @@ export const SettingsScreen: React.FC = () => {
         colors={colors}
         styles={styles}
       />
+
+      <Modal
+        visible={isThemeModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setThemeModalVisible(false)}
+      >
+        <TouchableOpacity
+          activeOpacity={1}
+          style={styles.themeModalBackdrop}
+          onPress={() => setThemeModalVisible(false)}
+        >
+          <View style={styles.themeModalCard}>
+            <Text style={styles.themeModalTitle}>Choose a theme</Text>
+
+            <ScrollView style={styles.themeModalList}>
+              {Object.values(THEMES).map((theme) => {
+                const isSelected = theme.id === currentTheme.id;
+                const isLocked = theme.isProOnly && !isPro;
+
+                return (
+                  <TouchableOpacity
+                    key={theme.id}
+                    style={[styles.themeOption, isSelected && styles.themeOptionSelected]}
+                    onPress={() => {
+                      handleSelectTheme(theme.id);
+                      if (!isLocked) {
+                        setThemeModalVisible(false);
+                      }
+                    }}
+                  >
+                    <View
+                      style={[
+                        styles.themePreview,
+                        {
+                          backgroundColor: theme.colors.surface,
+                          borderColor: theme.colors.border,
+                        },
+                      ]}
+                    >
+                      <View
+                        style={{
+                          flex: 1,
+                          borderRadius: 6,
+                          backgroundColor: theme.colors.primary,
+                          marginBottom: 2,
+                        }}
+                      />
+                      <View
+                        style={{
+                          flex: 1,
+                          borderRadius: 6,
+                          backgroundColor: theme.colors.accent,
+                        }}
+                      />
+                    </View>
+
+                    <View style={styles.themeTextContainer}>
+                      <Text style={styles.themeName}>
+                        {theme.name}
+                        {theme.isSeasonal ? ' 🎄' : ''}
+                      </Text>
+
+                      {isLocked && <Text style={styles.themeLockLabel}>Pro</Text>}
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </ScreenContainer>
   );
 };
@@ -745,45 +815,6 @@ function createStyles(colors: ReturnType<typeof useThemeColors>) {
     borderRadius: 16,
     padding: spacing.lg,
     marginBottom: spacing.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  themeOption: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 12,
-    padding: spacing.md,
-    marginBottom: spacing.sm,
-    backgroundColor: colors.background,
-  },
-  themeOptionSelected: {
-    borderColor: colors.primary,
-  },
-  themeHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: spacing.sm,
-  },
-  themeName: {
-    color: colors.textPrimary,
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  themeLockLabel: {
-    color: '#FF5A5F',
-    fontWeight: '700',
-    fontSize: 12,
-  },
-  themePreviewRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  themePreviewSwatch: {
-    width: 36,
-    height: 16,
-    borderRadius: 8,
-    marginRight: spacing.xs,
     borderWidth: 1,
     borderColor: colors.border,
   },
@@ -942,6 +973,97 @@ function createStyles(colors: ReturnType<typeof useThemeColors>) {
     color: colors.textPrimary,
     fontSize: 16,
     fontWeight: '700',
+  },
+  themeRow: {
+    borderRadius: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.background,
+  },
+  themeRowTitle: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: colors.textSecondary,
+  },
+  themeRowValue: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: colors.textPrimary,
+  },
+  themeRowPreview: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  themeRowColorDot: {
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    marginLeft: 6,
+  },
+  themeModalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    paddingHorizontal: 20,
+  },
+  themeModalCard: {
+    borderRadius: 18,
+    padding: 16,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    maxHeight: '70%',
+  },
+  themeModalTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 12,
+    color: colors.textPrimary,
+  },
+  themeModalList: {
+    maxHeight: '100%',
+  },
+  themeOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    borderRadius: 12,
+    marginBottom: 6,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.background,
+  },
+  themeOptionSelected: {
+    borderColor: colors.primary,
+  },
+  themePreview: {
+    width: 40,
+    height: 24,
+    borderRadius: 8,
+    borderWidth: 1,
+    marginRight: 10,
+    overflow: 'hidden',
+  },
+  themeTextContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  themeName: {
+    color: colors.textPrimary,
+    fontWeight: '600',
+  },
+  themeLockLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#FF5A5F',
   },
   modalBackdrop: {
     flex: 1,
