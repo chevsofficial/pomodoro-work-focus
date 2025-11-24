@@ -11,6 +11,7 @@ import { IntervalSession } from '../models';
 import useAppStore, {
   useAnalyticsMinDate,
   useIsPro,
+  useStreak,
 } from '../store/appStore';
 import { spacing } from '../theme/spacing';
 import { useThemeColors } from '../theme/useThemeColors';
@@ -169,6 +170,7 @@ export const AnalyticsScreen: React.FC = () => {
 
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const isPro = useIsPro();
+  const streak = useStreak();
   const analyticsMinDate = useAnalyticsMinDate();
   const intervals = useAppStore((state) => state.intervals);
   const tasks = useAppStore((state) => state.tasks);
@@ -176,6 +178,10 @@ export const AnalyticsScreen: React.FC = () => {
   const colors = useThemeColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const defaultActivityColor = colors.textSecondary;
+
+  const freezeUsesLeftThisWeek = isPro
+    ? Math.max(0, 1 - (streak.freezeUsesThisWeek ?? 0))
+    : 0;
 
   const handleSelectRange = (key: AnalyticsRangeKey) => {
     if (!isPro && PRO_ONLY_RANGE_KEYS.includes(key)) {
@@ -344,6 +350,37 @@ export const AnalyticsScreen: React.FC = () => {
         <Text style={styles.subtitle}>
           Your focus analytics will appear here once you start using the app.
         </Text>
+
+        <View style={styles.section}>
+          <View style={styles.streakCard}>
+            <Text style={styles.sectionTitle}>Streak</Text>
+
+            <View style={styles.streakRow}>
+              <View style={styles.streakCol}>
+                <Text style={styles.streakValue}>{streak.currentStreak} days</Text>
+                <Text style={styles.streakLabel}>Current streak</Text>
+              </View>
+              <View style={styles.streakCol}>
+                <Text style={styles.streakValue}>{streak.bestStreak} days</Text>
+                <Text style={styles.streakLabel}>Best streak</Text>
+              </View>
+            </View>
+
+            {isPro ? (
+              <Text style={styles.streakHint}>
+                {freezeUsesLeftThisWeek > 0
+                  ? `Streak Freeze available this week (${freezeUsesLeftThisWeek} left)`
+                  : 'Streak Freeze used this week'}
+              </Text>
+            ) : (
+              <TouchableOpacity onPress={() => navigateToProUpsell(navigation)}>
+                <Text style={styles.streakProHint}>
+                  Missed a day? Keep your streak with Streak Freeze in Pomodoro Focus Pro →
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Date range</Text>
@@ -641,6 +678,42 @@ function createStyles(colors: ReturnType<typeof useThemeColors>) {
       fontWeight: '600',
       color: colors.textPrimary,
       marginBottom: spacing.sm,
+    },
+    streakCard: {
+      borderRadius: 16,
+      padding: spacing.lg,
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    streakRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      marginTop: spacing.sm,
+    },
+    streakCol: {
+      flex: 1,
+    },
+    streakValue: {
+      fontSize: 20,
+      fontWeight: '700',
+      color: colors.textPrimary,
+    },
+    streakLabel: {
+      fontSize: 13,
+      color: colors.textSecondary,
+      marginTop: 2,
+    },
+    streakHint: {
+      marginTop: spacing.sm,
+      fontSize: 12,
+      color: colors.textSecondary,
+    },
+    streakProHint: {
+      marginTop: spacing.sm,
+      fontSize: 12,
+      color: colors.primary,
+      fontWeight: '600',
     },
     rangeRow: {
       marginBottom: spacing.sm,

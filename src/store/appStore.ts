@@ -1,6 +1,15 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
-import { AppStateSnapshot, ActivityType, IntervalSession, IntervalType, PomodoroSettings, ProStatus, Task } from '../models';
+import {
+  AppStateSnapshot,
+  ActivityType,
+  IntervalSession,
+  IntervalType,
+  PomodoroSettings,
+  ProStatus,
+  StreakState,
+  Task,
+} from '../models';
 
 // Toggle this during development to unlock everything
 const FORCE_ALL_PRO_FEATURES = __DEV__ && false; // Set to true for local testing
@@ -145,6 +154,15 @@ const defaultProStatus: ProStatus = {
   isPro: false,
 };
 
+const defaultStreakState: StreakState = {
+  currentStreak: 0,
+  bestStreak: 0,
+  lastActiveDate: undefined,
+  frozenDates: [],
+  lastFreezeWeekStart: undefined,
+  freezeUsesThisWeek: 0,
+};
+
 const debounce = <T extends (...args: any[]) => void>(fn: T, delay: number) => {
   let timeout: ReturnType<typeof setTimeout> | undefined;
   return (...args: Parameters<T>) => {
@@ -166,10 +184,104 @@ const persistState = async (state: AppStateSnapshot) => {
   }
 };
 
+const toDateKey = (iso: string): string => {
+  const d = new Date(iso);
+  d.setHours(0, 0, 0, 0);
+  return d.toISOString().slice(0, 10);
+};
+
+const differenceInDays = (fromKey: string, toKey: string): number => {
+  const from = new Date(fromKey);
+  const to = new Date(toKey);
+  const msPerDay = 24 * 60 * 60 * 1000;
+  const diff = Math.round((to.getTime() - from.getTime()) / msPerDay);
+  return diff;
+};
+
+const getWeekStartKey = (date: Date): string => {
+  const d = new Date(date);
+  const day = d.getDay();
+  const diffSinceMonday = (day + 6) % 7;
+  d.setDate(d.getDate() - diffSinceMonday);
+  d.setHours(0, 0, 0, 0);
+  return d.toISOString().slice(0, 10);
+};
+
+const computeStreakAfterCompletion = (
+  prev: StreakState,
+  completedAtIso: string,
+  isPro: boolean,
+): StreakState => {
+  const dayKey = toDateKey(completedAtIso);
+
+  if (prev.lastActiveDate === dayKey) {
+    return prev;
+  }
+
+  if (!prev.lastActiveDate) {
+    const currentStreak = 1;
+    return {
+      ...prev,
+      currentStreak,
+      bestStreak: Math.max(prev.bestStreak, currentStreak),
+      lastActiveDate: dayKey,
+    };
+  }
+
+  const gapDays = differenceInDays(prev.lastActiveDate, dayKey);
+
+  if (gapDays === 1) {
+    const currentStreak = prev.currentStreak + 1;
+    return {
+      ...prev,
+      currentStreak,
+      bestStreak: Math.max(prev.bestStreak, currentStreak),
+      lastActiveDate: dayKey,
+    };
+  }
+
+  let currentStreak = 1;
+  let frozenDates = prev.frozenDates;
+  let freezeUsesThisWeek = prev.freezeUsesThisWeek;
+  let lastFreezeWeekStart = prev.lastFreezeWeekStart;
+
+  if (gapDays === 2 && isPro) {
+    const now = new Date(completedAtIso);
+    const thisWeekStartKey = getWeekStartKey(now);
+
+    if (!lastFreezeWeekStart || lastFreezeWeekStart !== thisWeekStartKey) {
+      freezeUsesThisWeek = 0;
+      lastFreezeWeekStart = thisWeekStartKey;
+    }
+
+    if (freezeUsesThisWeek < 1) {
+      const missingDate = new Date(prev.lastActiveDate);
+      missingDate.setDate(missingDate.getDate() + 1);
+      const missingKey = missingDate.toISOString().slice(0, 10);
+
+      currentStreak = prev.currentStreak + 1;
+      frozenDates = [...frozenDates, missingKey];
+      freezeUsesThisWeek += 1;
+    }
+  }
+
+  const bestStreak = Math.max(prev.bestStreak, currentStreak);
+
+  return {
+    ...prev,
+    currentStreak,
+    bestStreak,
+    lastActiveDate: dayKey,
+    frozenDates,
+    freezeUsesThisWeek,
+    lastFreezeWeekStart,
+  };
+};
+
 const useAppStore = create<AppStore>((set, get) => {
   const getSnapshot = (): AppStateSnapshot => {
-    const { tasks, intervals, activityTypes, settings, proStatus } = get();
-    return { tasks, intervals, activityTypes, settings, proStatus };
+    const { tasks, intervals, activityTypes, settings, proStatus, streak } = get();
+    return { tasks, intervals, activityTypes, settings, proStatus, streak };
   };
 
   const schedulePersist = debounce((snapshot: AppStateSnapshot) => {
@@ -189,6 +301,7 @@ const useAppStore = create<AppStore>((set, get) => {
         set((state) => {
           const nextProStatus = parsed.proStatus ? { ...state.proStatus, ...parsed.proStatus } : state.proStatus;
           const nextSettings = { ...state.settings, ...(parsed.settings ?? {}) };
+          const nextStreak = parsed.streak ? { ...defaultStreakState, ...parsed.streak } : { ...defaultStreakState };
 
           return {
             ...state,
@@ -198,6 +311,7 @@ const useAppStore = create<AppStore>((set, get) => {
             settings: nextSettings,
             proStatus: nextProStatus,
             isPro: nextProStatus.isPro,
+            streak: nextStreak,
           };
         });
       }
@@ -215,6 +329,7 @@ const useAppStore = create<AppStore>((set, get) => {
     settings: { ...defaultSettings },
     proStatus: { ...defaultProStatus },
     isPro: defaultProStatus.isPro,
+    streak: { ...defaultStreakState },
 
     addTask: ({ title, description, activityTypeId }) => {
       const timestamp = nowIso();
@@ -311,17 +426,38 @@ const useAppStore = create<AppStore>((set, get) => {
 
     finishInterval: ({ intervalId, endedAt }) => {
       const timestamp = endedAt ?? nowIso();
-      setStateAndPersist((state) => ({
-        intervals: state.intervals.map((interval) =>
-          interval.id === intervalId
-            ? {
-                ...interval,
-                endedAt: timestamp,
-                wasSkipped: false,
-              }
-            : interval,
-        ),
-      }));
+      const isPro = selectIsProEffective(get());
+
+      setStateAndPersist((state) => {
+        let updatedInterval: IntervalSession | undefined;
+
+        const updatedIntervals = state.intervals.map((interval) => {
+          if (interval.id !== intervalId) return interval;
+
+          const next: IntervalSession = {
+            ...interval,
+            endedAt: timestamp,
+            wasSkipped: false,
+          };
+          updatedInterval = next;
+          return next;
+        });
+
+        let nextStreak = state.streak;
+
+        if (
+          updatedInterval &&
+          updatedInterval.type === 'work' &&
+          !updatedInterval.wasSkipped
+        ) {
+          nextStreak = computeStreakAfterCompletion(state.streak, timestamp, isPro);
+        }
+
+        return {
+          intervals: updatedIntervals,
+          streak: nextStreak,
+        };
+      });
     },
 
     skipInterval: ({ intervalId, skippedAt }) => {
@@ -377,7 +513,7 @@ const useAppStore = create<AppStore>((set, get) => {
     },
 
     setProStatus: (status) => {
-          setStateAndPersist((state) => {
+      setStateAndPersist((state) => {
         const nextProStatus = { ...state.proStatus, ...status };
         return { proStatus: nextProStatus, isPro: nextProStatus.isPro };
       });
@@ -416,6 +552,9 @@ export const useAppStateSnapshot = () =>
     activityTypes: state.activityTypes,
     settings: state.settings,
     proStatus: state.proStatus,
+    streak: state.streak,
   }));
+
+export const useStreak = () => useAppStore((state) => state.streak);
 
 export default useAppStore;
