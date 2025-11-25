@@ -101,10 +101,10 @@ const getIntervalTypeLabel = (type: IntervalType) => {
     case 'work':
       return 'Work';
     case 'short_break':
-      return 'Short Break';
+      return 'Short break';
     case 'long_break':
     default:
-      return 'Long Break';
+      return 'Long break';
   }
 };
 
@@ -168,7 +168,6 @@ export const useTimerStore = create<TimerState>((set, get) => {
       secondsFromNow,
       intervalType: type,
       nextIntervalType,
-      soundEnabled: settings.soundEnabled ?? true,
     }).then((identifier) => {
       if (!identifier) {
         return;
