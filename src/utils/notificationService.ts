@@ -2,9 +2,8 @@ import { Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import { IntervalType } from '../models';
 
-const INTERVAL_COMPLETION_CHANNEL_ID = 'interval-completion';
+export const COMPLETION_CHANNEL_ID = 'interval-completion';
 export const TIMER_STATUS_CHANNEL_ID = 'timer-status';
-const SILENT_CHANNEL_ID = 'pomodoro-silent';
 
 export const initNotificationService = async () => {
   Notifications.setNotificationHandler({
@@ -16,28 +15,20 @@ export const initNotificationService = async () => {
   });
 
   if (Platform.OS === 'android') {
-    await Notifications.setNotificationChannelAsync(INTERVAL_COMPLETION_CHANNEL_ID, {
-      name: 'Pomodoro Intervals',
+    await Notifications.setNotificationChannelAsync(COMPLETION_CHANNEL_ID, {
+      name: 'Pomodoro Completed',
       importance: Notifications.AndroidImportance.HIGH,
       sound: 'chime1',
       vibrationPattern: [0, 250, 250, 250],
       lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
-      bypassDnd: false,
     });
 
     await Notifications.setNotificationChannelAsync(TIMER_STATUS_CHANNEL_ID, {
-      name: 'Pomodoro Timer Status',
+      name: 'Timer Status',
       importance: Notifications.AndroidImportance.LOW,
       sound: null,
       vibrationPattern: [0],
       lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
-    });
-
-    await Notifications.setNotificationChannelAsync(SILENT_CHANNEL_ID, {
-      name: 'Pomodoro timers (silent)',
-      importance: Notifications.AndroidImportance.DEFAULT,
-      sound: null,
-      enableVibrate: false,
     });
   }
 };
@@ -66,15 +57,12 @@ type ScheduleArgs = {
   secondsFromNow: number;
   intervalType: IntervalType;
   nextIntervalType?: IntervalType;
-  soundEnabled: boolean;
-  vibrationEnabled?: boolean;
 };
 
 export const scheduleIntervalCompletionNotification = async ({
   secondsFromNow,
   intervalType,
   nextIntervalType,
-  soundEnabled,
 }: ScheduleArgs): Promise<string | undefined> => {
   if (secondsFromNow <= 0) {
     return undefined;
@@ -106,16 +94,11 @@ export const scheduleIntervalCompletionNotification = async ({
     const content: Notifications.NotificationContentInput = {
       title,
       body,
-      sound: soundEnabled ? 'chime1' : undefined,
+      sound: 'chime1',
       priority: Notifications.AndroidNotificationPriority.HIGH,
     };
 
-    const channelId =
-      Platform.OS === 'android'
-        ? soundEnabled
-          ? INTERVAL_COMPLETION_CHANNEL_ID
-          : SILENT_CHANNEL_ID
-        : undefined;
+    const channelId = Platform.OS === 'android' ? COMPLETION_CHANNEL_ID : undefined;
 
     const trigger: Notifications.NotificationTriggerInput = {
       seconds: secondsFromNow,
@@ -156,10 +139,6 @@ export const showTimerStatusNotification = async ({
   remainingMinutes,
   intervalTypeLabel,
 }: TimerStatusNotificationParams): Promise<void> => {
-  if (Platform.OS !== 'android') {
-    return;
-  }
-
   await Notifications.dismissNotificationAsync(TIMER_STATUS_NOTIFICATION_ID).catch(() => {});
 
   await Notifications.scheduleNotificationAsync({
@@ -171,16 +150,12 @@ export const showTimerStatusNotification = async ({
       sound: null,
       autoDismiss: false,
       data: { type: 'timer-status' },
-      channelId: TIMER_STATUS_CHANNEL_ID,
+      channelId: Platform.OS === 'android' ? TIMER_STATUS_CHANNEL_ID : undefined,
     },
     trigger: null,
   });
 };
 
 export const clearTimerStatusNotification = async (): Promise<void> => {
-  if (Platform.OS !== 'android') {
-    return;
-  }
-
   await Notifications.dismissNotificationAsync(TIMER_STATUS_NOTIFICATION_ID).catch(() => {});
 };
