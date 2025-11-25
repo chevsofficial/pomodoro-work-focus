@@ -3,15 +3,21 @@ import * as Notifications from 'expo-notifications';
 import { IntervalType } from '../models';
 
 export const COMPLETION_CHANNEL_ID = 'interval-completion';
-export const TIMER_STATUS_CHANNEL_ID = 'timer-status';
+export const STATUS_CHANNEL_ID = 'timer-status';
 
 export const initNotificationService = async () => {
   Notifications.setNotificationHandler({
-    handleNotification: async () => ({
-      shouldShowAlert: true,
-      shouldPlaySound: true,
-      shouldSetBadge: false,
-    }),
+    handleNotification: async (notification) => {
+      const type = notification.request.content.data?.type;
+
+      const isCompletion = type === 'completion';
+
+      return {
+        shouldShowAlert: true,
+        shouldPlaySound: isCompletion,
+        shouldSetBadge: false,
+      };
+    },
   });
 
   if (Platform.OS === 'android') {
@@ -23,7 +29,7 @@ export const initNotificationService = async () => {
       lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
     });
 
-    await Notifications.setNotificationChannelAsync(TIMER_STATUS_CHANNEL_ID, {
+    await Notifications.setNotificationChannelAsync(STATUS_CHANNEL_ID, {
       name: 'Timer Status',
       importance: Notifications.AndroidImportance.LOW,
       sound: null,
@@ -94,8 +100,9 @@ export const scheduleIntervalCompletionNotification = async ({
     const content: Notifications.NotificationContentInput = {
       title,
       body,
-      sound: 'chime1',
+      sound: 'default',
       priority: Notifications.AndroidNotificationPriority.HIGH,
+      data: { type: 'completion' },
     };
 
     const channelId = Platform.OS === 'android' ? COMPLETION_CHANNEL_ID : undefined;
@@ -147,10 +154,9 @@ export const showTimerStatusNotification = async ({
       identifier: TIMER_STATUS_NOTIFICATION_ID,
       title: taskTitle ? `${taskTitle}` : 'Pomodoro running',
       body: `${remainingMinutes} min left · ${intervalTypeLabel}`,
-      sound: null,
       autoDismiss: false,
-      data: { type: 'timer-status' },
-      channelId: Platform.OS === 'android' ? TIMER_STATUS_CHANNEL_ID : undefined,
+      data: { type: 'status' },
+      channelId: Platform.OS === 'android' ? STATUS_CHANNEL_ID : undefined,
     },
     trigger: null,
   });
