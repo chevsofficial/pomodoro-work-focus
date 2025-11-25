@@ -1,6 +1,11 @@
 import { create } from 'zustand';
 import { IntervalType } from '../models';
-import { cancelScheduledNotification, scheduleIntervalCompletionNotification } from '../utils/notificationService';
+import {
+  cancelScheduledNotification,
+  hideTimerStatusNotification,
+  scheduleIntervalCompletionNotification,
+  showTimerStatusNotification,
+} from '../utils/notificationService';
 import { playIntervalEndSound, triggerIntervalHaptics } from '../utils/soundService';
 import useAppStore, { selectEffectiveSettings, selectIsProEffective } from './appStore';
 
@@ -225,6 +230,10 @@ export const useTimerStore = create<TimerState>((set, get) => {
         return;
       }
 
+      const appStore = useAppStore.getState();
+      const settings = appStore.settings;
+      const isPro = selectIsProEffective(appStore);
+
       let remainingSeconds = state.remainingSeconds;
       if (!remainingSeconds || remainingSeconds <= 0) {
         remainingSeconds = getDurationForType(state.currentIntervalType, state.currentTaskId);
@@ -232,7 +241,6 @@ export const useTimerStore = create<TimerState>((set, get) => {
 
       let intervalId = state.activeIntervalId;
       if (!intervalId) {
-        const appStore = useAppStore.getState();
         intervalId = appStore.startInterval({
           taskId: state.currentTaskId,
           type: state.currentIntervalType,
@@ -253,10 +261,24 @@ export const useTimerStore = create<TimerState>((set, get) => {
 
       cancelScheduledNotificationIfNeeded();
       scheduleNotificationIfEnabled(remainingSeconds, state.currentIntervalType);
+
+      if (isPro && settings.enhancedBackgroundModeEnabled) {
+        const currentTask =
+          state.currentTaskId && appStore.tasks.find((task) => task.id === state.currentTaskId);
+
+        showTimerStatusNotification({
+          intervalType: state.currentIntervalType,
+          remainingSeconds,
+          taskTitle: currentTask?.title,
+        }).catch(() => {});
+      } else {
+        hideTimerStatusNotification().catch(() => {});
+      }
     },
 
     pauseTimer: () => {
       cancelScheduledNotificationIfNeeded();
+      hideTimerStatusNotification().catch(() => {});
       set({ isRunning: false, intervalStartTime: undefined, plannedEndTime: undefined });
     },
 
@@ -268,6 +290,7 @@ export const useTimerStore = create<TimerState>((set, get) => {
       }
 
       cancelScheduledNotificationIfNeeded();
+      hideTimerStatusNotification().catch(() => {});
       set({
         remainingSeconds: getDurationForType(state.currentIntervalType, state.currentTaskId),
         isRunning: false,
@@ -302,6 +325,8 @@ export const useTimerStore = create<TimerState>((set, get) => {
 
       const appStore = useAppStore.getState();
       appStore.finishInterval({ intervalId: state.activeIntervalId });
+
+      hideTimerStatusNotification().catch(() => {});
 
       const { nextType, nextCompletedWorkIntervals } = determineNextInterval(
         state.currentIntervalType,
@@ -356,6 +381,7 @@ export const useTimerStore = create<TimerState>((set, get) => {
       );
 
       cancelScheduledNotificationIfNeeded();
+      hideTimerStatusNotification().catch(() => {});
       set({
         currentIntervalType: nextType,
         completedWorkIntervals: nextCompletedWorkIntervals,

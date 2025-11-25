@@ -635,6 +635,55 @@ export const SettingsScreen: React.FC = () => {
             styles={styles}
             colors={colors}
           />
+
+          <Text style={styles.sectionLabel}>Background</Text>
+          <TouchableOpacity
+            style={styles.toggleRow}
+            activeOpacity={0.8}
+            onPress={() => {
+              if (!isPro) {
+                navigateToProUpsell(navigation);
+                return;
+              }
+
+              updateSettings({
+                enhancedBackgroundModeEnabled: !settings.enhancedBackgroundModeEnabled,
+              });
+            }}
+          >
+            <View>
+              <Text style={styles.toggleTitle}>Enhanced background mode</Text>
+              <Text style={styles.toggleSubtitle}>
+                Persistent timer notification and improved lock screen behavior.
+              </Text>
+            </View>
+
+            <Switch
+              value={Boolean(settings.enhancedBackgroundModeEnabled) && isPro}
+              onValueChange={() => {
+                if (!isPro) {
+                  navigateToProUpsell(navigation);
+                  return;
+                }
+
+                updateSettings({
+                  enhancedBackgroundModeEnabled: !settings.enhancedBackgroundModeEnabled,
+                });
+              }}
+              thumbColor={
+                Boolean(settings.enhancedBackgroundModeEnabled) && isPro
+                  ? colors.primary
+                  : colors.surface
+              }
+              trackColor={{ false: colors.border, true: colors.primary }}
+            />
+          </TouchableOpacity>
+
+          {!isPro && (
+            <Text style={styles.proHint}>
+              Unlock Enhanced background mode with Pomodoro Focus Pro.
+            </Text>
+          )}
         </View>
 
         <View style={styles.section}>
@@ -739,8 +788,6 @@ export const SettingsScreen: React.FC = () => {
                     key={theme.id}
                     style={[styles.themeOption, isSelected && styles.themeOptionSelected]}
                     onPress={() => {
-                      const isLocked = theme.isProOnly && !isPro;
-
                       if (isLocked) {
                         setThemeModalVisible(false);
                         navigateToProUpsell(navigation);
@@ -761,19 +808,17 @@ export const SettingsScreen: React.FC = () => {
                       ]}
                     >
                       <View
-                        style={{
-                          flex: 1,
-                          borderRadius: 6,
-                          backgroundColor: theme.colors.primary,
-                          marginBottom: 2,
-                        }}
+                        style={[
+                          styles.themePreviewBlock,
+                          styles.themePreviewBlockSpacing,
+                          { backgroundColor: theme.colors.primary },
+                        ]}
                       />
                       <View
-                        style={{
-                          flex: 1,
-                          borderRadius: 6,
-                          backgroundColor: theme.colors.accent,
-                        }}
+                        style={[
+                          styles.themePreviewBlock,
+                          { backgroundColor: theme.colors.accent },
+                        ]}
                       />
                     </View>
 
@@ -812,6 +857,12 @@ function createStyles(colors: ReturnType<typeof useThemeColors>) {
     color: colors.textSecondary,
     marginBottom: spacing.lg,
   },
+  sectionLabel: {
+    fontSize: 13,
+    color: colors.textSecondary,
+    marginBottom: spacing.sm,
+    marginTop: spacing.sm,
+  },
   section: {
     backgroundColor: colors.surface,
     borderRadius: 16,
@@ -831,6 +882,23 @@ function createStyles(colors: ReturnType<typeof useThemeColors>) {
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: spacing.md,
+  },
+  toggleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: spacing.sm,
+  },
+  toggleTitle: {
+    color: colors.textPrimary,
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  toggleSubtitle: {
+    color: colors.textSecondary,
+    fontSize: 13,
+    marginTop: 2,
+    maxWidth: '80%',
   },
   sectionAction: {
     color: colors.accent,
@@ -965,6 +1033,11 @@ function createStyles(colors: ReturnType<typeof useThemeColors>) {
     color: colors.primary,
     fontWeight: '600',
   },
+  proHint: {
+    color: colors.textSecondary,
+    fontSize: 12,
+    marginTop: spacing.xs,
+  },
   upgradeButton: {
     backgroundColor: colors.primary,
     borderRadius: 12,
@@ -1051,6 +1124,13 @@ function createStyles(colors: ReturnType<typeof useThemeColors>) {
     borderWidth: 1,
     marginRight: 10,
     overflow: 'hidden',
+  },
+  themePreviewBlock: {
+    flex: 1,
+    borderRadius: 6,
+  },
+  themePreviewBlockSpacing: {
+    marginBottom: 2,
   },
   themeTextContainer: {
     flex: 1,

@@ -7,7 +7,7 @@ import { RootNavigator } from './src/navigation/RootNavigator';
 import { ThemeProvider } from './src/theme/ThemeProvider';
 import { useThemeColors } from './src/theme/useThemeColors';
 import { useSettings } from './src/store/appStore';
-import { initializeNotifications, requestNotificationPermissions } from './src/utils/notificationService';
+import { initNotificationService, requestNotificationPermissions } from './src/utils/notificationService';
 
 const App: React.FC = () => {
   const colors = useThemeColors();
@@ -46,7 +46,7 @@ const App: React.FC = () => {
   );
 
   useEffect(() => {
-    initializeNotifications();
+    initNotificationService().catch(console.warn);
   }, []);
 
   useEffect(() => {

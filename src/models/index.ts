@@ -46,6 +46,8 @@ export interface PomodoroSettings {
   notificationSoundKey: string;
   defaultActivityTypeId?: string;
   themeId?: ThemeId;
+
+  enhancedBackgroundModeEnabled?: boolean; // Pro-only feature
 }
 
 export interface ProStatus {

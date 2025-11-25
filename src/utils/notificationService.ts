@@ -2,10 +2,13 @@ import { Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import { IntervalType } from '../models';
 
-const SOUND_CHANNEL_ID = 'pomodoro-sound';
+const INTERVAL_COMPLETIONS_CHANNEL_ID = 'interval-completions';
+const TIMER_STATUS_CHANNEL_ID = 'timer-status';
 const SILENT_CHANNEL_ID = 'pomodoro-silent';
 
-export const initializeNotifications = async () => {
+let activeTimerStatusNotificationId: string | undefined;
+
+export const initNotificationService = async () => {
   Notifications.setNotificationHandler({
     handleNotification: async () => ({
       shouldShowAlert: true,
@@ -15,11 +18,21 @@ export const initializeNotifications = async () => {
   });
 
   if (Platform.OS === 'android') {
-    await Notifications.setNotificationChannelAsync(SOUND_CHANNEL_ID, {
-      name: 'Pomodoro timers (sound)',
+    await Notifications.setNotificationChannelAsync(INTERVAL_COMPLETIONS_CHANNEL_ID, {
+      name: 'Pomodoro Intervals',
       importance: Notifications.AndroidImportance.HIGH,
       sound: 'default',
-      enableVibrate: true,
+      vibrationPattern: [0, 250, 250, 250],
+      lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
+      bypassDnd: false,
+    });
+
+    await Notifications.setNotificationChannelAsync(TIMER_STATUS_CHANNEL_ID, {
+      name: 'Pomodoro Timer Status',
+      importance: Notifications.AndroidImportance.LOW,
+      sound: null,
+      vibrationPattern: [0],
+      lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
     });
 
     await Notifications.setNotificationChannelAsync(SILENT_CHANNEL_ID, {
@@ -30,6 +43,8 @@ export const initializeNotifications = async () => {
     });
   }
 };
+
+export const initializeNotifications = initNotificationService;
 
 export const requestNotificationPermissions = async (): Promise<boolean> => {
   try {
@@ -94,12 +109,13 @@ export const scheduleIntervalCompletionNotification = async ({
       title,
       body,
       sound: soundEnabled ? 'default' : undefined,
+      priority: Notifications.AndroidNotificationPriority.HIGH,
     };
 
     const channelId =
       Platform.OS === 'android'
         ? soundEnabled
-          ? SOUND_CHANNEL_ID
+          ? INTERVAL_COMPLETIONS_CHANNEL_ID
           : SILENT_CHANNEL_ID
         : undefined;
 
@@ -127,4 +143,62 @@ export const cancelScheduledNotification = async (identifier: string) => {
   } catch (error) {
     console.warn('[Notifications] Error canceling notification', error);
   }
+};
+
+type TimerStatusNotificationParams = {
+  intervalType: IntervalType;
+  remainingSeconds: number;
+  taskTitle?: string;
+};
+
+export const showTimerStatusNotification = async ({
+  intervalType,
+  remainingSeconds,
+  taskTitle,
+}: TimerStatusNotificationParams): Promise<void> => {
+  if (Platform.OS !== 'android') {
+    return;
+  }
+
+  const minutes = Math.max(0, Math.ceil(remainingSeconds / 60));
+  const intervalLabel =
+    intervalType === 'work'
+      ? 'Work'
+      : intervalType === 'short_break'
+      ? 'Short break'
+      : 'Long break';
+
+  const title = `${intervalLabel} timer running`;
+  const body = taskTitle ? `${taskTitle} · ~${minutes} min remaining` : `~${minutes} min remaining`;
+
+  if (activeTimerStatusNotificationId) {
+    await Notifications.cancelScheduledNotificationAsync(activeTimerStatusNotificationId).catch(() => {});
+    activeTimerStatusNotificationId = undefined;
+  }
+
+  const id = await Notifications.scheduleNotificationAsync({
+    content: {
+      title,
+      body,
+      sound: null,
+      sticky: true,
+      channelId: TIMER_STATUS_CHANNEL_ID,
+    },
+    trigger: null,
+  });
+
+  activeTimerStatusNotificationId = id;
+};
+
+export const hideTimerStatusNotification = async (): Promise<void> => {
+  if (Platform.OS !== 'android') {
+    return;
+  }
+
+  if (!activeTimerStatusNotificationId) {
+    return;
+  }
+
+  await Notifications.cancelScheduledNotificationAsync(activeTimerStatusNotificationId).catch(() => {});
+  activeTimerStatusNotificationId = undefined;
 };
