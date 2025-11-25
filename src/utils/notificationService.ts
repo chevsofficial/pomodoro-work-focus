@@ -2,11 +2,9 @@ import { Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import { IntervalType } from '../models';
 
-const INTERVAL_COMPLETIONS_CHANNEL_ID = 'interval-completions';
-const TIMER_STATUS_CHANNEL_ID = 'timer-status';
+const INTERVAL_COMPLETION_CHANNEL_ID = 'interval-completion';
+export const TIMER_STATUS_CHANNEL_ID = 'timer-status';
 const SILENT_CHANNEL_ID = 'pomodoro-silent';
-
-let activeTimerStatusNotificationId: string | undefined;
 
 export const initNotificationService = async () => {
   Notifications.setNotificationHandler({
@@ -18,10 +16,10 @@ export const initNotificationService = async () => {
   });
 
   if (Platform.OS === 'android') {
-    await Notifications.setNotificationChannelAsync(INTERVAL_COMPLETIONS_CHANNEL_ID, {
+    await Notifications.setNotificationChannelAsync(INTERVAL_COMPLETION_CHANNEL_ID, {
       name: 'Pomodoro Intervals',
       importance: Notifications.AndroidImportance.HIGH,
-      sound: 'default',
+      sound: 'chime1',
       vibrationPattern: [0, 250, 250, 250],
       lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
       bypassDnd: false,
@@ -108,14 +106,14 @@ export const scheduleIntervalCompletionNotification = async ({
     const content: Notifications.NotificationContentInput = {
       title,
       body,
-      sound: soundEnabled ? 'default' : undefined,
+      sound: soundEnabled ? 'chime1' : undefined,
       priority: Notifications.AndroidNotificationPriority.HIGH,
     };
 
     const channelId =
       Platform.OS === 'android'
         ? soundEnabled
-          ? INTERVAL_COMPLETIONS_CHANNEL_ID
+          ? INTERVAL_COMPLETION_CHANNEL_ID
           : SILENT_CHANNEL_ID
         : undefined;
 
@@ -145,60 +143,44 @@ export const cancelScheduledNotification = async (identifier: string) => {
   }
 };
 
+const TIMER_STATUS_NOTIFICATION_ID = 'TIMER_STATUS';
+
 type TimerStatusNotificationParams = {
-  intervalType: IntervalType;
-  remainingSeconds: number;
   taskTitle?: string;
+  remainingMinutes: number;
+  intervalTypeLabel: string;
 };
 
 export const showTimerStatusNotification = async ({
-  intervalType,
-  remainingSeconds,
   taskTitle,
+  remainingMinutes,
+  intervalTypeLabel,
 }: TimerStatusNotificationParams): Promise<void> => {
   if (Platform.OS !== 'android') {
     return;
   }
 
-  const minutes = Math.max(0, Math.ceil(remainingSeconds / 60));
-  const intervalLabel =
-    intervalType === 'work'
-      ? 'Work'
-      : intervalType === 'short_break'
-      ? 'Short break'
-      : 'Long break';
+  await Notifications.dismissNotificationAsync(TIMER_STATUS_NOTIFICATION_ID).catch(() => {});
 
-  const title = `${intervalLabel} timer running`;
-  const body = taskTitle ? `${taskTitle} · ~${minutes} min remaining` : `~${minutes} min remaining`;
-
-  if (activeTimerStatusNotificationId) {
-    await Notifications.cancelScheduledNotificationAsync(activeTimerStatusNotificationId).catch(() => {});
-    activeTimerStatusNotificationId = undefined;
-  }
-
-  const id = await Notifications.scheduleNotificationAsync({
+  await Notifications.scheduleNotificationAsync({
+    identifier: TIMER_STATUS_NOTIFICATION_ID,
     content: {
-      title,
-      body,
+      identifier: TIMER_STATUS_NOTIFICATION_ID,
+      title: taskTitle ? `${taskTitle}` : 'Pomodoro running',
+      body: `${remainingMinutes} min left · ${intervalTypeLabel}`,
       sound: null,
-      sticky: true,
+      autoDismiss: false,
+      data: { type: 'timer-status' },
       channelId: TIMER_STATUS_CHANNEL_ID,
     },
     trigger: null,
   });
-
-  activeTimerStatusNotificationId = id;
 };
 
-export const hideTimerStatusNotification = async (): Promise<void> => {
+export const clearTimerStatusNotification = async (): Promise<void> => {
   if (Platform.OS !== 'android') {
     return;
   }
 
-  if (!activeTimerStatusNotificationId) {
-    return;
-  }
-
-  await Notifications.cancelScheduledNotificationAsync(activeTimerStatusNotificationId).catch(() => {});
-  activeTimerStatusNotificationId = undefined;
+  await Notifications.dismissNotificationAsync(TIMER_STATUS_NOTIFICATION_ID).catch(() => {});
 };

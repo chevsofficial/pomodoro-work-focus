@@ -47,7 +47,7 @@ export interface PomodoroSettings {
   defaultActivityTypeId?: string;
   themeId?: ThemeId;
 
-  enhancedBackgroundModeEnabled?: boolean; // Pro-only feature
+  enhancedBackgroundModeEnabled?: boolean;
 }
 
 export interface ProStatus {
