@@ -429,3 +429,35 @@ useAppStore.subscribe(() => {
     plannedEndTime: undefined,
   });
 });
+
+let wasEnhancedBackgroundActive = false;
+
+useAppStore.subscribe((appState) => {
+  const timerState = useTimerStore.getState();
+  const shouldShowEnhancedBackground =
+    timerState.isRunning &&
+    selectIsProEffective(appState) &&
+    Boolean(appState.settings.enhancedBackgroundModeEnabled);
+
+  if (shouldShowEnhancedBackground && !wasEnhancedBackgroundActive) {
+    const remainingSeconds = timerState.plannedEndTime
+      ? Math.max(0, Math.round((timerState.plannedEndTime - Date.now()) / 1000))
+      : timerState.remainingSeconds;
+
+    const currentTask =
+      timerState.currentTaskId &&
+      appState.tasks.find((task) => task.id === timerState.currentTaskId);
+
+    showTimerStatusNotification({
+      intervalType: timerState.currentIntervalType,
+      remainingSeconds,
+      taskTitle: currentTask?.title,
+    }).catch(() => {});
+  }
+
+  if (!shouldShowEnhancedBackground && wasEnhancedBackgroundActive) {
+    hideTimerStatusNotification().catch(() => {});
+  }
+
+  wasEnhancedBackgroundActive = shouldShowEnhancedBackground;
+});
