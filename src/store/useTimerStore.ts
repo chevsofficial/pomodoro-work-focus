@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { IntervalType } from '../models';
 import {
   cancelScheduledNotification,
-  hideTimerStatusNotification,
+  clearTimerStatusNotification,
   scheduleIntervalCompletionNotification,
   showTimerStatusNotification,
 } from '../utils/notificationService';
@@ -96,6 +96,18 @@ const determineNextInterval = (
   };
 };
 
+const getIntervalTypeLabel = (type: IntervalType) => {
+  switch (type) {
+    case 'work':
+      return 'Work';
+    case 'short_break':
+      return 'Short Break';
+    case 'long_break':
+    default:
+      return 'Long Break';
+  }
+};
+
 interface TimerState {
   currentIntervalType: IntervalType;
   currentTaskId?: string;
@@ -106,6 +118,7 @@ interface TimerState {
   intervalStartTime?: number;
   plannedEndTime?: number;
   scheduledNotificationId?: string;
+  lastStatusRemainingMinutes?: number;
   setCurrentTask: (taskId?: string) => void;
   setIntervalType: (type: IntervalType) => void;
   startTimer: () => void;
@@ -116,6 +129,8 @@ interface TimerState {
   skipCurrentInterval: () => void;
   syncWithCurrentTime: () => void;
 }
+
+let triggerStatusNotificationUpdate: (() => void) | undefined;
 
 export const useTimerStore = create<TimerState>((set, get) => {
   const cancelScheduledNotificationIfNeeded = () => {
@@ -168,6 +183,44 @@ export const useTimerStore = create<TimerState>((set, get) => {
     });
   };
 
+  const updateStatusNotificationIfNeeded = () => {
+    const state = get();
+    const appStoreState = useAppStore.getState();
+    const settings = appStoreState.settings;
+
+    if (!settings.notificationsEnabled || !settings.enhancedBackgroundModeEnabled) {
+      clearTimerStatusNotification().catch(() => {});
+      set({ lastStatusRemainingMinutes: undefined });
+      return;
+    }
+
+    if (!state.isRunning || state.remainingSeconds <= 0) {
+      clearTimerStatusNotification().catch(() => {});
+      set({ lastStatusRemainingMinutes: undefined });
+      return;
+    }
+
+    const minutes = Math.ceil(state.remainingSeconds / 60);
+
+    if (state.lastStatusRemainingMinutes === minutes) {
+      return;
+    }
+
+    const currentTask = state.currentTaskId
+      ? appStoreState.tasks.find((t) => t.id === state.currentTaskId)
+      : undefined;
+
+    showTimerStatusNotification({
+      taskTitle: currentTask?.title,
+      remainingMinutes: minutes,
+      intervalTypeLabel: getIntervalTypeLabel(state.currentIntervalType),
+    }).catch(() => {});
+
+    set({ lastStatusRemainingMinutes: minutes });
+  };
+
+  triggerStatusNotificationUpdate = updateStatusNotificationIfNeeded;
+
   return {
     currentIntervalType: 'work',
     currentTaskId: undefined,
@@ -178,6 +231,7 @@ export const useTimerStore = create<TimerState>((set, get) => {
     intervalStartTime: undefined,
     plannedEndTime: undefined,
     scheduledNotificationId: undefined,
+    lastStatusRemainingMinutes: undefined,
 
     setCurrentTask: (taskId) =>
       set((state) => {
@@ -222,6 +276,7 @@ export const useTimerStore = create<TimerState>((set, get) => {
       });
 
       cancelScheduledNotificationIfNeeded();
+      updateStatusNotificationIfNeeded();
     },
 
     startTimer: () => {
@@ -231,8 +286,6 @@ export const useTimerStore = create<TimerState>((set, get) => {
       }
 
       const appStore = useAppStore.getState();
-      const settings = appStore.settings;
-      const isPro = selectIsProEffective(appStore);
 
       let remainingSeconds = state.remainingSeconds;
       if (!remainingSeconds || remainingSeconds <= 0) {
@@ -262,24 +315,18 @@ export const useTimerStore = create<TimerState>((set, get) => {
       cancelScheduledNotificationIfNeeded();
       scheduleNotificationIfEnabled(remainingSeconds, state.currentIntervalType);
 
-      if (isPro && settings.enhancedBackgroundModeEnabled) {
-        const currentTask =
-          state.currentTaskId && appStore.tasks.find((task) => task.id === state.currentTaskId);
-
-        showTimerStatusNotification({
-          intervalType: state.currentIntervalType,
-          remainingSeconds,
-          taskTitle: currentTask?.title,
-        }).catch(() => {});
-      } else {
-        hideTimerStatusNotification().catch(() => {});
-      }
+      updateStatusNotificationIfNeeded();
     },
 
     pauseTimer: () => {
       cancelScheduledNotificationIfNeeded();
-      hideTimerStatusNotification().catch(() => {});
-      set({ isRunning: false, intervalStartTime: undefined, plannedEndTime: undefined });
+      clearTimerStatusNotification().catch(() => {});
+      set({
+        isRunning: false,
+        intervalStartTime: undefined,
+        plannedEndTime: undefined,
+        lastStatusRemainingMinutes: undefined,
+      });
     },
 
     resetTimer: () => {
@@ -290,13 +337,14 @@ export const useTimerStore = create<TimerState>((set, get) => {
       }
 
       cancelScheduledNotificationIfNeeded();
-      hideTimerStatusNotification().catch(() => {});
+      clearTimerStatusNotification().catch(() => {});
       set({
         remainingSeconds: getDurationForType(state.currentIntervalType, state.currentTaskId),
         isRunning: false,
         activeIntervalId: undefined,
         intervalStartTime: undefined,
         plannedEndTime: undefined,
+        lastStatusRemainingMinutes: undefined,
       });
     },
 
@@ -315,6 +363,8 @@ export const useTimerStore = create<TimerState>((set, get) => {
           remainingSeconds: nextRemainingSeconds,
         };
       });
+
+      updateStatusNotificationIfNeeded();
     },
 
     handleIntervalCompletion: () => {
@@ -326,7 +376,7 @@ export const useTimerStore = create<TimerState>((set, get) => {
       const appStore = useAppStore.getState();
       appStore.finishInterval({ intervalId: state.activeIntervalId });
 
-      hideTimerStatusNotification().catch(() => {});
+      clearTimerStatusNotification().catch(() => {});
 
       const { nextType, nextCompletedWorkIntervals } = determineNextInterval(
         state.currentIntervalType,
@@ -344,6 +394,7 @@ export const useTimerStore = create<TimerState>((set, get) => {
         activeIntervalId: undefined,
         intervalStartTime: undefined,
         plannedEndTime: undefined,
+        lastStatusRemainingMinutes: undefined,
       });
 
       playIntervalEndSound();
@@ -381,7 +432,7 @@ export const useTimerStore = create<TimerState>((set, get) => {
       );
 
       cancelScheduledNotificationIfNeeded();
-      hideTimerStatusNotification().catch(() => {});
+      clearTimerStatusNotification().catch(() => {});
       set({
         currentIntervalType: nextType,
         completedWorkIntervals: nextCompletedWorkIntervals,
@@ -390,6 +441,7 @@ export const useTimerStore = create<TimerState>((set, get) => {
         activeIntervalId: undefined,
         intervalStartTime: undefined,
         plannedEndTime: undefined,
+        lastStatusRemainingMinutes: undefined,
       });
 
       const effectiveSettings = selectEffectiveSettings(appStore);
@@ -411,6 +463,8 @@ export const useTimerStore = create<TimerState>((set, get) => {
       const nextRemainingSeconds = Math.max(0, Math.ceil(remainingMs / 1000));
 
       set({ remainingSeconds: nextRemainingSeconds });
+
+      updateStatusNotificationIfNeeded();
     },
   };
 });
@@ -430,34 +484,8 @@ useAppStore.subscribe(() => {
   });
 });
 
-let wasEnhancedBackgroundActive = false;
-
-useAppStore.subscribe((appState) => {
-  const timerState = useTimerStore.getState();
-  const shouldShowEnhancedBackground =
-    timerState.isRunning &&
-    selectIsProEffective(appState) &&
-    Boolean(appState.settings.enhancedBackgroundModeEnabled);
-
-  if (shouldShowEnhancedBackground && !wasEnhancedBackgroundActive) {
-    const remainingSeconds = timerState.plannedEndTime
-      ? Math.max(0, Math.round((timerState.plannedEndTime - Date.now()) / 1000))
-      : timerState.remainingSeconds;
-
-    const currentTask =
-      timerState.currentTaskId &&
-      appState.tasks.find((task) => task.id === timerState.currentTaskId);
-
-    showTimerStatusNotification({
-      intervalType: timerState.currentIntervalType,
-      remainingSeconds,
-      taskTitle: currentTask?.title,
-    }).catch(() => {});
+useAppStore.subscribe(() => {
+  if (triggerStatusNotificationUpdate) {
+    triggerStatusNotificationUpdate();
   }
-
-  if (!shouldShowEnhancedBackground && wasEnhancedBackgroundActive) {
-    hideTimerStatusNotification().catch(() => {});
-  }
-
-  wasEnhancedBackgroundActive = shouldShowEnhancedBackground;
 });

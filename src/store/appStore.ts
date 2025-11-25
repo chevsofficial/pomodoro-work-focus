@@ -148,7 +148,7 @@ const defaultSettings: PomodoroSettings = {
   notificationSoundKey: 'chime1',
   defaultActivityTypeId: undefined,
   themeId: 'dark',
-  enhancedBackgroundModeEnabled: false,
+  enhancedBackgroundModeEnabled: true,
 };
 
 const defaultProStatus: ProStatus = {

@@ -637,53 +637,27 @@ export const SettingsScreen: React.FC = () => {
           />
 
           <Text style={styles.sectionLabel}>Background</Text>
-          <TouchableOpacity
-            style={styles.toggleRow}
-            activeOpacity={0.8}
-            onPress={() => {
-              if (!isPro) {
-                navigateToProUpsell(navigation);
-                return;
-              }
-
-              updateSettings({
-                enhancedBackgroundModeEnabled: !settings.enhancedBackgroundModeEnabled,
-              });
-            }}
-          >
+          <View style={styles.toggleRow}>
             <View>
-              <Text style={styles.toggleTitle}>Enhanced background mode</Text>
+              <Text style={styles.toggleTitle}>Persistent timer notification</Text>
               <Text style={styles.toggleSubtitle}>
-                Persistent timer notification and improved lock screen behavior.
+                Keep a silent timer status notification visible while the timer runs.
               </Text>
             </View>
 
             <Switch
-              value={Boolean(settings.enhancedBackgroundModeEnabled) && isPro}
-              onValueChange={() => {
-                if (!isPro) {
-                  navigateToProUpsell(navigation);
-                  return;
-                }
-
-                updateSettings({
-                  enhancedBackgroundModeEnabled: !settings.enhancedBackgroundModeEnabled,
-                });
-              }}
+              value={!!settings.enhancedBackgroundModeEnabled}
+              onValueChange={(value) =>
+                updateSettings({ enhancedBackgroundModeEnabled: value })
+              }
               thumbColor={
-                Boolean(settings.enhancedBackgroundModeEnabled) && isPro
+                settings.enhancedBackgroundModeEnabled
                   ? colors.primary
                   : colors.surface
               }
               trackColor={{ false: colors.border, true: colors.primary }}
             />
-          </TouchableOpacity>
-
-          {!isPro && (
-            <Text style={styles.proHint}>
-              Unlock Enhanced background mode with Pomodoro Focus Pro.
-            </Text>
-          )}
+          </View>
         </View>
 
         <View style={styles.section}>
