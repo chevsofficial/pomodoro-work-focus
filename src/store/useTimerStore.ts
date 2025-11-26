@@ -164,6 +164,43 @@ export const useTimerStore = create<TimerState>((set, get) => {
     });
   };
 
+  const transitionToNextInterval = (
+    prevState: TimerState,
+    { shouldCountWorkCompletion, playCompletionFeedback }: { shouldCountWorkCompletion: boolean; playCompletionFeedback?: boolean },
+  ) => {
+    const { nextType, nextCompletedWorkIntervals } = determineNextInterval(
+      prevState.currentIntervalType,
+      prevState.completedWorkIntervals,
+      shouldCountWorkCompletion,
+      prevState.currentTaskId,
+    );
+
+    cancelScheduledNotificationIfNeeded();
+    set({
+      currentIntervalType: nextType,
+      completedWorkIntervals: nextCompletedWorkIntervals,
+      remainingSeconds: getDurationForType(nextType, prevState.currentTaskId),
+      isRunning: false,
+      activeIntervalId: undefined,
+      intervalStartTime: undefined,
+      plannedEndTime: undefined,
+    });
+
+    if (playCompletionFeedback) {
+      playIntervalEndSound();
+      triggerIntervalHaptics();
+    }
+
+    const appStoreState = useAppStore.getState();
+    const effectiveSettings = selectEffectiveSettings(appStoreState);
+    const isPro = selectIsProEffective(appStoreState);
+    const autoStart = isPro ? effectiveSettings.autoStartNextInterval : false;
+
+    if (autoStart) {
+      get().startTimer();
+    }
+  };
+
   return {
     currentIntervalType: 'work',
     currentTaskId: undefined,
@@ -304,34 +341,10 @@ export const useTimerStore = create<TimerState>((set, get) => {
       const appStore = useAppStore.getState();
       appStore.finishInterval({ intervalId: state.activeIntervalId });
 
-      const { nextType, nextCompletedWorkIntervals } = determineNextInterval(
-        state.currentIntervalType,
-        state.completedWorkIntervals,
-        true,
-        state.currentTaskId,
-      );
-
-      cancelScheduledNotificationIfNeeded();
-      set({
-        currentIntervalType: nextType,
-        completedWorkIntervals: nextCompletedWorkIntervals,
-        remainingSeconds: getDurationForType(nextType, state.currentTaskId),
-        isRunning: false,
-        activeIntervalId: undefined,
-        intervalStartTime: undefined,
-        plannedEndTime: undefined,
+      transitionToNextInterval(state, {
+        shouldCountWorkCompletion: true,
+        playCompletionFeedback: true,
       });
-
-      playIntervalEndSound();
-      triggerIntervalHaptics();
-
-      const effectiveSettings = selectEffectiveSettings(appStore);
-      const isPro = selectIsProEffective(appStore);
-      const autoStart = isPro ? effectiveSettings.autoStartNextInterval : false;
-
-      if (autoStart) {
-        get().startTimer();
-      }
     },
 
     skipCurrentInterval: () => {
@@ -349,31 +362,7 @@ export const useTimerStore = create<TimerState>((set, get) => {
 
       appStore.skipInterval({ intervalId });
 
-      const { nextType, nextCompletedWorkIntervals } = determineNextInterval(
-        state.currentIntervalType,
-        state.completedWorkIntervals,
-        false,
-        state.currentTaskId,
-      );
-
-      cancelScheduledNotificationIfNeeded();
-      set({
-        currentIntervalType: nextType,
-        completedWorkIntervals: nextCompletedWorkIntervals,
-        remainingSeconds: getDurationForType(nextType, state.currentTaskId),
-        isRunning: false,
-        activeIntervalId: undefined,
-        intervalStartTime: undefined,
-        plannedEndTime: undefined,
-      });
-
-      const effectiveSettings = selectEffectiveSettings(appStore);
-      const isPro = selectIsProEffective(appStore);
-      const autoStart = isPro ? effectiveSettings.autoStartNextInterval : false;
-
-      if (autoStart) {
-        get().startTimer();
-      }
+      transitionToNextInterval(state, { shouldCountWorkCompletion: false });
     },
     endIntervalNow: () => {
       const state = get();
@@ -387,31 +376,7 @@ export const useTimerStore = create<TimerState>((set, get) => {
 
       appStore.finishInterval({ intervalId: state.activeIntervalId, endedAt });
 
-      const { nextType, nextCompletedWorkIntervals } = determineNextInterval(
-        state.currentIntervalType,
-        state.completedWorkIntervals,
-        true,
-        state.currentTaskId,
-      );
-
-      cancelScheduledNotificationIfNeeded();
-      set({
-        currentIntervalType: nextType,
-        completedWorkIntervals: nextCompletedWorkIntervals,
-        remainingSeconds: getDurationForType(nextType, state.currentTaskId),
-        isRunning: false,
-        activeIntervalId: undefined,
-        intervalStartTime: undefined,
-        plannedEndTime: undefined,
-      });
-
-      const effectiveSettings = selectEffectiveSettings(appStore);
-      const isPro = selectIsProEffective(appStore);
-      const autoStart = isPro ? effectiveSettings.autoStartNextInterval : false;
-
-      if (autoStart) {
-        get().startTimer();
-      }
+      transitionToNextInterval(state, { shouldCountWorkCompletion: true });
     },
     syncWithCurrentTime: () => {
       const state = get();
