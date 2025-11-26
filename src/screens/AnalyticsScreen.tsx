@@ -361,6 +361,27 @@ export const AnalyticsScreen: React.FC = () => {
           Your focus analytics will appear here once you start using the app.
         </Text>
 
+        <View style={styles.card}>
+          <View style={styles.totalRow}>
+            <View style={styles.totalColumn}>
+              <Text style={styles.totalLabel}>Total Pomodoros</Text>
+              <View style={styles.totalValueRow}>
+                <Image
+                  source={require('../../assets/tomato-happy.png')}
+                  style={styles.tomatoIconLarge}
+                  resizeMode="contain"
+                />
+                <Text style={styles.totalValue}>{lifetimeCompletedWork}</Text>
+              </View>
+            </View>
+
+            <View style={styles.totalColumn}>
+              <Text style={styles.totalLabel}>Total Focus</Text>
+              <Text style={styles.totalValue}>{lifetimeFocusHours.toFixed(1)}h</Text>
+            </View>
+          </View>
+        </View>
+
         <View style={styles.section}>
           <View style={styles.streakCard}>
             <Text style={styles.sectionTitle}>Streak</Text>
@@ -485,27 +506,6 @@ export const AnalyticsScreen: React.FC = () => {
                   : labelEnd}
               </Text>
             </TouchableOpacity>
-          </View>
-        </View>
-
-        <View style={styles.card}>
-          <View style={styles.totalRow}>
-            <View style={styles.totalColumn}>
-              <Text style={styles.totalLabel}>Total Pomodoros</Text>
-              <View style={styles.totalValueRow}>
-                <Image
-                  source={require('../../assets/tomato-happy.png')}
-                  style={styles.tomatoIconLarge}
-                  resizeMode="contain"
-                />
-                <Text style={styles.totalValue}>{lifetimeCompletedWork}</Text>
-              </View>
-            </View>
-
-            <View style={styles.totalColumn}>
-              <Text style={styles.totalLabel}>Total Focus</Text>
-              <Text style={styles.totalValue}>{lifetimeFocusHours.toFixed(1)}h</Text>
-            </View>
           </View>
         </View>
 
