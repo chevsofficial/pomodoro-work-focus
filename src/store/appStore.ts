@@ -635,12 +635,17 @@ const useAppStore = create<AppStore>((set, get) => {
       });
     },
     setCloudUser: (userId) => {
-      setStateAndPersist((state) => ({
-        cloudSync: {
-          ...state.cloudSync,
-          userId,
-        },
-      }));
+      setStateAndPersist((state) => {
+        const keepEnabled = userId ? state.cloudSync.cloudSyncEnabled : false;
+
+        return {
+          cloudSync: {
+            ...defaultCloudSyncState,
+            userId,
+            cloudSyncEnabled: keepEnabled,
+          },
+        };
+      });
     },
     setCloudSyncEnabled: (enabled) => {
       setStateAndPersist((state) => ({
