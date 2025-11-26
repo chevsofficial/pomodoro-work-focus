@@ -104,20 +104,21 @@ export const PomodoroScreen: React.FC = () => {
   const styles = useMemo(() => createStyles(colors), [colors]);
 
   const {
-      currentIntervalType,
-      setIntervalType,
-      currentTaskId,
-      setCurrentTask,
-      remainingSeconds,
-      isRunning,
-      startTimer,
-      pauseTimer,
-      tick,
-      handleIntervalCompletion,
-      skipCurrentInterval,
-      completedWorkIntervals,
-      syncWithCurrentTime,
+    currentIntervalType,
+    setIntervalType,
+    currentTaskId,
+    setCurrentTask,
+    remainingSeconds,
+    isRunning,
+    startTimer,
+    pauseTimer,
+    tick,
+    handleIntervalCompletion,
+    skipCurrentInterval,
+    completedWorkIntervals,
+    syncWithCurrentTime,
     activeIntervalId,
+    endIntervalNow,
   } = useTimerStore((state) => state);
 
   const [isTaskPickerVisible, setTaskPickerVisible] = useState(false);
@@ -255,12 +256,22 @@ export const PomodoroScreen: React.FC = () => {
 
       <View style={styles.secondaryControls}>
         {activeIntervalId && (
-          <TouchableOpacity
-            style={[styles.secondaryButton, styles.skipButton]}
-            onPress={skipCurrentInterval}
-          >
-            <Text style={styles.secondaryButtonText}>Skip</Text>
-          </TouchableOpacity>
+          <>
+            <TouchableOpacity
+              style={[styles.secondaryButton, styles.endNowButton]}
+              onPress={endIntervalNow}
+            >
+              <Text style={[styles.secondaryButtonText, styles.endNowButtonText]}>
+                End & Save
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.secondaryButton, styles.skipButton]}
+              onPress={skipCurrentInterval}
+            >
+              <Text style={styles.secondaryButtonText}>Skip</Text>
+            </TouchableOpacity>
+          </>
         )}
       </View>
 
@@ -409,10 +420,17 @@ function createStyles(colors: ReturnType<typeof useThemeColors>) {
       borderColor: colors.textSecondary,
       marginHorizontal: spacing.xs,
     },
+    endNowButton: {
+      backgroundColor: colors.primary,
+      borderColor: colors.primary,
+    },
     secondaryButtonText: {
       fontSize: 14,
       fontWeight: '600',
       color: colors.textPrimary,
+    },
+    endNowButtonText: {
+      color: colors.background,
     },
     skipButton: {
       backgroundColor: colors.surface,

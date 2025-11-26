@@ -109,6 +109,7 @@ interface TimerState {
   tick: () => void;
   handleIntervalCompletion: () => void;
   skipCurrentInterval: () => void;
+  endIntervalNow: () => void;
   syncWithCurrentTime: () => void;
 }
 
@@ -352,6 +353,44 @@ export const useTimerStore = create<TimerState>((set, get) => {
         state.currentIntervalType,
         state.completedWorkIntervals,
         false,
+        state.currentTaskId,
+      );
+
+      cancelScheduledNotificationIfNeeded();
+      set({
+        currentIntervalType: nextType,
+        completedWorkIntervals: nextCompletedWorkIntervals,
+        remainingSeconds: getDurationForType(nextType, state.currentTaskId),
+        isRunning: false,
+        activeIntervalId: undefined,
+        intervalStartTime: undefined,
+        plannedEndTime: undefined,
+      });
+
+      const effectiveSettings = selectEffectiveSettings(appStore);
+      const isPro = selectIsProEffective(appStore);
+      const autoStart = isPro ? effectiveSettings.autoStartNextInterval : false;
+
+      if (autoStart) {
+        get().startTimer();
+      }
+    },
+    endIntervalNow: () => {
+      const state = get();
+      const appStore = useAppStore.getState();
+
+      if (!state.activeIntervalId) {
+        return;
+      }
+
+      const endedAt = new Date().toISOString();
+
+      appStore.finishInterval({ intervalId: state.activeIntervalId, endedAt });
+
+      const { nextType, nextCompletedWorkIntervals } = determineNextInterval(
+        state.currentIntervalType,
+        state.completedWorkIntervals,
+        true,
         state.currentTaskId,
       );
 

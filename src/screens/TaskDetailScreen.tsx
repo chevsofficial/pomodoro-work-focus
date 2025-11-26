@@ -8,6 +8,7 @@ import { ActivityType, IntervalSession } from '../models';
 import useAppStore, { useActivityTypes, useIntervalsByTask, useTasks } from '../store/appStore';
 import { spacing } from '../theme/spacing';
 import { useThemeColors } from '../theme/useThemeColors';
+import { getActualDurationSeconds, MIN_ANALYTICS_INTERVAL_SECONDS } from '../utils/intervalUtils';
 
 const formatDateTime = (value?: string) => {
   if (!value) {
@@ -158,12 +159,12 @@ export const TaskDetailScreen: React.FC = () => {
   const selectedActivityType = activityTypeId ? activityTypeMap[activityTypeId] : undefined;
 
   const renderInterval = (interval: IntervalSession) => {
-    const start = new Date(interval.startedAt).getTime();
-    const end = interval.endedAt ? new Date(interval.endedAt).getTime() : undefined;
-
     const plannedSeconds = interval.durationSeconds;
+    const rawActualSeconds = interval.endedAt
+      ? getActualDurationSeconds(interval)
+      : interval.durationSeconds;
 
-    let actualSeconds = end ? Math.max(0, Math.round((end - start) / 1000)) : plannedSeconds;
+    let actualSeconds = rawActualSeconds;
 
     // If the interval was completed normally (not skipped), and actual is just slightly
     // less than planned, snap it up so small drift doesn't show in history.
@@ -174,12 +175,23 @@ export const TaskDetailScreen: React.FC = () => {
       }
     }
 
+    const isShort = interval.endedAt ? actualSeconds < MIN_ANALYTICS_INTERVAL_SECONDS : false;
+
+    let statusLabel: string;
+    if (!interval.endedAt) {
+      statusLabel = 'In Progress';
+    } else if (interval.wasSkipped) {
+      statusLabel = isShort ? 'Cancelled early (not counted)' : 'Skipped';
+    } else {
+      statusLabel = isShort ? 'Completed (short, not counted)' : 'Completed';
+    }
+
     return (
       <View key={interval.id} style={styles.intervalRow}>
         <View style={styles.intervalHeader}>
           <Text style={styles.intervalType}>{intervalTypeLabel[interval.type] ?? interval.type}</Text>
           <Text style={styles.intervalStatus}>
-            {interval.wasSkipped ? 'Skipped' : interval.endedAt ? 'Completed' : 'In Progress'}
+            {statusLabel}
           </Text>
         </View>
         <Text style={styles.intervalDetail}>
@@ -306,6 +318,9 @@ export const TaskDetailScreen: React.FC = () => {
           ) : (
             <View style={styles.intervalList}>{sortedIntervals.map(renderInterval)}</View>
           )}
+          <Text style={styles.intervalsFootnote}>
+            *Intervals under 5 minutes are shown here but not counted in Analytics.
+          </Text>
         </View>
 
         <View style={styles.actionsRow}>
@@ -457,6 +472,12 @@ function createStyles(colors: ReturnType<typeof useThemeColors>) {
     },
     intervalList: {
       marginTop: spacing.sm,
+    },
+    intervalsFootnote: {
+      color: colors.textSecondary,
+      fontSize: 12,
+      marginTop: spacing.xs,
+      fontStyle: 'italic',
     },
     intervalRow: {
       borderRadius: 12,
