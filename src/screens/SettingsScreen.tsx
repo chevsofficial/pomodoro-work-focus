@@ -17,6 +17,7 @@ import { RootStackParamList } from '../navigation/RootNavigator';
 import { navigateToProUpsell } from '../navigation/proNavigation';
 import { ActivityType, PomodoroSettings } from '../models';
 import useAppStore, { useActivityTypes, useEffectiveSettings, useIsPro } from '../store/appStore';
+import { cloudSyncApi } from '../services/cloudSyncApi';
 import { spacing } from '../theme/spacing';
 import { THEMES, ThemeId, useThemeColors } from '../theme/useThemeColors';
 import {
@@ -395,10 +396,14 @@ export const SettingsScreen: React.FC = () => {
   const storeSettings = useAppStore((state) => state.settings);
   const activityTypes = useActivityTypes();
   const isPro = useIsPro();
+  const cloudSync = useAppStore((state) => state.cloudSync);
   const updateSettings = useAppStore((state) => state.updateSettings);
   const addActivityType = useAppStore((state) => state.addActivityType);
   const updateActivityType = useAppStore((state) => state.updateActivityType);
   const deleteActivityType = useAppStore((state) => state.deleteActivityType);
+  const setCloudSyncEnabled = useAppStore((state) => state.setCloudSyncEnabled);
+  const setCloudUser = useAppStore((state) => state.setCloudUser);
+  const hydrateFromCloudSnapshot = useAppStore((state) => state.hydrateFromCloudSnapshot);
   const navigation = useNavigation<SettingsNavigation>();
   const colors = useThemeColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
@@ -493,6 +498,34 @@ export const SettingsScreen: React.FC = () => {
     updateSettings({ notificationsEnabled: enabled });
   };
 
+  const handleGoToSignIn = async () => {
+    const demoUserId = 'demo-user';
+    setCloudUser(demoUserId);
+
+    try {
+      const snapshot = await cloudSyncApi.fetchSnapshot(demoUserId);
+      if (snapshot) {
+        hydrateFromCloudSnapshot(snapshot);
+      }
+    } catch (error) {
+      console.warn('Failed to fetch cloud snapshot', error);
+    }
+  };
+
+  const handleSignOut = () => {
+    setCloudSyncEnabled(false);
+    setCloudUser(undefined);
+  };
+
+  const handleCloudSyncToggle = async (value: boolean) => {
+    if (!cloudSync.userId && value) {
+      await handleGoToSignIn();
+      return;
+    }
+
+    setCloudSyncEnabled(value);
+  };
+
   const [isModalVisible, setModalVisible] = useState(false);
   const [isThemeModalVisible, setThemeModalVisible] = useState(false);
   const [editingType, setEditingType] = useState<ActivityType | undefined>(undefined);
@@ -511,6 +544,10 @@ export const SettingsScreen: React.FC = () => {
       settings.intervalsBeforeLongBreak,
     ],
   );
+
+  const lastSyncedText = cloudSync.lastSyncedAt
+    ? `Last synced: ${new Date(cloudSync.lastSyncedAt).toLocaleString()}`
+    : 'Not synced yet.';
 
   const openAddModal = () => {
     if (hasReachedFreeActivityLimit) {
@@ -635,6 +672,43 @@ export const SettingsScreen: React.FC = () => {
             styles={styles}
             colors={colors}
           />
+        </View>
+
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Cloud Sync</Text>
+            {isPro && (
+              <TouchableOpacity onPress={cloudSync.userId ? handleSignOut : handleGoToSignIn}>
+                <Text style={styles.sectionAction}>{cloudSync.userId ? 'Sign out' : 'Sign in'}</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+
+          {!isPro && (
+            <TouchableOpacity style={styles.proBox} onPress={handleUpgradePress}>
+              <Text style={styles.proBoxText}>
+                Sync your tasks, activity types, settings, and analytics across devices with Pomodoro
+                Focus Pro.
+              </Text>
+              <Text style={styles.proLink}>View Plans</Text>
+            </TouchableOpacity>
+          )}
+
+          {isPro && (
+            <>
+              {!cloudSync.userId && <Text style={styles.sectionHint}>Sign in to enable sync.</Text>}
+              <View style={styles.settingRow}>
+                <Text style={styles.settingLabel}>Cloud sync enabled</Text>
+                <Switch
+                  value={cloudSync.cloudSyncEnabled}
+                  onValueChange={handleCloudSyncToggle}
+                  thumbColor={cloudSync.cloudSyncEnabled ? colors.primary : colors.surface}
+                  trackColor={{ false: colors.border, true: colors.primary }}
+                />
+              </View>
+              <Text style={styles.sectionHint}>{lastSyncedText}</Text>
+            </>
+          )}
         </View>
 
         <View style={styles.section}>
@@ -840,6 +914,11 @@ function createStyles(colors: ReturnType<typeof useThemeColors>) {
     color: colors.textSecondary,
     opacity: 0.5,
   },
+  sectionHint: {
+    color: colors.textSecondary,
+    fontSize: 13,
+    marginTop: spacing.xs,
+  },
   settingRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -955,6 +1034,22 @@ function createStyles(colors: ReturnType<typeof useThemeColors>) {
     padding: spacing.md,
     marginBottom: spacing.md,
     backgroundColor: colors.background,
+  },
+  proBox: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 12,
+    padding: spacing.md,
+    backgroundColor: colors.background,
+  },
+  proBoxText: {
+    color: colors.textPrimary,
+    fontSize: 14,
+  },
+  proLink: {
+    color: colors.accent,
+    fontWeight: '700',
+    marginTop: spacing.xs,
   },
   proBannerTitle: {
     fontSize: 14,

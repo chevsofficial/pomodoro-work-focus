@@ -7,9 +7,11 @@ import {
   IntervalType,
   PomodoroSettings,
   ProStatus,
+  CloudSyncState,
   StreakState,
   Task,
 } from '../models';
+import { CloudSnapshot, cloudSyncApi } from '../services/cloudSyncApi';
 
 // Toggle this during development to unlock everything
 const FORCE_ALL_PRO_FEATURES = __DEV__ && false; // Set to true for local testing
@@ -129,10 +131,15 @@ export interface AppStore extends AppStateSnapshot {
   deleteActivityType: (activityTypeId: string) => void;
   setProStatus: (status: ProStatus) => void;
   setPro: (value: boolean) => void;
+  setCloudUser: (userId?: string) => void;
+  setCloudSyncEnabled: (enabled: boolean) => void;
+  markCloudSynced: (info: { revision: number; syncedAt?: string }) => void;
+  hydrateFromCloudSnapshot: (snapshot: AppStateSnapshot & { revision?: number }) => void;
 }
 
 export const STORAGE_KEY = 'POMODORO_APP_STATE_V1';
 const PERSIST_DEBOUNCE_MS = 500;
+const CLOUD_SYNC_DEBOUNCE_MS = 3000;
 
 const nowIso = () => new Date().toISOString();
 
@@ -163,6 +170,13 @@ const defaultStreakState: StreakState = {
   frozenDates: [],
   lastFreezeWeekStart: undefined,
   freezeUsesThisWeek: 0,
+};
+
+const defaultCloudSyncState: CloudSyncState = {
+  userId: undefined,
+  cloudSyncEnabled: false,
+  lastSyncedAt: undefined,
+  lastKnownRevision: undefined,
 };
 
 const debounce = <T extends (...args: any[]) => void>(fn: T, delay: number) => {
@@ -322,17 +336,55 @@ const cleanupIntervals = (intervals: IntervalSession[]): IntervalSession[] => {
 
 const useAppStore = create<AppStore>((set, get) => {
   const getSnapshot = (): AppStateSnapshot => {
-    const { tasks, intervals, activityTypes, settings, proStatus, streak } = get();
-    return { tasks, intervals, activityTypes, settings, proStatus, streak };
+    const { tasks, intervals, activityTypes, settings, proStatus, streak, cloudSync } = get();
+    return { tasks, intervals, activityTypes, settings, proStatus, streak, cloudSync };
   };
 
   const schedulePersist = debounce((snapshot: AppStateSnapshot) => {
     persistState(snapshot);
   }, PERSIST_DEBOUNCE_MS);
 
+  const getCloudSnapshot = (): CloudSnapshot | null => {
+    const state = get();
+    const userId = state.cloudSync.userId;
+    if (!userId) return null;
+
+    const base = getSnapshot();
+    return {
+      ...base,
+      userId,
+      updatedAt: nowIso(),
+      revision: state.cloudSync.lastKnownRevision ?? 0,
+    };
+  };
+
+  const scheduleCloudSync = debounce(async () => {
+    const state = get();
+
+    const isPro = selectIsProEffective(state);
+    if (!isPro) return;
+    if (!state.cloudSync.userId) return;
+    if (!state.cloudSync.cloudSyncEnabled) return;
+
+    const snapshot = getCloudSnapshot();
+    if (!snapshot) return;
+
+    try {
+      const stored = await cloudSyncApi.uploadSnapshot(snapshot);
+      get().markCloudSynced({
+        revision: stored.revision,
+        syncedAt: stored.updatedAt,
+      });
+    } catch (error) {
+      console.warn('Cloud sync failed', error);
+    }
+  }, CLOUD_SYNC_DEBOUNCE_MS);
+
   const setStateAndPersist = (updater: (state: AppStore) => AppStateSnapshot | Partial<AppStore>) => {
     set((state) => ({ ...state, ...updater(state) }));
-    schedulePersist(getSnapshot());
+    const snapshot = getSnapshot();
+    schedulePersist(snapshot);
+    scheduleCloudSync();
   };
 
   const hydrate = async () => {
@@ -349,6 +401,9 @@ const useAppStore = create<AppStore>((set, get) => {
           const nextStreak = normalizeFreezeUsage(hydratedStreak, nowIso());
           const rawIntervals = parsed.intervals ?? state.intervals;
           const cleanedIntervals = cleanupIntervals(rawIntervals);
+          const nextCloudSync = parsed.cloudSync
+            ? { ...defaultCloudSyncState, ...parsed.cloudSync }
+            : { ...defaultCloudSyncState };
 
           return {
             ...state,
@@ -359,6 +414,7 @@ const useAppStore = create<AppStore>((set, get) => {
             proStatus: nextProStatus,
             isPro: nextProStatus.isPro,
             streak: nextStreak,
+            cloudSync: nextCloudSync,
           };
         });
       }
@@ -377,6 +433,7 @@ const useAppStore = create<AppStore>((set, get) => {
     proStatus: { ...defaultProStatus },
     isPro: defaultProStatus.isPro,
     streak: { ...defaultStreakState },
+    cloudSync: { ...defaultCloudSyncState },
 
     addTask: ({ title, description, activityTypeId }) => {
       const timestamp = nowIso();
@@ -572,6 +629,53 @@ const useAppStore = create<AppStore>((set, get) => {
         return { proStatus: nextProStatus, isPro: value };
       });
     },
+    setCloudUser: (userId) => {
+      setStateAndPersist((state) => ({
+        cloudSync: {
+          ...state.cloudSync,
+          userId,
+        },
+      }));
+    },
+    setCloudSyncEnabled: (enabled) => {
+      setStateAndPersist((state) => ({
+        cloudSync: {
+          ...state.cloudSync,
+          cloudSyncEnabled: enabled,
+        },
+      }));
+    },
+    markCloudSynced: ({ revision, syncedAt }) => {
+      const timestamp = syncedAt ?? nowIso();
+      setStateAndPersist((state) => ({
+        cloudSync: {
+          ...state.cloudSync,
+          lastSyncedAt: timestamp,
+          lastKnownRevision: revision,
+        },
+      }));
+    },
+    hydrateFromCloudSnapshot: (snapshot) => {
+      set((state) => {
+        const nextProStatus = snapshot.proStatus ?? state.proStatus;
+        const nextSettings = { ...state.settings, ...(snapshot.settings ?? {}) };
+
+        return {
+          ...state,
+          tasks: snapshot.tasks ?? state.tasks,
+          intervals: snapshot.intervals ?? state.intervals,
+          activityTypes: snapshot.activityTypes ?? state.activityTypes,
+          settings: nextSettings,
+          proStatus: nextProStatus,
+          isPro: nextProStatus.isPro,
+          cloudSync: {
+            ...state.cloudSync,
+            lastKnownRevision: snapshot.revision ?? state.cloudSync.lastKnownRevision,
+            lastSyncedAt: nowIso(),
+          },
+        };
+      });
+    },
   };
 });
 
@@ -600,6 +704,7 @@ export const useAppStateSnapshot = () =>
     settings: state.settings,
     proStatus: state.proStatus,
     streak: state.streak,
+    cloudSync: state.cloudSync,
   }));
 
 export const useStreak = () => useAppStore((state) => state.streak);

@@ -64,6 +64,13 @@ export interface StreakState {
   freezeUsesThisWeek: number;
 }
 
+export interface CloudSyncState {
+  userId?: string;
+  cloudSyncEnabled: boolean;
+  lastSyncedAt?: string;
+  lastKnownRevision?: number;
+}
+
 export interface AppStateSnapshot {
   tasks: Task[];
   intervals: IntervalSession[];
@@ -71,4 +78,5 @@ export interface AppStateSnapshot {
   settings: PomodoroSettings;
   proStatus: ProStatus;
   streak: StreakState;
+  cloudSync: CloudSyncState;
 }
