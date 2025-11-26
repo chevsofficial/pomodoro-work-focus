@@ -14,7 +14,10 @@ import useAppStore, {
   useIsPro,
   useStreak,
 } from '../store/appStore';
-import { getActualDurationSeconds, MIN_ANALYTICS_INTERVAL_SECONDS } from '../utils/intervalUtils';
+import {
+  getAnalyticsDurationSeconds,
+  MIN_ANALYTICS_INTERVAL_SECONDS,
+} from '../utils/intervalUtils';
 import { spacing } from '../theme/spacing';
 import { useThemeColors } from '../theme/useThemeColors';
 
@@ -251,8 +254,8 @@ export const AnalyticsScreen: React.FC = () => {
       (intervals ?? []).filter((interval) => {
         if (!interval.endedAt) return false;
 
-        const actualSeconds = getActualDurationSeconds(interval);
-        return actualSeconds >= MIN_ANALYTICS_INTERVAL_SECONDS;
+        const analyticsSeconds = getAnalyticsDurationSeconds(interval);
+        return analyticsSeconds >= MIN_ANALYTICS_INTERVAL_SECONDS;
       }),
     [intervals],
   );
@@ -284,7 +287,7 @@ export const AnalyticsScreen: React.FC = () => {
     () =>
       workIntervals
         .filter((i) => !i.wasSkipped && i.endedAt)
-        .reduce((sum, i) => sum + getActualDurationSeconds(i), 0),
+        .reduce((sum, i) => sum + getAnalyticsDurationSeconds(i), 0),
     [workIntervals],
   );
 
@@ -305,7 +308,7 @@ export const AnalyticsScreen: React.FC = () => {
     () =>
       workIntervalsInRange
         .filter((i) => !i.wasSkipped && i.endedAt)
-        .reduce((sum, i) => sum + getActualDurationSeconds(i), 0),
+        .reduce((sum, i) => sum + getAnalyticsDurationSeconds(i), 0),
     [workIntervalsInRange],
   );
 
@@ -331,7 +334,7 @@ export const AnalyticsScreen: React.FC = () => {
       if (interval.wasSkipped || !interval.endedAt) continue;
 
       const activityId = getEffectiveActivityTypeId(interval, taskMap);
-      const hours = getActualDurationSeconds(interval) / 3600;
+      const hours = getAnalyticsDurationSeconds(interval) / 3600;
 
       totals[activityId] = (totals[activityId] ?? 0) + hours;
     }
