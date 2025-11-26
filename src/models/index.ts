@@ -17,6 +17,7 @@ export interface Task {
 export interface IntervalSession {
   id: string;
   taskId?: string;
+  activityTypeId?: string;
   type: IntervalType;
   startedAt: string;
   endedAt?: string;

@@ -7,7 +7,8 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { ScreenContainer } from '../components/ScreenContainer';
 import { RootStackParamList } from '../navigation/RootNavigator';
 import { navigateToProUpsell } from '../navigation/proNavigation';
-import { IntervalSession } from '../models';
+import { ACTIVITY_TYPE_COLORS, OTHER_ACTIVITY_TYPE_ID, OTHER_ACTIVITY_TYPE_LABEL } from '../config/activityTypeConstants';
+import { IntervalSession, Task } from '../models';
 import useAppStore, {
   useAnalyticsMinDate,
   useIsPro,
@@ -53,6 +54,22 @@ const DATE_RANGE_OPTIONS: { key: AnalyticsRangeKey; label: string }[] = [
 ];
 
 const DEFAULT_ACTIVITY_NAME = 'No activity type';
+
+const getEffectiveActivityTypeId = (
+  interval: IntervalSession,
+  taskMapById: Record<string, Task | undefined>,
+) => {
+  if (interval.activityTypeId) {
+    return interval.activityTypeId;
+  }
+
+  const task = interval.taskId ? taskMapById[interval.taskId] : undefined;
+  if (task?.activityTypeId) {
+    return task.activityTypeId;
+  }
+
+  return OTHER_ACTIVITY_TYPE_ID;
+};
 
 const startOfDay = (d: Date) =>
   new Date(d.getFullYear(), d.getMonth(), d.getDate());
@@ -178,7 +195,6 @@ export const AnalyticsScreen: React.FC = () => {
   const activityTypes = useAppStore((state) => state.activityTypes);
   const colors = useThemeColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
-  const defaultActivityColor = colors.textSecondary;
 
   const freezeUsesLeftThisWeek = isPro
     ? Math.max(0, 1 - (streak.freezeUsesThisWeek ?? 0))
@@ -301,67 +317,67 @@ export const AnalyticsScreen: React.FC = () => {
   }, [activityTypes]);
 
   const taskMap = useMemo(() => {
-    const map: Record<string, (typeof tasks)[number]> = {};
+    const map: Record<string, (typeof tasks)[number] | undefined> = {};
     tasks.forEach((t) => {
       map[t.id] = t;
     });
     return map;
   }, [tasks]);
 
-  const activityTypeRatio = useMemo(() => {
+  const focusByActivityType = useMemo(() => {
     const totals: Record<string, number> = {};
 
     for (const interval of workIntervalsInRange) {
       if (interval.wasSkipped || !interval.endedAt) continue;
 
-      const task = interval.taskId ? taskMap[interval.taskId] : undefined;
-      const activityId = task?.activityTypeId;
-      if (!activityId) continue;
+      const activityId = getEffectiveActivityTypeId(interval, taskMap);
       const hours = getActualDurationSeconds(interval) / 3600;
 
       totals[activityId] = (totals[activityId] ?? 0) + hours;
     }
 
-    const totalHours = Object.values(totals).reduce((sum, v) => sum + v, 0);
-    if (totalHours === 0) return [] as {
-      key: string;
-      label: string;
-      color: string;
-      hours: number;
-      percent: number;
-    }[];
+    return totals;
+  }, [taskMap, workIntervalsInRange]);
 
-    return Object.entries(totals)
-      .map(([key, hours]) => {
-        const type = key === 'none' ? undefined : activityTypeMap[key];
+  const totalRangeHours = useMemo(
+    () => Object.values(focusByActivityType).reduce((sum, v) => sum + v, 0),
+    [focusByActivityType],
+  );
+
+  const activityTypeRatio = useMemo(() => {
+    return Object.entries(focusByActivityType)
+      .filter(([, hours]) => hours > 0)
+      .map(([activityTypeId, hours]) => {
+        const type = activityTypeMap[activityTypeId];
+        const label =
+          activityTypeId === OTHER_ACTIVITY_TYPE_ID
+            ? OTHER_ACTIVITY_TYPE_LABEL
+            : type?.name ?? DEFAULT_ACTIVITY_NAME;
+        const color =
+          type?.color ??
+          ACTIVITY_TYPE_COLORS[activityTypeId] ??
+          ACTIVITY_TYPE_COLORS[OTHER_ACTIVITY_TYPE_ID];
+
         return {
-          key,
-          label: type?.name ?? DEFAULT_ACTIVITY_NAME,
-          color: type?.color ?? defaultActivityColor,
+          key: activityTypeId,
+          label,
+          color,
           hours,
-          percent: (hours / totalHours) * 100,
+          percent: totalRangeHours > 0 ? (hours / totalRangeHours) * 100 : 0,
         };
       })
       .sort((a, b) => b.hours - a.hours);
-  }, [activityTypeMap, defaultActivityColor, taskMap, workIntervalsInRange]);
+  }, [activityTypeMap, focusByActivityType, totalRangeHours]);
 
   const focusBarSegments = useMemo(() => {
-    const totalHours = activityTypeRatio.reduce((sum, row) => sum + row.hours, 0);
-    if (totalHours <= 0) return [] as { key: string; color: string; fraction: number }[];
+    if (totalRangeHours <= 0) return [] as { key: string; color: string; fraction: number }[];
 
-    return activityTypeRatio
-      .filter((row) => row.hours > 0)
-      .map((row) => ({
-        key: row.key,
-        color: row.color,
-        fraction: row.hours / totalHours,
-      }));
-  }, [activityTypeRatio]);
-
-  const totalRangeHours = useMemo(
-    () => activityTypeRatio.reduce((sum, row) => sum + row.hours, 0),
-    [activityTypeRatio],
-  );
+    return activityTypeRatio.map((row) => ({
+      key: row.key,
+      color: row.color,
+      fraction: row.hours / totalRangeHours,
+    }));
+  }, [activityTypeRatio, totalRangeHours]);
   const maxHours = Math.max(totalRangeHours, 0.1);
 
   return (
