@@ -315,7 +315,8 @@ export const AnalyticsScreen: React.FC = () => {
       if (interval.wasSkipped || !interval.endedAt) continue;
 
       const task = interval.taskId ? taskMap[interval.taskId] : undefined;
-      const activityId = task?.activityTypeId ?? 'none';
+      const activityId = task?.activityTypeId;
+      if (!activityId) continue;
       const hours = getActualDurationSeconds(interval) / 3600;
 
       totals[activityId] = (totals[activityId] ?? 0) + hours;
@@ -343,6 +344,19 @@ export const AnalyticsScreen: React.FC = () => {
       })
       .sort((a, b) => b.hours - a.hours);
   }, [activityTypeMap, defaultActivityColor, taskMap, workIntervalsInRange]);
+
+  const focusBarSegments = useMemo(() => {
+    const totalHours = activityTypeRatio.reduce((sum, row) => sum + row.hours, 0);
+    if (totalHours <= 0) return [] as { key: string; color: string; fraction: number }[];
+
+    return activityTypeRatio
+      .filter((row) => row.hours > 0)
+      .map((row) => ({
+        key: row.key,
+        color: row.color,
+        fraction: row.hours / totalHours,
+      }));
+  }, [activityTypeRatio]);
 
   const totalRangeHours = useMemo(
     () => activityTypeRatio.reduce((sum, row) => sum + row.hours, 0),
@@ -537,12 +551,12 @@ export const AnalyticsScreen: React.FC = () => {
 
               <View style={styles.focusBarWrapper}>
                 <View style={styles.focusBarBackground}>
-                  {activityTypeRatio.map((row) => (
+                  {focusBarSegments.map((segment) => (
                     <View
-                      key={row.key}
+                      key={segment.key}
                       style={{
-                        flex: row.hours || 0.0001,
-                        backgroundColor: row.color,
+                        flex: segment.fraction,
+                        backgroundColor: segment.color,
                       }}
                     />
                   ))}
