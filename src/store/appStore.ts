@@ -3,6 +3,7 @@ import { create } from 'zustand';
 import {
   AppStateSnapshot,
   ActivityType,
+  IntervalSegment,
   IntervalSession,
   IntervalType,
   PomodoroSettings,
@@ -12,6 +13,13 @@ import {
   Task,
 } from '../models';
 import { CloudSnapshot, cloudSyncApi } from '../services/cloudSyncApi';
+import {
+  closeCurrentSegment,
+  getActiveDurationSecondsFromSegments,
+  getAnalyticsDurationSeconds,
+  normalizeSegments,
+  startNewSegment,
+} from '../utils/intervalUtils';
 
 // Toggle this during development to unlock everything
 const FORCE_ALL_PRO_FEATURES = __DEV__ && false; // Set to true for local testing
@@ -123,6 +131,8 @@ export interface AppStore extends AppStateSnapshot {
   toggleTaskCompleted: (taskId: string) => void;
   deleteTaskSoft: (taskId: string) => void;
   startInterval: (payload: StartIntervalPayload) => string;
+  startIntervalSegment: (payload: { intervalId: string; startTimeMs: number }) => void;
+  endIntervalSegment: (payload: { intervalId: string; endTimeMs: number }) => void;
   finishInterval: (payload: FinishIntervalPayload) => void;
   skipInterval: (payload: SkipIntervalPayload) => void;
   updateSettings: (updates: Partial<PomodoroSettings>) => void;
@@ -312,11 +322,78 @@ const computeStreakAfterCompletion = (
   };
 };
 
+const toMs = (value?: string): number | undefined => {
+  if (!value) return undefined;
+  const ms = new Date(value).getTime();
+  return Number.isFinite(ms) ? ms : undefined;
+};
+
+const deriveSegmentsForInterval = (interval: IntervalSession, endMs?: number): IntervalSegment[] => {
+  const startMs = toMs(interval.startedAt);
+  return normalizeSegments(interval.segments, startMs, endMs);
+};
+
+const applyIntervalDurations = (
+  interval: IntervalSession,
+  segments: IntervalSegment[],
+  endMs?: number,
+): IntervalSession => {
+  const activeDurationSeconds = getActiveDurationSecondsFromSegments(segments);
+  const startMs = toMs(interval.startedAt);
+
+  const wallDurationSeconds =
+    endMs !== undefined && startMs !== undefined
+      ? Math.max(0, Math.round((endMs - startMs) / 1000))
+      : interval.wallDurationSeconds;
+
+  const analyticsDurationSeconds =
+    endMs !== undefined || interval.analyticsDurationSeconds !== undefined
+      ? getAnalyticsDurationSeconds({
+          ...interval,
+          segments,
+          activeDurationSeconds,
+          wallDurationSeconds,
+        })
+      : interval.analyticsDurationSeconds;
+
+  return {
+    ...interval,
+    segments,
+    activeDurationSeconds,
+    wallDurationSeconds,
+    analyticsDurationSeconds,
+  };
+};
+
+const finalizeIntervalDurations = (
+  interval: IntervalSession,
+  endMs: number,
+  wasSkipped: boolean,
+): IntervalSession => {
+  const segments = closeCurrentSegment(deriveSegmentsForInterval(interval, endMs), endMs);
+  const withDurations = applyIntervalDurations(interval, segments, endMs);
+
+  return {
+    ...withDurations,
+    endedAt: new Date(endMs).toISOString(),
+    wasSkipped,
+  };
+};
+
+const ensureCompletedIntervalDurations = (interval: IntervalSession): IntervalSession => {
+  if (!interval.endedAt) return interval;
+
+  const endMs = toMs(interval.endedAt);
+  if (endMs === undefined) return interval;
+
+  return finalizeIntervalDurations(interval, endMs, interval.wasSkipped);
+};
+
 const cleanupIntervals = (intervals: IntervalSession[]): IntervalSession[] => {
   const now = Date.now();
 
   return intervals.map((interval) => {
-    if (interval.endedAt) return interval;
+    if (interval.endedAt) return ensureCompletedIntervalDurations(interval);
 
     const startedMs = new Date(interval.startedAt).getTime();
     if (!Number.isFinite(startedMs)) return interval;
@@ -326,11 +403,7 @@ const cleanupIntervals = (intervals: IntervalSession[]): IntervalSession[] => {
       return interval;
     }
 
-    return {
-      ...interval,
-      endedAt: new Date(startedMs).toISOString(),
-      wasSkipped: true,
-    };
+    return finalizeIntervalDurations(interval, startedMs, true);
   });
 };
 
@@ -518,7 +591,9 @@ const useAppStore = create<AppStore>((set, get) => {
     },
 
     startInterval: ({ taskId, type, durationSeconds }) => {
-      const timestamp = nowIso();
+      const startMs = Date.now();
+      const timestamp = new Date(startMs).toISOString();
+      const segments = [{ start: startMs, end: startMs }];
       const interval: IntervalSession = {
         id: createId(),
         taskId,
@@ -526,6 +601,10 @@ const useAppStore = create<AppStore>((set, get) => {
         startedAt: timestamp,
         wasSkipped: false,
         durationSeconds,
+        segments,
+        activeDurationSeconds: 0,
+        wallDurationSeconds: 0,
+        analyticsDurationSeconds: 0,
       };
 
       setStateAndPersist((state) => ({ intervals: [...state.intervals, interval] }));
@@ -533,8 +612,35 @@ const useAppStore = create<AppStore>((set, get) => {
       return interval.id;
     },
 
+    startIntervalSegment: ({ intervalId, startTimeMs }) => {
+      setStateAndPersist((state) => ({
+        intervals: state.intervals.map((interval) => {
+          if (interval.id !== intervalId) return interval;
+
+          const baseSegments = deriveSegmentsForInterval(interval, startTimeMs);
+          const segments = startNewSegment(baseSegments, startTimeMs);
+
+          return applyIntervalDurations(interval, segments);
+        }),
+      }));
+    },
+
+    endIntervalSegment: ({ intervalId, endTimeMs }) => {
+      setStateAndPersist((state) => ({
+        intervals: state.intervals.map((interval) => {
+          if (interval.id !== intervalId) return interval;
+
+          const baseSegments = deriveSegmentsForInterval(interval, endTimeMs);
+          const segments = closeCurrentSegment(baseSegments, endTimeMs);
+
+          return applyIntervalDurations(interval, segments);
+        }),
+      }));
+    },
+
     finishInterval: ({ intervalId, endedAt }) => {
       const timestamp = endedAt ?? nowIso();
+      const endMs = new Date(timestamp).getTime();
       const isPro = selectIsProEffective(get());
 
       setStateAndPersist((state) => {
@@ -543,11 +649,7 @@ const useAppStore = create<AppStore>((set, get) => {
         const updatedIntervals = state.intervals.map((interval) => {
           if (interval.id !== intervalId) return interval;
 
-          const next: IntervalSession = {
-            ...interval,
-            endedAt: timestamp,
-            wasSkipped: false,
-          };
+          const next = finalizeIntervalDurations(interval, endMs, false);
           updatedInterval = next;
           return next;
         });
@@ -571,15 +673,10 @@ const useAppStore = create<AppStore>((set, get) => {
 
     skipInterval: ({ intervalId, skippedAt }) => {
       const timestamp = skippedAt ?? nowIso();
+      const endMs = new Date(timestamp).getTime();
       setStateAndPersist((state) => ({
         intervals: state.intervals.map((interval) =>
-          interval.id === intervalId
-            ? {
-                ...interval,
-                endedAt: timestamp,
-                wasSkipped: true,
-              }
-            : interval,
+          interval.id === intervalId ? finalizeIntervalDurations(interval, endMs, true) : interval,
         ),
       }));
     },
@@ -672,11 +769,12 @@ const useAppStore = create<AppStore>((set, get) => {
       setStateAndPersist((state) => {
         const nextProStatus = snapshot.proStatus ?? state.proStatus;
         const nextSettings = { ...state.settings, ...(snapshot.settings ?? {}) };
+        const nextIntervals = cleanupIntervals(snapshot.intervals ?? state.intervals);
 
         return {
           ...state,
           tasks: snapshot.tasks ?? state.tasks,
-          intervals: snapshot.intervals ?? state.intervals,
+          intervals: nextIntervals,
           activityTypes: snapshot.activityTypes ?? state.activityTypes,
           settings: nextSettings,
           proStatus: nextProStatus,

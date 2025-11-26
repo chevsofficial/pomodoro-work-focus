@@ -241,7 +241,9 @@ export const useTimerStore = create<TimerState>((set, get) => {
       const state = get();
       if (state.activeIntervalId) {
         const appStore = useAppStore.getState();
-        appStore.skipInterval({ intervalId: state.activeIntervalId });
+        const now = Date.now();
+        appStore.endIntervalSegment({ intervalId: state.activeIntervalId, endTimeMs: now });
+        appStore.skipInterval({ intervalId: state.activeIntervalId, skippedAt: new Date(now).toISOString() });
       }
 
       const duration = getDurationForType(type, state.currentTaskId);
@@ -268,14 +270,17 @@ export const useTimerStore = create<TimerState>((set, get) => {
         remainingSeconds = getDurationForType(state.currentIntervalType, state.currentTaskId);
       }
 
+      const appStore = useAppStore.getState();
       let intervalId = state.activeIntervalId;
       if (!intervalId) {
-        const appStore = useAppStore.getState();
         intervalId = appStore.startInterval({
           taskId: state.currentTaskId,
           type: state.currentIntervalType,
           durationSeconds: getDurationForType(state.currentIntervalType, state.currentTaskId),
         });
+      } else if (!state.intervalStartTime) {
+        const now = Date.now();
+        appStore.startIntervalSegment({ intervalId, startTimeMs: now });
       }
 
       const now = Date.now();
@@ -294,15 +299,45 @@ export const useTimerStore = create<TimerState>((set, get) => {
     },
 
     pauseTimer: () => {
+      const state = get();
+      const now = Date.now();
+
+      if (state.activeIntervalId) {
+        const appStore = useAppStore.getState();
+        appStore.endIntervalSegment({ intervalId: state.activeIntervalId, endTimeMs: now });
+      }
+
       cancelScheduledNotificationIfNeeded();
-      set({ isRunning: false, intervalStartTime: undefined, plannedEndTime: undefined });
+      set((current) => {
+        if (!current.plannedEndTime) {
+          return {
+            ...current,
+            isRunning: false,
+            intervalStartTime: undefined,
+            plannedEndTime: undefined,
+          };
+        }
+
+        const remainingMs = current.plannedEndTime - now;
+        const nextRemainingSeconds = Math.max(0, Math.round(remainingMs / 1000));
+
+        return {
+          ...current,
+          isRunning: false,
+          intervalStartTime: undefined,
+          plannedEndTime: undefined,
+          remainingSeconds: nextRemainingSeconds,
+        };
+      });
     },
 
     resetTimer: () => {
       const state = get();
       if (state.activeIntervalId) {
         const appStore = useAppStore.getState();
-        appStore.skipInterval({ intervalId: state.activeIntervalId });
+        const now = Date.now();
+        appStore.endIntervalSegment({ intervalId: state.activeIntervalId, endTimeMs: now });
+        appStore.skipInterval({ intervalId: state.activeIntervalId, skippedAt: new Date(now).toISOString() });
       }
 
       cancelScheduledNotificationIfNeeded();
@@ -339,7 +374,9 @@ export const useTimerStore = create<TimerState>((set, get) => {
       }
 
       const appStore = useAppStore.getState();
-      appStore.finishInterval({ intervalId: state.activeIntervalId });
+      const endMs = state.plannedEndTime ?? Date.now();
+      appStore.endIntervalSegment({ intervalId: state.activeIntervalId, endTimeMs: endMs });
+      appStore.finishInterval({ intervalId: state.activeIntervalId, endedAt: new Date(endMs).toISOString() });
 
       transitionToNextInterval(state, {
         shouldCountWorkCompletion: true,
@@ -360,7 +397,9 @@ export const useTimerStore = create<TimerState>((set, get) => {
         });
       }
 
-      appStore.skipInterval({ intervalId });
+      const now = Date.now();
+      appStore.endIntervalSegment({ intervalId, endTimeMs: now });
+      appStore.skipInterval({ intervalId, skippedAt: new Date(now).toISOString() });
 
       transitionToNextInterval(state, { shouldCountWorkCompletion: false });
     },
@@ -372,8 +411,10 @@ export const useTimerStore = create<TimerState>((set, get) => {
         return;
       }
 
-      const endedAt = new Date().toISOString();
+      const endMs = Date.now();
+      const endedAt = new Date(endMs).toISOString();
 
+      appStore.endIntervalSegment({ intervalId: state.activeIntervalId, endTimeMs: endMs });
       appStore.finishInterval({ intervalId: state.activeIntervalId, endedAt });
 
       transitionToNextInterval(state, { shouldCountWorkCompletion: true });
