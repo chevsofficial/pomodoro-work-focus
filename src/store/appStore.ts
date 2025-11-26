@@ -380,11 +380,16 @@ const useAppStore = create<AppStore>((set, get) => {
     }
   }, CLOUD_SYNC_DEBOUNCE_MS);
 
-  const setStateAndPersist = (updater: (state: AppStore) => AppStateSnapshot | Partial<AppStore>) => {
+  const setStateAndPersist = (
+    updater: (state: AppStore) => AppStateSnapshot | Partial<AppStore>,
+    options: { skipCloudSync?: boolean } = {},
+  ) => {
     set((state) => ({ ...state, ...updater(state) }));
     const snapshot = getSnapshot();
     schedulePersist(snapshot);
-    scheduleCloudSync();
+    if (!options.skipCloudSync) {
+      scheduleCloudSync();
+    }
   };
 
   const hydrate = async () => {
@@ -647,16 +652,19 @@ const useAppStore = create<AppStore>((set, get) => {
     },
     markCloudSynced: ({ revision, syncedAt }) => {
       const timestamp = syncedAt ?? nowIso();
-      setStateAndPersist((state) => ({
-        cloudSync: {
-          ...state.cloudSync,
-          lastSyncedAt: timestamp,
-          lastKnownRevision: revision,
-        },
-      }));
+      setStateAndPersist(
+        (state) => ({
+          cloudSync: {
+            ...state.cloudSync,
+            lastSyncedAt: timestamp,
+            lastKnownRevision: revision,
+          },
+        }),
+        { skipCloudSync: true },
+      );
     },
     hydrateFromCloudSnapshot: (snapshot) => {
-      set((state) => {
+      setStateAndPersist((state) => {
         const nextProStatus = snapshot.proStatus ?? state.proStatus;
         const nextSettings = { ...state.settings, ...(snapshot.settings ?? {}) };
 
