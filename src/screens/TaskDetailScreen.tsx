@@ -8,7 +8,12 @@ import { ActivityType, IntervalSession } from '../models';
 import useAppStore, { useActivityTypes, useIntervalsByTask, useTasks } from '../store/appStore';
 import { spacing } from '../theme/spacing';
 import { useThemeColors } from '../theme/useThemeColors';
-import { getActualDurationSeconds, MIN_ANALYTICS_INTERVAL_SECONDS } from '../utils/intervalUtils';
+import {
+  getActiveDurationSeconds,
+  getAnalyticsDurationSeconds,
+  getWallDurationSeconds,
+  MIN_ANALYTICS_INTERVAL_SECONDS,
+} from '../utils/intervalUtils';
 
 const formatDateTime = (value?: string) => {
   if (!value) {
@@ -160,22 +165,26 @@ export const TaskDetailScreen: React.FC = () => {
 
   const renderInterval = (interval: IntervalSession) => {
     const plannedSeconds = interval.durationSeconds;
-    const rawActualSeconds = interval.endedAt
-      ? getActualDurationSeconds(interval)
+    const activeSeconds = interval.endedAt
+      ? getActiveDurationSeconds(interval)
       : interval.durationSeconds;
 
-    let actualSeconds = rawActualSeconds;
+    let focusSeconds = interval.analyticsDurationSeconds ?? getAnalyticsDurationSeconds(interval);
+    if (!interval.endedAt) {
+      focusSeconds = Math.min(activeSeconds, plannedSeconds);
+    }
 
-    // If the interval was completed normally (not skipped), and actual is just slightly
+    // If the interval was completed normally (not skipped), and focus is just slightly
     // less than planned, snap it up so small drift doesn't show in history.
     if (!interval.wasSkipped && interval.endedAt) {
-      const diff = plannedSeconds - actualSeconds;
+      const diff = plannedSeconds - focusSeconds;
       if (diff > 0 && diff <= 5) {
-        actualSeconds = plannedSeconds;
+        focusSeconds = plannedSeconds;
       }
     }
 
-    const isShort = interval.endedAt ? actualSeconds < MIN_ANALYTICS_INTERVAL_SECONDS : false;
+    const wallSeconds = interval.endedAt ? getWallDurationSeconds(interval) : 0;
+    const isShort = interval.endedAt ? focusSeconds < MIN_ANALYTICS_INTERVAL_SECONDS : false;
 
     let statusLabel: string;
     if (!interval.endedAt) {
@@ -204,7 +213,10 @@ export const TaskDetailScreen: React.FC = () => {
           Planned: <Text style={styles.intervalValue}>{formatDuration(plannedSeconds)}</Text>
         </Text>
         <Text style={styles.intervalDetail}>
-          Actual: <Text style={styles.intervalValue}>{formatDuration(actualSeconds)}</Text>
+          Focus time: <Text style={styles.intervalValue}>{formatDuration(focusSeconds)}</Text>
+        </Text>
+        <Text style={styles.intervalDetail}>
+          Elapsed: <Text style={styles.intervalValue}>{formatDuration(wallSeconds)}</Text>
         </Text>
       </View>
     );

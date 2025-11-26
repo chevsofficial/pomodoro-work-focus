@@ -23,7 +23,15 @@ export interface IntervalSession {
   endedAt?: string;
   wasSkipped: boolean;
   durationSeconds: number;
+  segments?: IntervalSegment[];
+  activeDurationSeconds?: number;
+  wallDurationSeconds?: number;
   analyticsDurationSeconds?: number;
+}
+
+export interface IntervalSegment {
+  start: number; // timestamp in milliseconds
+  end: number; // timestamp in milliseconds
 }
 
 export interface ActivityType {
