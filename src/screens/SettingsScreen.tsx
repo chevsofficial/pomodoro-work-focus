@@ -520,6 +520,7 @@ export const SettingsScreen: React.FC = () => {
   const handleCloudSyncToggle = async (value: boolean) => {
     if (!cloudSync.userId && value) {
       await handleGoToSignIn();
+      setCloudSyncEnabled(true);
       return;
     }
 
