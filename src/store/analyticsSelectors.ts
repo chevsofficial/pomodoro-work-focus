@@ -1,4 +1,5 @@
 import { IntervalSession, Task } from '../models';
+import { getAnalyticsDurationSeconds } from '../utils/intervalUtils';
 import useAppStore from './appStore';
 
 export type AnalyticsRange = 'today' | 'week' | 'month' | 'all';
@@ -43,19 +44,6 @@ const isAfterRangeStart = (dateIso?: string, rangeStart?: Date) => {
 const isCompletedWorkInterval = (interval: IntervalSession) =>
   interval.type === 'work' && !interval.wasSkipped && Boolean(interval.endedAt);
 
-const getIntervalDurationSeconds = (interval: IntervalSession) => {
-  if (interval.startedAt && interval.endedAt) {
-    const started = new Date(interval.startedAt);
-    const ended = new Date(interval.endedAt);
-    const diff = (ended.getTime() - started.getTime()) / 1000;
-    if (!Number.isNaN(diff) && diff > 0) {
-      return diff;
-    }
-  }
-
-  return interval.durationSeconds ?? 0;
-};
-
 export const calculateAnalyticsStats = (
   tasks: Task[],
   intervals: IntervalSession[],
@@ -79,7 +67,7 @@ export const calculateAnalyticsStats = (
 
     if (isCompletedWorkInterval(interval)) {
       completedWorkIntervals += 1;
-      totalFocusSeconds += getIntervalDurationSeconds(interval);
+      totalFocusSeconds += getAnalyticsDurationSeconds(interval);
     }
 
     if (interval.wasSkipped) {

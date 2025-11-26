@@ -23,6 +23,7 @@ export interface IntervalSession {
   endedAt?: string;
   wasSkipped: boolean;
   durationSeconds: number;
+  analyticsDurationSeconds?: number;
 }
 
 export interface ActivityType {
