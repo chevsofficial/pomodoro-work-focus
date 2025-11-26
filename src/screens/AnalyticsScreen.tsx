@@ -13,6 +13,7 @@ import useAppStore, {
   useIsPro,
   useStreak,
 } from '../store/appStore';
+import { getActualDurationSeconds, MIN_ANALYTICS_INTERVAL_SECONDS } from '../utils/intervalUtils';
 import { spacing } from '../theme/spacing';
 import { useThemeColors } from '../theme/useThemeColors';
 
@@ -229,28 +230,37 @@ export const AnalyticsScreen: React.FC = () => {
   const labelStart = useMemo(() => formatRangeDateLabel(rangeStart), [rangeStart]);
   const labelEnd = useMemo(() => formatRangeDateLabel(rangeEnd), [rangeEnd]);
 
-  const workIntervals = useMemo(
+  const analyticsIntervals = useMemo(
     () =>
-      (intervals ?? []).filter((i) => i.type === 'work' && !!i.startedAt),
+      (intervals ?? []).filter((interval) => {
+        if (!interval.endedAt) return false;
+
+        const actualSeconds = getActualDurationSeconds(interval);
+        return actualSeconds >= MIN_ANALYTICS_INTERVAL_SECONDS;
+      }),
     [intervals],
+  );
+
+  const workIntervals = useMemo(
+    () => analyticsIntervals.filter((i) => i.type === 'work' && !!i.startedAt),
+    [analyticsIntervals],
   );
 
   const filteredIntervals = useMemo(() => {
     if (!effectiveRangeStart || !effectiveRangeEnd) return [] as IntervalSession[];
 
-    return (intervals ?? []).filter((interval) => {
+    return analyticsIntervals.filter((interval) => {
       const startedAt = new Date(interval.startedAt);
       return startedAt >= effectiveRangeStart && startedAt <= effectiveRangeEnd;
     });
-  }, [effectiveRangeEnd, effectiveRangeStart, intervals]);
+  }, [analyticsIntervals, effectiveRangeEnd, effectiveRangeStart]);
 
   const workIntervalsInRange = useMemo(() => {
     return filteredIntervals.filter((i) => i.type === 'work' && !!i.startedAt);
   }, [filteredIntervals]);
 
   const lifetimeCompletedWork = useMemo(
-    () =>
-      workIntervals.filter((i) => !i.wasSkipped && i.endedAt).length,
+    () => workIntervals.filter((i) => !i.wasSkipped && i.endedAt).length,
     [workIntervals],
   );
 
@@ -258,7 +268,7 @@ export const AnalyticsScreen: React.FC = () => {
     () =>
       workIntervals
         .filter((i) => !i.wasSkipped && i.endedAt)
-        .reduce((sum, i) => sum + i.durationSeconds, 0),
+        .reduce((sum, i) => sum + getActualDurationSeconds(i), 0),
     [workIntervals],
   );
 
@@ -279,7 +289,7 @@ export const AnalyticsScreen: React.FC = () => {
     () =>
       workIntervalsInRange
         .filter((i) => !i.wasSkipped && i.endedAt)
-        .reduce((sum, i) => sum + i.durationSeconds, 0),
+        .reduce((sum, i) => sum + getActualDurationSeconds(i), 0),
     [workIntervalsInRange],
   );
 
@@ -306,7 +316,7 @@ export const AnalyticsScreen: React.FC = () => {
 
       const task = interval.taskId ? taskMap[interval.taskId] : undefined;
       const activityId = task?.activityTypeId ?? 'none';
-      const hours = interval.durationSeconds / 3600;
+      const hours = getActualDurationSeconds(interval) / 3600;
 
       totals[activityId] = (totals[activityId] ?? 0) + hours;
     }

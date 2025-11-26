@@ -63,6 +63,8 @@ const FREE_DEFAULT_LONG_MIN = 15;
 const FREE_DEFAULT_INTERVALS_BEFORE_LONG = 4;
 const FREE_DEFAULT_AUTOSTART = false;
 
+const ORPHAN_INTERVAL_AGE_MS = 5 * 60 * 1000;
+
 export const selectEffectiveSettings = (state: AppStore): PomodoroSettings => {
   const raw = state.settings;
   const isPro = selectIsProEffective(state);
@@ -296,6 +298,28 @@ const computeStreakAfterCompletion = (
   };
 };
 
+const cleanupIntervals = (intervals: IntervalSession[]): IntervalSession[] => {
+  const now = Date.now();
+
+  return intervals.map((interval) => {
+    if (interval.endedAt) return interval;
+
+    const startedMs = new Date(interval.startedAt).getTime();
+    if (!Number.isFinite(startedMs)) return interval;
+
+    const ageMs = now - startedMs;
+    if (ageMs < ORPHAN_INTERVAL_AGE_MS) {
+      return interval;
+    }
+
+    return {
+      ...interval,
+      endedAt: new Date(startedMs).toISOString(),
+      wasSkipped: true,
+    };
+  });
+};
+
 const useAppStore = create<AppStore>((set, get) => {
   const getSnapshot = (): AppStateSnapshot => {
     const { tasks, intervals, activityTypes, settings, proStatus, streak } = get();
@@ -323,11 +347,13 @@ const useAppStore = create<AppStore>((set, get) => {
             ? { ...defaultStreakState, ...parsed.streak }
             : { ...defaultStreakState };
           const nextStreak = normalizeFreezeUsage(hydratedStreak, nowIso());
+          const rawIntervals = parsed.intervals ?? state.intervals;
+          const cleanedIntervals = cleanupIntervals(rawIntervals);
 
           return {
             ...state,
             tasks: parsed.tasks ?? state.tasks,
-            intervals: parsed.intervals ?? state.intervals,
+            intervals: cleanedIntervals,
             activityTypes: parsed.activityTypes ?? state.activityTypes,
             settings: nextSettings,
             proStatus: nextProStatus,
