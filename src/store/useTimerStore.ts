@@ -242,7 +242,11 @@ export const useTimerStore = create<TimerState>((set, get) => {
       if (state.activeIntervalId) {
         const appStore = useAppStore.getState();
         const now = Date.now();
-        appStore.endIntervalSegment({ intervalId: state.activeIntervalId, endTimeMs: now });
+
+        if (state.intervalStartTime) {
+          appStore.endIntervalSegment({ intervalId: state.activeIntervalId, endTimeMs: now });
+        }
+
         appStore.skipInterval({ intervalId: state.activeIntervalId, skippedAt: new Date(now).toISOString() });
       }
 
@@ -336,7 +340,11 @@ export const useTimerStore = create<TimerState>((set, get) => {
       if (state.activeIntervalId) {
         const appStore = useAppStore.getState();
         const now = Date.now();
-        appStore.endIntervalSegment({ intervalId: state.activeIntervalId, endTimeMs: now });
+
+        if (state.intervalStartTime) {
+          appStore.endIntervalSegment({ intervalId: state.activeIntervalId, endTimeMs: now });
+        }
+
         appStore.skipInterval({ intervalId: state.activeIntervalId, skippedAt: new Date(now).toISOString() });
       }
 
@@ -398,7 +406,9 @@ export const useTimerStore = create<TimerState>((set, get) => {
       }
 
       const now = Date.now();
-      appStore.endIntervalSegment({ intervalId, endTimeMs: now });
+      if (state.intervalStartTime) {
+        appStore.endIntervalSegment({ intervalId, endTimeMs: now });
+      }
       appStore.skipInterval({ intervalId, skippedAt: new Date(now).toISOString() });
 
       transitionToNextInterval(state, { shouldCountWorkCompletion: false });
@@ -414,7 +424,9 @@ export const useTimerStore = create<TimerState>((set, get) => {
       const endMs = Date.now();
       const endedAt = new Date(endMs).toISOString();
 
-      appStore.endIntervalSegment({ intervalId: state.activeIntervalId, endTimeMs: endMs });
+      if (state.intervalStartTime) {
+        appStore.endIntervalSegment({ intervalId: state.activeIntervalId, endTimeMs: endMs });
+      }
       appStore.finishInterval({ intervalId: state.activeIntervalId, endedAt });
 
       transitionToNextInterval(state, { shouldCountWorkCompletion: true });
