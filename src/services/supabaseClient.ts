@@ -1,0 +1,16 @@
+import { createClient } from '@supabase/supabase-js';
+import Constants from 'expo-constants';
+
+const extras = (Constants.expoConfig?.extra ?? {}) as {
+  supabaseUrl?: string;
+  supabaseAnonKey?: string;
+};
+
+const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL ?? extras.supabaseUrl;
+const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? extras.supabaseAnonKey;
+
+if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+  throw new Error('Supabase credentials are not configured.');
+}
+
+export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);

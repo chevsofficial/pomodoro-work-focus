@@ -733,7 +733,8 @@ const useAppStore = create<AppStore>((set, get) => {
     },
     setCloudUser: (userId) => {
       setStateAndPersist((state) => {
-        const keepEnabled = userId ? state.cloudSync.cloudSyncEnabled : false;
+        const keepEnabled =
+          userId && selectIsProEffective(state) ? state.cloudSync.cloudSyncEnabled : false;
 
         return {
           cloudSync: {
@@ -745,12 +746,16 @@ const useAppStore = create<AppStore>((set, get) => {
       });
     },
     setCloudSyncEnabled: (enabled) => {
-      setStateAndPersist((state) => ({
-        cloudSync: {
-          ...state.cloudSync,
-          cloudSyncEnabled: enabled,
-        },
-      }));
+      setStateAndPersist((state) => {
+        const canEnable = selectIsProEffective(state) && Boolean(state.cloudSync.userId);
+
+        return {
+          cloudSync: {
+            ...state.cloudSync,
+            cloudSyncEnabled: enabled && canEnable,
+          },
+        };
+      });
     },
     markCloudSynced: ({ revision, syncedAt }) => {
       const timestamp = syncedAt ?? nowIso();
