@@ -6,8 +6,10 @@ import { StatusBar, StatusBarStyle } from 'expo-status-bar';
 import { RootNavigator } from './src/navigation/RootNavigator';
 import { ThemeProvider } from './src/theme/ThemeProvider';
 import { useThemeColors } from './src/theme/useThemeColors';
-import { useSettings } from './src/store/appStore';
+import useAppStore, { useSettings } from './src/store/appStore';
 import { initializeNotifications, requestNotificationPermissions } from './src/utils/notificationService';
+import { supabase } from './src/services/supabaseClient';
+import { cloudSyncApi } from './src/services/cloudSyncApi';
 
 const App: React.FC = () => {
   const colors = useThemeColors();
@@ -54,6 +56,31 @@ const App: React.FC = () => {
       requestNotificationPermissions();
     }
   }, [settings.notificationsEnabled]);
+
+  useEffect(() => {
+    const appStore = useAppStore.getState();
+
+    const { data: subscription } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      const userId = session?.user?.id;
+
+      if (!userId) {
+        appStore.setCloudUser(undefined);
+        appStore.setCloudSyncEnabled(false);
+        return;
+      }
+
+      appStore.setCloudUser(userId);
+
+      const cloudSnapshot = await cloudSyncApi.fetchSnapshot(userId);
+      if (cloudSnapshot) {
+        appStore.hydrateFromCloudSnapshot(cloudSnapshot);
+      }
+    });
+
+    return () => {
+      subscription?.subscription.unsubscribe();
+    };
+  }, []);
 
   return (
     <SafeAreaProvider>

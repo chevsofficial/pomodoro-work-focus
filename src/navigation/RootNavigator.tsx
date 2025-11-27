@@ -11,6 +11,7 @@ import { SettingsScreen } from '../screens/SettingsScreen';
 import { TasksScreen } from '../screens/TasksScreen';
 import { TaskDetailScreen } from '../screens/TaskDetailScreen';
 import { PaywallScreen } from '../screens/PaywallScreen';
+import { AuthScreen } from '../screens/AuthScreen';
 import { useThemeColors } from '../theme/useThemeColors';
 
 export type RootTabParamList = {
@@ -25,6 +26,7 @@ export type RootStackParamList = {
   RootTabs: NavigatorScreenParams<RootTabParamList>;
   TaskDetail: { taskId: string };
   Paywall: undefined;
+  Auth: undefined;
 };
 
 const Tab = createBottomTabNavigator<RootTabParamList>();
@@ -160,6 +162,13 @@ export function RootNavigator() {
         component={PaywallScreen}
         options={{
           title: 'Upgrade',
+        }}
+      />
+      <Stack.Screen
+        name="Auth"
+        component={AuthScreen}
+        options={{
+          title: 'Cloud Sync',
         }}
       />
     </AnyStackNavigator>

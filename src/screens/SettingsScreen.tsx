@@ -17,7 +17,7 @@ import { RootStackParamList } from '../navigation/RootNavigator';
 import { navigateToProUpsell } from '../navigation/proNavigation';
 import { ActivityType, PomodoroSettings } from '../models';
 import useAppStore, { useActivityTypes, useEffectiveSettings, useIsPro } from '../store/appStore';
-import { cloudSyncApi } from '../services/cloudSyncApi';
+import { signOut } from '../services/authService';
 import { spacing } from '../theme/spacing';
 import { THEMES, ThemeId, useThemeColors } from '../theme/useThemeColors';
 import {
@@ -402,8 +402,6 @@ export const SettingsScreen: React.FC = () => {
   const updateActivityType = useAppStore((state) => state.updateActivityType);
   const deleteActivityType = useAppStore((state) => state.deleteActivityType);
   const setCloudSyncEnabled = useAppStore((state) => state.setCloudSyncEnabled);
-  const setCloudUser = useAppStore((state) => state.setCloudUser);
-  const hydrateFromCloudSnapshot = useAppStore((state) => state.hydrateFromCloudSnapshot);
   const navigation = useNavigation<SettingsNavigation>();
   const colors = useThemeColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
@@ -498,29 +496,22 @@ export const SettingsScreen: React.FC = () => {
     updateSettings({ notificationsEnabled: enabled });
   };
 
-  const handleGoToSignIn = async () => {
-    const demoUserId = 'demo-user';
-    setCloudUser(demoUserId);
+  const handleGoToSignIn = () => {
+    navigation.navigate('Auth');
+  };
 
+  const handleSignOut = async () => {
     try {
-      const snapshot = await cloudSyncApi.fetchSnapshot(demoUserId);
-      if (snapshot) {
-        hydrateFromCloudSnapshot(snapshot);
-      }
+      await signOut();
     } catch (error) {
-      console.warn('Failed to fetch cloud snapshot', error);
+      console.warn('Failed to sign out', error);
+      Alert.alert('Sign out failed', 'Please try again.');
     }
   };
 
-  const handleSignOut = () => {
-    setCloudSyncEnabled(false);
-    setCloudUser(undefined);
-  };
-
-  const handleCloudSyncToggle = async (value: boolean) => {
-    if (!cloudSync.userId && value) {
-      await handleGoToSignIn();
-      setCloudSyncEnabled(true);
+  const handleCloudSyncToggle = (value: boolean) => {
+    if (!cloudSync.userId) {
+      handleGoToSignIn();
       return;
     }
 
@@ -678,9 +669,9 @@ export const SettingsScreen: React.FC = () => {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Cloud Sync</Text>
-            {isPro && (
-              <TouchableOpacity onPress={cloudSync.userId ? handleSignOut : handleGoToSignIn}>
-                <Text style={styles.sectionAction}>{cloudSync.userId ? 'Sign out' : 'Sign in'}</Text>
+            {isPro && cloudSync.userId && (
+              <TouchableOpacity onPress={handleSignOut}>
+                <Text style={styles.sectionAction}>Sign out</Text>
               </TouchableOpacity>
             )}
           </View>
@@ -695,9 +686,17 @@ export const SettingsScreen: React.FC = () => {
             </TouchableOpacity>
           )}
 
-          {isPro && (
+          {isPro && !cloudSync.userId && (
             <>
-              {!cloudSync.userId && <Text style={styles.sectionHint}>Sign in to enable sync.</Text>}
+              <Text style={styles.sectionHint}>Sign in to enable Cloud Sync.</Text>
+              <TouchableOpacity style={styles.authButton} onPress={handleGoToSignIn}>
+                <Text style={styles.authButtonLabel}>Sign in</Text>
+              </TouchableOpacity>
+            </>
+          )}
+
+          {isPro && cloudSync.userId && (
+            <>
               <View style={styles.settingRow}>
                 <Text style={styles.settingLabel}>Cloud sync enabled</Text>
                 <Switch
@@ -1046,6 +1045,19 @@ function createStyles(colors: ReturnType<typeof useThemeColors>) {
   proBoxText: {
     color: colors.textPrimary,
     fontSize: 14,
+  },
+  authButton: {
+    backgroundColor: colors.primary,
+    borderRadius: 12,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    alignSelf: 'flex-start',
+    marginTop: spacing.sm,
+  },
+  authButtonLabel: {
+    color: colors.surface,
+    fontWeight: '700',
+    fontSize: 15,
   },
   proLink: {
     color: colors.accent,
