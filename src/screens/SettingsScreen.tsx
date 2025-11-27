@@ -813,8 +813,7 @@ export const SettingsScreen: React.FC = () => {
                     key={theme.id}
                     style={[styles.themeOption, isSelected && styles.themeOptionSelected]}
                     onPress={() => {
-                      const isLocked = theme.isProOnly && !isPro;
-
+                      // use the isLocked from the outer scope (avoid redeclaring)
                       if (isLocked) {
                         setThemeModalVisible(false);
                         navigateToProUpsell(navigation);
