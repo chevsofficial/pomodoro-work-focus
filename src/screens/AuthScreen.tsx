@@ -28,6 +28,7 @@ export const AuthScreen: React.FC<Props> = ({ navigation }) => {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | undefined>();
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleSubmit = async () => {
     setError(undefined);
@@ -85,14 +86,24 @@ export const AuthScreen: React.FC<Props> = ({ navigation }) => {
             onChangeText={setEmail}
           />
 
-          <TextInput
-            style={styles.input}
-            placeholder="Password"
-            placeholderTextColor={colors.textSecondary}
-            secureTextEntry
-            value={password}
-            onChangeText={setPassword}
-          />
+          <View style={styles.inputRow}>
+            <TextInput
+              style={[styles.input, styles.passwordInput]}
+              placeholder="Password"
+              placeholderTextColor={colors.textSecondary}
+              secureTextEntry={!showPassword}
+              autoCapitalize="none"
+              value={password}
+              onChangeText={setPassword}
+            />
+
+            <TouchableOpacity
+              style={styles.passwordToggle}
+              onPress={() => setShowPassword((prev) => !prev)}
+            >
+              <Text style={styles.passwordToggleText}>{showPassword ? 'Hide' : 'Show'}</Text>
+            </TouchableOpacity>
+          </View>
 
           {error && <Text style={styles.error}>{error}</Text>}
 
@@ -141,6 +152,22 @@ const createStyles = (colors: ReturnType<typeof useThemeColors>) =>
       color: colors.textPrimary,
       backgroundColor: colors.background,
       marginBottom: spacing.md,
+    },
+    inputRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    passwordInput: {
+      flex: 1,
+    },
+    passwordToggle: {
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+    },
+    passwordToggleText: {
+      color: colors.primary,
+      fontSize: 12,
+      fontWeight: '600',
     },
     primaryButton: {
       backgroundColor: colors.primary,
