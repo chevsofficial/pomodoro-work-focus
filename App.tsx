@@ -11,6 +11,7 @@ import useAppStore, { useSettings } from './src/store/appStore';
 import { initializeNotifications, requestNotificationPermissions } from './src/utils/notificationService';
 import { supabase } from './src/services/supabaseClient';
 import { cloudSyncApi } from './src/services/cloudSyncApi';
+import { initRevenueCat } from './src/services/revenuecat';
 
 const App: React.FC = () => {
   const colors = useThemeColors();
@@ -71,6 +72,10 @@ const App: React.FC = () => {
     }),
     [],
   );
+
+  useEffect(() => {
+    initRevenueCat();
+  }, []);
 
   useEffect(() => {
     initializeNotifications();

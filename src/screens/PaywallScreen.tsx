@@ -1,10 +1,23 @@
-import React, { useMemo } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useEffect, useMemo, useState } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { PurchasesPackage } from 'react-native-purchases';
 import { ScreenContainer } from '../components/ScreenContainer';
-import { PRO_BENEFITS, PRO_DEV_UNLOCK_ENABLED, IAP_PRODUCT_IDS } from '../config/proFeatures';
+import { PRO_BENEFITS, PRO_PRICING } from '../config/proFeatures';
+import { fetchOfferings, purchaseProduct, restorePurchases } from '../services/revenuecat';
 import useAppStore, { useIsPro, useProStatus } from '../store/appStore';
 import { spacing } from '../theme/spacing';
 import { useThemeColors } from '../theme/useThemeColors';
+
+const formatPriceText = (pkg: PurchasesPackage | null, fallback: string) =>
+  pkg?.product?.priceString ?? fallback;
 
 export const PaywallScreen: React.FC = () => {
   const colors = useThemeColors();
@@ -13,65 +26,171 @@ export const PaywallScreen: React.FC = () => {
   const proStatus = useProStatus();
   const styles = useMemo(() => createStyles(colors), [colors]);
 
-  const handleContinue = () => {
+  const [annualPackage, setAnnualPackage] = useState<PurchasesPackage | null>(null);
+  const [monthlyPackage, setMonthlyPackage] = useState<PurchasesPackage | null>(null);
+  const [loadingOfferings, setLoadingOfferings] = useState(true);
+  const [isPurchasing, setIsPurchasing] = useState(false);
+  const [isRestoring, setIsRestoring] = useState(false);
+
+  useEffect(() => {
+    const loadOfferings = async () => {
+      setLoadingOfferings(true);
+      const offerings = await fetchOfferings();
+
+      setAnnualPackage(offerings?.current?.annual ?? null);
+      setMonthlyPackage(offerings?.current?.monthly ?? null);
+      setLoadingOfferings(false);
+    };
+
+    loadOfferings();
+  }, []);
+
+  const handlePurchase = async (pkg: PurchasesPackage | null) => {
     if (isPro) {
-      Alert.alert('Already Pro', 'Thanks for supporting Pomodoro Focus!');
+      Alert.alert('Already Pro', 'Thanks for supporting TomoFlow!');
       return;
     }
 
-    if (PRO_DEV_UNLOCK_ENABLED) {
+    if (!pkg) {
+      Alert.alert('Store unavailable', 'We could not load products. Please try again shortly.');
+      return;
+    }
+
+    try {
+      setIsPurchasing(true);
+      await purchaseProduct(pkg);
+    } catch (error: any) {
+      if (!error?.userCancelled) {
+        Alert.alert('Purchase failed', 'Something went wrong while starting your subscription.');
+      }
+    } finally {
+      setIsPurchasing(false);
+    }
+  };
+
+  const handleRestore = async () => {
+    try {
+      setIsRestoring(true);
+      const entitlement = await restorePurchases();
+      if (entitlement) {
+        Alert.alert('Restored', 'Your TomoFlow Pro access has been restored.');
+      } else {
+        Alert.alert('No purchases found', 'We could not find an active Pro subscription to restore.');
+      }
+    } catch (error) {
+      Alert.alert('Restore failed', 'Something went wrong while restoring purchases.');
+    } finally {
+      setIsRestoring(false);
+    }
+  };
+
+  const handleDevUnlock = () => {
+    if (__DEV__) {
+      const timestamp = new Date().toISOString();
       setProStatus({
         isPro: true,
-        source: 'purchase',
-        purchaseDate: new Date().toISOString(),
+        source: 'promo',
+        activatedAt: timestamp,
+        lastVerifiedAt: timestamp,
       });
-      Alert.alert('Pro unlocked', 'DEV ONLY: Pro has been toggled on for testing.');
-      return;
+      Alert.alert('Dev unlock', 'Pro has been unlocked for development builds.');
     }
-
-    Alert.alert(
-      'Coming soon',
-      'In-app purchases are being integrated with react-native-iap. The continue button will trigger the platform purchase flow.',
-    );
   };
+
+  const annualPriceText = formatPriceText(annualPackage, PRO_PRICING.annual.priceText);
+  const monthlyPriceText = formatPriceText(monthlyPackage, PRO_PRICING.monthly.priceText);
 
   return (
     <ScreenContainer withTopPadding={false}>
-      <ScrollView contentContainerStyle={styles.content}>
-        <Text style={styles.title}>Pomodoro Focus Pro</Text>
-        <Text style={styles.description}>
-          Go beyond the basics with more flexibility, detailed insights, and upcoming cloud sync.
-        </Text>
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <View style={styles.header}>
+          <Text style={styles.logo}>TomoFlow</Text>
+          <Text style={styles.heroTitle}>Unlock TomoFlow Pro</Text>
+          <Text style={styles.heroSubtitle}>Your most productive self starts here.</Text>
+          <Text style={styles.heroBody}>
+            Focus deeper, stay organized, and get powerful insights — distraction-free.
+          </Text>
+        </View>
 
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>What you get</Text>
+          <Text style={styles.sectionTitle}>Everything you get</Text>
           {PRO_BENEFITS.map((benefit) => (
             <View key={benefit} style={styles.benefitRow}>
-              <View style={styles.bullet} />
+              <Text style={styles.benefitIcon}>✅</Text>
               <Text style={styles.benefitText}>{benefit}</Text>
             </View>
           ))}
         </View>
 
-        <TouchableOpacity
-          style={[styles.primaryButton, isPro && styles.primaryButtonDisabled]}
-          onPress={handleContinue}
-          disabled={isPro}
-        >
-          <Text style={styles.primaryButtonText}>{isPro ? 'Already upgraded' : 'Continue'}</Text>
-        </TouchableOpacity>
+        <View style={styles.pricingWrapper}>
+          <View style={[styles.pricingCard, styles.pricingCardHighlighted]}>
+            <View style={styles.badgeWrapper}>
+              <Text style={styles.badgeText}>Most Popular</Text>
+            </View>
+            <Text style={styles.planTitle}>{PRO_PRICING.annual.title}</Text>
+            <Text style={styles.planPrice}>{annualPriceText}</Text>
+            <Text style={styles.planDescription}>{PRO_PRICING.annual.description}</Text>
+            <Text style={styles.planSavings}>{PRO_PRICING.annual.savingsText}</Text>
+            <TouchableOpacity
+              style={[styles.planButton, isPro && styles.planButtonDisabled]}
+              onPress={() => handlePurchase(annualPackage)}
+              disabled={isPro || isPurchasing}
+            >
+              {isPurchasing ? (
+                <ActivityIndicator color={colors.background} />
+              ) : (
+                <Text style={styles.planButtonText}>Start 7-Day Free Trial</Text>
+              )}
+            </TouchableOpacity>
+          </View>
 
-        {proStatus.source && (
-          <Text style={styles.secondaryText}>Unlocked via {proStatus.source}.</Text>
+          <View style={styles.pricingCard}>
+            <Text style={styles.planTitle}>{PRO_PRICING.monthly.title}</Text>
+            <Text style={styles.planPrice}>{monthlyPriceText}</Text>
+            <Text style={styles.planDescription}>{PRO_PRICING.monthly.description}</Text>
+            <TouchableOpacity
+              style={[styles.secondaryButton, isPro && styles.secondaryButtonDisabled]}
+              onPress={() => handlePurchase(monthlyPackage)}
+              disabled={isPro || isPurchasing}
+            >
+              <Text style={styles.secondaryButtonText}>Choose Monthly</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {loadingOfferings && (
+          <View style={styles.loadingRow}>
+            <ActivityIndicator color={colors.primary} />
+            <Text style={styles.loadingText}>Loading plans…</Text>
+          </View>
         )}
 
-        <View style={styles.noteCard}>
-          <Text style={styles.noteTitle}>Implementation note</Text>
-          <Text style={styles.noteBody}>
-            Production builds will call react-native-iap with product IDs {IAP_PRODUCT_IDS.ios} (iOS) and
-            {` ${IAP_PRODUCT_IDS.android}`} (Android), handle purchase updates, and validate receipts before unlocking Pro.
-          </Text>
-        </View>
+        {proStatus.isPro && (
+          <Text style={styles.secondaryText}>Unlocked via {proStatus.source ?? 'iap'}.</Text>
+        )}
+
+        <TouchableOpacity
+          style={[styles.restoreButton, isRestoring && styles.restoreButtonDisabled]}
+          onPress={handleRestore}
+          disabled={isRestoring}
+        >
+          {isRestoring ? (
+            <ActivityIndicator color={colors.textSecondary} />
+          ) : (
+            <Text style={styles.restoreText}>Restore Purchases</Text>
+          )}
+        </TouchableOpacity>
+
+        <Text style={styles.legalText}>
+          Payment will be charged to your Apple/Google account. Subscription auto-renews unless
+          cancelled at least 24 hours before the end of the current period.
+        </Text>
+
+        {__DEV__ && (
+          <TouchableOpacity style={styles.devUnlock} onPress={handleDevUnlock}>
+            <Text style={styles.devUnlockText}>DEV: Unlock Pro</Text>
+          </TouchableOpacity>
+        )}
       </ScrollView>
     </ScreenContainer>
   );
@@ -82,20 +201,40 @@ function createStyles(colors: ReturnType<typeof useThemeColors>) {
     content: {
       paddingHorizontal: spacing.lg,
       paddingVertical: spacing.xl,
+      gap: spacing.lg,
     },
-    title: {
-      fontSize: 32,
+    header: {
+      alignItems: 'center',
+      gap: spacing.sm,
+    },
+    logo: {
+      fontSize: 16,
+      color: colors.textSecondary,
+      letterSpacing: 1.2,
+      textTransform: 'uppercase',
+    },
+    heroTitle: {
+      fontSize: 30,
       fontWeight: '800',
       color: colors.textPrimary,
-      marginBottom: spacing.sm,
       textAlign: 'center',
     },
-    description: {
+    heroSubtitle: {
       fontSize: 16,
       color: colors.textSecondary,
       textAlign: 'center',
-      marginBottom: spacing.xl,
+    },
+    heroBody: {
+      fontSize: 15,
+      color: colors.textSecondary,
+      textAlign: 'center',
       lineHeight: 22,
+    },
+    sectionTitle: {
+      fontSize: 18,
+      fontWeight: '700',
+      color: colors.textPrimary,
+      marginBottom: spacing.md,
     },
     card: {
       borderRadius: 16,
@@ -103,67 +242,143 @@ function createStyles(colors: ReturnType<typeof useThemeColors>) {
       padding: spacing.lg,
       borderWidth: 1,
       borderColor: colors.border,
-      marginBottom: spacing.xl,
-    },
-    cardTitle: {
-      fontSize: 18,
-      fontWeight: '700',
-      color: colors.textPrimary,
-      marginBottom: spacing.md,
+      gap: spacing.sm,
     },
     benefitRow: {
       flexDirection: 'row',
       alignItems: 'center',
-      marginBottom: spacing.sm,
+      gap: spacing.md,
     },
-    bullet: {
-      width: 8,
-      height: 8,
-      borderRadius: 4,
-      backgroundColor: colors.primary,
-      marginRight: spacing.md,
+    benefitIcon: {
+      fontSize: 16,
     },
     benefitText: {
       color: colors.textPrimary,
       flex: 1,
+      fontSize: 15,
     },
-    primaryButton: {
+    pricingWrapper: {
+      gap: spacing.md,
+    },
+    pricingCard: {
+      borderRadius: 16,
+      backgroundColor: colors.surface,
+      padding: spacing.lg,
+      borderWidth: 1,
+      borderColor: colors.border,
+      gap: spacing.sm,
+    },
+    pricingCardHighlighted: {
+      borderColor: colors.accent,
+      shadowColor: colors.accent,
+      shadowOpacity: 0.2,
+      shadowOffset: { width: 0, height: 6 },
+      shadowRadius: 12,
+      elevation: 3,
+    },
+    badgeWrapper: {
+      alignSelf: 'flex-start',
+      paddingHorizontal: spacing.sm,
+      paddingVertical: spacing.xs,
+      backgroundColor: colors.accent,
+      borderRadius: 999,
+    },
+    badgeText: {
+      color: colors.background,
+      fontWeight: '700',
+      fontSize: 12,
+      letterSpacing: 0.4,
+    },
+    planTitle: {
+      fontSize: 16,
+      fontWeight: '700',
+      color: colors.textPrimary,
+    },
+    planPrice: {
+      fontSize: 24,
+      fontWeight: '800',
+      color: colors.textPrimary,
+    },
+    planDescription: {
+      fontSize: 14,
+      color: colors.textSecondary,
+    },
+    planSavings: {
+      fontSize: 13,
+      color: colors.accent,
+      fontWeight: '700',
+    },
+    planButton: {
       backgroundColor: colors.primary,
       borderRadius: 14,
       paddingVertical: spacing.md,
       alignItems: 'center',
-      marginBottom: spacing.sm,
+      marginTop: spacing.sm,
     },
-    primaryButtonDisabled: {
+    planButtonDisabled: {
       backgroundColor: colors.border,
     },
-    primaryButtonText: {
+    planButtonText: {
       color: colors.background,
       fontSize: 16,
       fontWeight: '700',
     },
+    secondaryButton: {
+      borderRadius: 14,
+      paddingVertical: spacing.md,
+      alignItems: 'center',
+      marginTop: spacing.sm,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    secondaryButtonDisabled: {
+      opacity: 0.7,
+    },
+    secondaryButtonText: {
+      color: colors.textPrimary,
+      fontSize: 15,
+      fontWeight: '700',
+    },
+    loadingRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+      alignSelf: 'center',
+    },
+    loadingText: {
+      color: colors.textSecondary,
+    },
     secondaryText: {
       textAlign: 'center',
       color: colors.textSecondary,
-      marginBottom: spacing.lg,
     },
-    noteCard: {
+    restoreButton: {
+      alignItems: 'center',
+      paddingVertical: spacing.md,
+    },
+    restoreButtonDisabled: {
+      opacity: 0.7,
+    },
+    restoreText: {
+      color: colors.textSecondary,
+      fontSize: 15,
+    },
+    legalText: {
+      color: colors.textSecondary,
+      fontSize: 12,
+      lineHeight: 18,
+      textAlign: 'center',
+    },
+    devUnlock: {
+      alignSelf: 'center',
+      paddingVertical: spacing.md,
+      paddingHorizontal: spacing.lg,
       borderRadius: 12,
-      backgroundColor: colors.background,
       borderWidth: 1,
       borderColor: colors.border,
-      padding: spacing.md,
     },
-    noteTitle: {
-      fontSize: 14,
-      fontWeight: '700',
-      color: colors.textPrimary,
-      marginBottom: spacing.xs,
-    },
-    noteBody: {
-      fontSize: 13,
+    devUnlockText: {
       color: colors.textSecondary,
-      lineHeight: 20,
     },
   });
 }
