@@ -13,6 +13,7 @@ import { TaskDetailScreen } from '../screens/TaskDetailScreen';
 import { PaywallScreen } from '../screens/PaywallScreen';
 import { AuthScreen } from '../screens/AuthScreen';
 import { useThemeColors } from '../theme/useThemeColors';
+import { AuthCallbackScreen } from '../screens/AuthCallbackScreen';
 
 export type RootTabParamList = {
   Tasks: undefined;
@@ -27,6 +28,7 @@ export type RootStackParamList = {
   TaskDetail: { taskId: string };
   Paywall: undefined;
   Auth: undefined;
+  AuthCallback: undefined;
 };
 
 const Tab = createBottomTabNavigator<RootTabParamList>();
@@ -169,6 +171,13 @@ export function RootNavigator() {
         component={AuthScreen}
         options={{
           title: 'Cloud Sync',
+        }}
+      />
+      <Stack.Screen
+        name="AuthCallback"
+        component={AuthCallbackScreen}
+        options={{
+          title: 'Email Confirmed',
         }}
       />
     </AnyStackNavigator>
