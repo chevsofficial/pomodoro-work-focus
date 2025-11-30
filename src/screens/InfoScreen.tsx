@@ -98,7 +98,15 @@ export const InfoScreen: React.FC = () => {
 
     if (normalizedCode === 'FOCUSPRO2023' || normalizedCode === 'TESTPRO' || normalizedCode === 'DEBUGPRO') {
       const appStore = useAppStore.getState();
-      appStore.setPro(true);
+      const timestamp = new Date().toISOString();
+      appStore.setProStatus({
+        isPro: true,
+        source: 'redeem_code',
+        productId: null,
+        expiresAt: null,
+        activatedAt: timestamp,
+        lastVerifiedAt: timestamp,
+      });
       Alert.alert('Success', 'Code applied! Pomodoro Focus Pro is now unlocked.');
       closeRedeemModal();
       return;

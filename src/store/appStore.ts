@@ -139,7 +139,7 @@ export interface AppStore extends AppStateSnapshot {
   addActivityType: (payload: AddActivityTypePayload) => void;
   updateActivityType: (activityTypeId: string, updates: UpdateActivityTypePayload) => void;
   deleteActivityType: (activityTypeId: string) => void;
-  setProStatus: (status: ProStatus) => void;
+  setProStatus: (status: Partial<ProStatus> & { isPro: boolean; source?: ProStatus['source'] }) => void;
   setPro: (value: boolean) => void;
   setCloudUser: (userId?: string) => void;
   setCloudSyncEnabled: (enabled: boolean) => void;
@@ -171,6 +171,12 @@ const defaultSettings: PomodoroSettings = {
 
 const defaultProStatus: ProStatus = {
   isPro: false,
+  source: 'none',
+  productId: null,
+  platform: undefined,
+  expiresAt: null,
+  activatedAt: null,
+  lastVerifiedAt: null,
 };
 
 const defaultStreakState: StreakState = {
@@ -471,7 +477,9 @@ const useAppStore = create<AppStore>((set, get) => {
       if (stored) {
         const parsed = JSON.parse(stored) as Partial<AppStateSnapshot>;
         set((state) => {
-          const nextProStatus = parsed.proStatus ? { ...state.proStatus, ...parsed.proStatus } : state.proStatus;
+          const nextProStatus = parsed.proStatus
+            ? { ...defaultProStatus, ...state.proStatus, ...parsed.proStatus }
+            : state.proStatus;
           const nextSettings = { ...state.settings, ...(parsed.settings ?? {}) };
           const hydratedStreak = parsed.streak
             ? { ...defaultStreakState, ...parsed.streak }
@@ -720,14 +728,14 @@ const useAppStore = create<AppStore>((set, get) => {
 
     setProStatus: (status) => {
       setStateAndPersist((state) => {
-        const nextProStatus = { ...state.proStatus, ...status };
+        const nextProStatus = { ...defaultProStatus, ...state.proStatus, ...status };
         return { proStatus: nextProStatus, isPro: nextProStatus.isPro };
       });
     },
 
     setPro: (value) => {
       setStateAndPersist((state) => {
-        const nextProStatus = { ...state.proStatus, isPro: value };
+        const nextProStatus = { ...defaultProStatus, ...state.proStatus, isPro: value };
         return { proStatus: nextProStatus, isPro: value };
       });
     },
@@ -772,7 +780,9 @@ const useAppStore = create<AppStore>((set, get) => {
     },
     hydrateFromCloudSnapshot: (snapshot) => {
       setStateAndPersist((state) => {
-        const nextProStatus = snapshot.proStatus ?? state.proStatus;
+        const nextProStatus = snapshot.proStatus
+          ? { ...defaultProStatus, ...state.proStatus, ...snapshot.proStatus }
+          : state.proStatus;
         const nextSettings = { ...state.settings, ...(snapshot.settings ?? {}) };
         const nextIntervals = cleanupIntervals(snapshot.intervals ?? state.intervals);
 

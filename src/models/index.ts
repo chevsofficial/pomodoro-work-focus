@@ -58,11 +58,17 @@ export interface PomodoroSettings {
   themeId?: ThemeId;
 }
 
+export type ProSource = 'none' | 'redeem_code' | 'iap' | 'admin' | 'promo';
+
 export interface ProStatus {
   isPro: boolean;
-  purchaseDate?: string;
-  expiryDate?: string;
-  source?: 'purchase' | 'code' | 'promo';
+  source: ProSource;
+
+  productId?: string | null;
+  platform?: 'ios' | 'android';
+  expiresAt?: string | null;
+  activatedAt?: string | null;
+  lastVerifiedAt?: string | null;
 }
 
 export interface StreakState {
