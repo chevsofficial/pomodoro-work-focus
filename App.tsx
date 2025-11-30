@@ -48,6 +48,30 @@ const App: React.FC = () => {
     [colors],
   );
 
+  const linking = useMemo(
+    () => ({
+      prefixes: ['tomoflow://', Linking.createURL('/')],
+      config: {
+        screens: {
+          RootTabs: {
+            screens: {
+              Pomodoro: 'pomodoro',
+              Tasks: 'tasks',
+              Analytics: 'analytics',
+              Settings: 'settings',
+              Info: 'info',
+            },
+          },
+          AuthCallback: 'auth-callback',
+          TaskDetail: 'task/:taskId',
+          Paywall: 'paywall',
+          Auth: 'auth',
+        },
+      },
+    }),
+    [],
+  );
+
   useEffect(() => {
     initializeNotifications();
   }, []);
@@ -136,7 +160,7 @@ const App: React.FC = () => {
   return (
     <SafeAreaProvider>
       <ThemeProvider>
-        <NavigationContainer theme={navigationTheme}>
+        <NavigationContainer linking={linking} theme={navigationTheme}>
           <StatusBar style={statusBarStyle} backgroundColor={colors.background} />
           <RootNavigator />
         </NavigationContainer>

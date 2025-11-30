@@ -1,7 +1,11 @@
-import { makeRedirectUri } from 'expo-auth-session';
+import * as AuthSession from 'expo-auth-session';
 import { supabase } from './supabaseClient';
 
-const redirectUrl = makeRedirectUri({ scheme: 'tomoflow' });
+// Note: the tomoflow:// scheme will only open real builds or dev clients, not Expo Go.
+const redirectUrl = AuthSession.makeRedirectUri({
+  scheme: 'tomoflow',
+  path: 'auth-callback',
+});
 
 export const signInWithEmail = async (email: string, password: string) => {
   const { data, error } = await supabase.auth.signInWithPassword({
