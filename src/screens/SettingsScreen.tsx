@@ -504,7 +504,7 @@ export const SettingsScreen: React.FC = () => {
     try {
       await signOut();
     } catch (error) {
-      console.warn('Failed to sign out', error);
+      console.error('Auth: sign out failed', error);
       Alert.alert('Sign out failed', 'Please try again.');
     }
   };

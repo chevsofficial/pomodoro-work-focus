@@ -21,7 +21,7 @@ export const cloudSyncApi = {
       if (error.code === 'PGRST116' || error.code === 'PGRST204') {
         return null;
       }
-      console.warn('fetchSnapshot error', error);
+      console.error('Cloud sync: fetchSnapshot failed', error);
       return null;
     }
 
@@ -52,7 +52,7 @@ export const cloudSyncApi = {
       .single();
 
     if (error) {
-      console.warn('uploadSnapshot error', error);
+      console.error('Cloud sync: uploadSnapshot failed', error);
       throw error;
     }
 

@@ -21,8 +21,8 @@ import {
   startNewSegment,
 } from '../utils/intervalUtils';
 
-// Toggle this during development to unlock everything
-const FORCE_ALL_PRO_FEATURES = __DEV__ && false; // Set to true for local testing
+// IMPORTANT: must be false for production builds
+const FORCE_ALL_PRO_FEATURES = false;
 
 export const FREE_TASK_LIMIT = 10;
 
@@ -449,7 +449,7 @@ const useAppStore = create<AppStore>((set, get) => {
         syncedAt: stored.updatedAt,
       });
     } catch (error) {
-      console.warn('Cloud sync failed', error);
+      console.error('Cloud sync: upload to Supabase failed', error);
     }
   }, CLOUD_SYNC_DEBOUNCE_MS);
 

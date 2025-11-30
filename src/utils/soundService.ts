@@ -32,7 +32,7 @@ export const playIntervalEndSound = async () => {
 
     currentSound = sound;
   } catch (error) {
-    console.warn('[SoundService] Failed to play interval end sound', error);
+    console.error('[SoundService] Playing interval end sound failed', error);
   }
 };
 
