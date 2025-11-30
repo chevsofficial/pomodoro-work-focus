@@ -19,6 +19,7 @@
     "@supabase/supabase-js": "^2.86.0",
     "babel-preset-expo": "~11.0.0",
     "expo": "^51.0.0",
+    "expo-ads-admob": "^13.0.0",
     "expo-auth-session": "~5.5.2",
     "expo-av": "~14.0.4",
     "expo-linking": "~6.3.1",
