@@ -1,7 +1,7 @@
 import { makeRedirectUri } from 'expo-auth-session';
 import { supabase } from './supabaseClient';
 
-const authRedirectUrl = makeRedirectUri({ scheme: 'tomoflow' });
+const redirectUrl = makeRedirectUri({ scheme: 'tomoflow' });
 
 export const signInWithEmail = async (email: string, password: string) => {
   const { data, error } = await supabase.auth.signInWithPassword({
@@ -18,7 +18,7 @@ export const signUpWithEmail = async (email: string, password: string) => {
     email,
     password,
     options: {
-      emailRedirectTo: authRedirectUrl,
+      emailRedirectTo: redirectUrl,
     },
   });
 
