@@ -62,7 +62,6 @@ const InfoRow: React.FC<InfoRowProps> = ({
 export const InfoScreen: React.FC = () => {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const colors = useThemeColors();
-  const setProStatus = useAppStore((state) => state.setProStatus);
   const proStatus = useProStatus();
   const isPro = useIsPro();
   const [isRedeemModalVisible, setRedeemModalVisible] = useState(false);
@@ -98,7 +97,8 @@ export const InfoScreen: React.FC = () => {
     }
 
     if (normalizedCode === 'FOCUSPRO2023' || normalizedCode === 'TESTPRO' || normalizedCode === 'DEBUGPRO') {
-      setProStatus({ isPro: true });
+      const appStore = useAppStore.getState();
+      appStore.setPro(true);
       Alert.alert('Success', 'Code applied! Pomodoro Focus Pro is now unlocked.');
       closeRedeemModal();
       return;

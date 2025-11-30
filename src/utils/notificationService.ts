@@ -44,7 +44,7 @@ export const requestNotificationPermissions = async (): Promise<boolean> => {
 
     return finalStatus === 'granted';
   } catch (error) {
-    console.warn('[Notifications] Error requesting permissions', error);
+    console.error('[Notifications] Permission request failed', error);
     return false;
   }
 };
@@ -116,7 +116,7 @@ export const scheduleIntervalCompletionNotification = async ({
 
     return id;
   } catch (error) {
-    console.warn('[Notifications] Error scheduling notification', error);
+    console.error('[Notifications] Scheduling notification failed', error);
     return undefined;
   }
 };
@@ -125,6 +125,6 @@ export const cancelScheduledNotification = async (identifier: string) => {
   try {
     await Notifications.cancelScheduledNotificationAsync(identifier);
   } catch (error) {
-    console.warn('[Notifications] Error canceling notification', error);
+    console.error('[Notifications] Canceling notification failed', error);
   }
 };
