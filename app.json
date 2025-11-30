@@ -15,6 +15,7 @@
     "updates": {
       "fallbackToCacheTimeout": 0
     },
+    "plugins": ["react-native-google-mobile-ads"],
     "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": true,
