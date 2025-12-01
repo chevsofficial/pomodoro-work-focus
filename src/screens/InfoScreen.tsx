@@ -107,7 +107,7 @@ export const InfoScreen: React.FC = () => {
         activatedAt: timestamp,
         lastVerifiedAt: timestamp,
       });
-      Alert.alert('Success', 'Code applied! Pomodoro Focus Pro is now unlocked.');
+      Alert.alert('Success', 'Code applied! TomoFlow Pro is now unlocked.');
       closeRedeemModal();
       return;
     }
@@ -135,15 +135,15 @@ export const InfoScreen: React.FC = () => {
       title: 'About',
       items: [
         {
-          title: 'Website',
+          title: 'Help Center',
           description: 'Guides, FAQs, and feature highlights',
           onPress: () => openLink(APP_LINKS.website),
-        },
+        },/* REMOVED FOR TOMOFLOW V1
         {
           title: 'News & Offers',
           description: 'Latest product updates and discounts',
           onPress: () => openLink(APP_LINKS.news),
-        },
+        },*/
       ],
     },
     {
@@ -180,19 +180,19 @@ export const InfoScreen: React.FC = () => {
       title: 'Social',
       items: [
         {
-          title: 'Twitter',
-          description: '@pomodorofocus',
+          title: 'X',
+          description: '@tomoflowapp',
           onPress: () => openLink(APP_LINKS.socials.twitter),
         },
         {
           title: 'Instagram',
-          description: '@pomodorofocusapp',
+          description: '@tomoflowapp',
           onPress: () => openLink(APP_LINKS.socials.instagram),
         },
         {
-          title: 'YouTube',
-          description: 'Tips and walkthroughs',
-          onPress: () => openLink(APP_LINKS.socials.youtube),
+          title: 'Facebook',
+          description: '@tomoflowapp',
+          onPress: () => openLink(APP_LINKS.socials.facebook),
         },
       ],
     },
@@ -220,7 +220,7 @@ export const InfoScreen: React.FC = () => {
       >
         <Text style={styles.title}>Info & Support</Text>
         <Text style={styles.subtitle}>
-          Discover help resources, learn more about Pomodoro Focus, and connect with our team.
+          Discover help resources, learn more about TomoFlow, and connect with our team.
         </Text>
 
         {sections.map((section) => (

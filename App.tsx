@@ -165,7 +165,7 @@ const App: React.FC = () => {
   return (
     <SafeAreaProvider>
       <ThemeProvider>
-        <NavigationContainer linking={linking} theme={navigationTheme}>
+        <NavigationContainer linking={linking as any} theme={navigationTheme}>
           <StatusBar style={statusBarStyle} backgroundColor={colors.background} />
           <RootNavigator />
         </NavigationContainer>

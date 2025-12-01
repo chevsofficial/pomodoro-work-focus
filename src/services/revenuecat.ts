@@ -1,77 +1,101 @@
-import Purchases, { PurchasesOfferings, PurchasesPackage } from 'react-native-purchases';
-import { Platform } from 'react-native';
+// src/services/revenuecat.ts
+
+import Purchases, {
+  PurchasesOfferings,
+  PurchasesPackage,
+} from 'react-native-purchases';
+import Constants from 'expo-constants';
 import useAppStore from '../store/appStore';
-import { getRevenueCatApiKey, REVENUECAT_KEYS } from '../config/revenuecat';
+import { getRevenueCatApiKey } from '../config/revenuecat';
 
-export const initRevenueCat = () => {
-  const apiKey = getRevenueCatApiKey();
+// Helper: detect if we're running inside Expo Go
+function isExpoGo() {
+  // In Expo Go this will be "expo"
+  return Constants.appOwnership === 'expo';
+}
 
-  if (!apiKey) {
-    console.error('RevenueCat: API key is not configured for this platform.');
+/**
+ * Initialize RevenueCat safely.
+ * - In Expo Go: we SKIP configuring, to avoid crashes.
+ * - In dev/production builds: we call Purchases.configure with your API key.
+ */
+export async function initRevenueCat() {
+  if (isExpoGo()) {
+    console.log('[RevenueCat] Expo Go detected, skipping Purchases.configure');
     return;
   }
 
-  Purchases.configure({
-    apiKey,
-    appUserID: null,
-  });
-};
+  const apiKey = getRevenueCatApiKey();
 
-export const fetchOfferings = async (): Promise<PurchasesOfferings | null> => {
+  if (!apiKey) {
+    console.warn(
+      '[RevenueCat] Missing RevenueCat API key for this platform, skipping configure'
+    );
+    return;
+  }
+
   try {
-    return await Purchases.getOfferings();
+    await Purchases.configure({ apiKey });
+    console.log('[RevenueCat] Purchases configured successfully');
   } catch (error) {
-    console.error('RevenueCat: failed to load offerings', error);
+    console.warn('[RevenueCat] Purchases.configure failed', error);
+  }
+}
+
+/**
+ * Fetch offerings safely. Returns null if anything fails.
+ */
+export async function fetchOfferings(): Promise<PurchasesOfferings | null> {
+  try {
+    const offerings = await Purchases.getOfferings();
+    return offerings;
+  } catch (error) {
+    console.warn('[RevenueCat] getOfferings failed', error);
     return null;
   }
-};
+}
 
-export const purchaseProduct = async (packageToBuy: PurchasesPackage) => {
+/**
+ * Purchase a package and update isPro if user has active entitlements.
+ */
+export async function purchasePackage(pkg: PurchasesPackage) {
   try {
-    const { customerInfo } = await Purchases.purchasePackage(packageToBuy);
-    const entitlement = customerInfo.entitlements.active['pro'];
+    const { customerInfo } = await Purchases.purchasePackage(pkg);
 
-    if (entitlement) {
-      useAppStore.getState().setProStatus({
-        isPro: true,
-        source: 'iap',
-        productId: packageToBuy.product.identifier,
-        platform: Platform.OS,
-        expiresAt: entitlement.expirationDate ?? null,
-        activatedAt: new Date().toISOString(),
-        lastVerifiedAt: new Date().toISOString(),
-      });
+    const entitlements = customerInfo.entitlements.active;
+    const hasPro = Object.keys(entitlements).length > 0;
+
+    if (hasPro) {
+      // Assumes your store has setIsPro(boolean)
+      useAppStore.getState().setPro(true);
     }
+
+    return customerInfo;
   } catch (error: any) {
-    if (!error?.userCancelled) {
-      console.error('RevenueCat: purchase failed', error);
+    if (error?.userCancelled) {
+      console.log('[RevenueCat] Purchase cancelled by user');
+    } else {
+      console.warn('[RevenueCat] purchasePackage failed', error);
     }
     throw error;
   }
-};
+}
 
-export const restorePurchases = async () => {
+/**
+ * Restore purchases and update isPro.
+ */
+export async function restorePurchases() {
   try {
-    const { customerInfo } = await Purchases.restorePurchases();
-    const entitlement = customerInfo.entitlements.active['pro'];
+    const customerInfo = await Purchases.restorePurchases();
 
-    if (entitlement) {
-      useAppStore.getState().setProStatus({
-        isPro: true,
-        source: 'iap',
-        productId: entitlement.productIdentifier,
-        platform: Platform.OS,
-        expiresAt: entitlement.expirationDate ?? null,
-        activatedAt: new Date().toISOString(),
-        lastVerifiedAt: new Date().toISOString(),
-      });
-    }
+    const entitlements = customerInfo.entitlements.active;
+    const hasPro = Object.keys(entitlements).length > 0;
 
-    return entitlement;
+    useAppStore.getState().setPro(hasPro);
+
+    return customerInfo;
   } catch (error) {
-    console.error('RevenueCat: restore failed', error);
+    console.warn('[RevenueCat] restorePurchases failed', error);
     throw error;
   }
-};
-
-export const getConfiguredRevenueCatKeys = () => REVENUECAT_KEYS;
+}
