@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { IntervalType } from '../models';
+import { MIN_ANALYTICS_INTERVAL_SECONDS } from '../utils/intervalUtils';
 import { cancelScheduledNotification, scheduleIntervalCompletionNotification } from '../utils/notificationService';
 import { playIntervalEndSound, triggerIntervalHaptics } from '../utils/soundService';
 import useAppStore, { selectEffectiveSettings, selectIsProEffective } from './appStore';
@@ -411,7 +412,26 @@ export const useTimerStore = create<TimerState>((set, get) => {
       }
       appStore.skipInterval({ intervalId, skippedAt: new Date(now).toISOString() });
 
+      const latestStore = useAppStore.getState();
+      const interval = latestStore.intervals.find((candidate) => candidate.id === intervalId);
+      const startedAtMs = interval ? new Date(interval.startedAt).getTime() : undefined;
+
+      const elapsedSeconds =
+        startedAtMs !== undefined && Number.isFinite(startedAtMs)
+          ? Math.max(0, Math.round((now - startedAtMs) / 1000))
+          : undefined;
+
+      const shouldShowEarlySkipInfoModal =
+        state.currentIntervalType === 'work' &&
+        latestStore.settings.showEarlySkipInfoModal &&
+        elapsedSeconds !== undefined &&
+        elapsedSeconds < MIN_ANALYTICS_INTERVAL_SECONDS;
+
       transitionToNextInterval(state, { shouldCountWorkCompletion: false });
+
+      if (shouldShowEarlySkipInfoModal) {
+        latestStore.showEarlySkipInfo();
+      }
     },
     endIntervalNow: () => {
       const state = get();

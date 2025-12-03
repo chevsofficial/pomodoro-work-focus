@@ -126,6 +126,7 @@ type SkipIntervalPayload = {
 
 export interface AppStore extends AppStateSnapshot {
   isPro: boolean;
+  earlySkipInfoVisible: boolean;
   addTask: (payload: AddTaskPayload) => void;
   updateTask: (taskId: string, updates: UpdateTaskPayload) => void;
   toggleTaskCompleted: (taskId: string) => void;
@@ -139,6 +140,9 @@ export interface AppStore extends AppStateSnapshot {
   addActivityType: (payload: AddActivityTypePayload) => void;
   updateActivityType: (activityTypeId: string, updates: UpdateActivityTypePayload) => void;
   deleteActivityType: (activityTypeId: string) => void;
+  setShowEarlySkipInfoModal: (show: boolean) => void;
+  showEarlySkipInfo: () => void;
+  hideEarlySkipInfo: () => void;
   setProStatus: (status: Partial<ProStatus> & { isPro: boolean; source?: ProStatus['source'] }) => void;
   setPro: (value: boolean) => void;
   setCloudUser: (userId?: string) => void;
@@ -167,6 +171,7 @@ const defaultSettings: PomodoroSettings = {
   notificationSoundKey: 'chime1',
   defaultActivityTypeId: undefined,
   themeId: 'dark',
+  showEarlySkipInfoModal: true,
 };
 
 const defaultProStatus: ProStatus = {
@@ -518,6 +523,7 @@ const useAppStore = create<AppStore>((set, get) => {
     settings: { ...defaultSettings },
     proStatus: { ...defaultProStatus },
     isPro: defaultProStatus.isPro,
+    earlySkipInfoVisible: false,
     streak: { ...defaultStreakState },
     cloudSync: { ...defaultCloudSyncState },
 
@@ -696,6 +702,23 @@ const useAppStore = create<AppStore>((set, get) => {
           ...updates,
         },
       }));
+    },
+
+    setShowEarlySkipInfoModal: (show) => {
+      setStateAndPersist((state) => ({
+        settings: {
+          ...state.settings,
+          showEarlySkipInfoModal: show,
+        },
+      }));
+    },
+
+    showEarlySkipInfo: () => {
+      set({ earlySkipInfoVisible: true });
+    },
+
+    hideEarlySkipInfo: () => {
+      set({ earlySkipInfoVisible: false });
     },
 
     addActivityType: (payload) => {

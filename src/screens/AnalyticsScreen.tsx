@@ -63,16 +63,9 @@ const getEffectiveActivityTypeId = (
   interval: IntervalSession,
   taskMapById: Record<string, Task | undefined>,
 ) => {
-  if (interval.activityTypeId) {
-    return interval.activityTypeId;
-  }
-
   const task = interval.taskId ? taskMapById[interval.taskId] : undefined;
-  if (task?.activityTypeId) {
-    return task.activityTypeId;
-  }
 
-  return OTHER_ACTIVITY_TYPE_ID;
+  return interval.activityTypeId ?? task?.activityTypeId ?? OTHER_ACTIVITY_TYPE_ID;
 };
 
 const startOfDay = (d: Date) =>
