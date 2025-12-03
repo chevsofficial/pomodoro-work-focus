@@ -13,7 +13,7 @@ import { ScreenContainer } from '../components/ScreenContainer';
 import { AdBanner } from '../components/AdBanner';
 import { RootTabParamList } from '../navigation/RootNavigator';
 import { IntervalType, Task } from '../models';
-import { useTasks } from '../store/appStore';
+import useAppStore, { useTasks } from '../store/appStore';
 import { useTimerStore } from '../store/useTimerStore';
 import { useThemeColors } from '../theme/useThemeColors';
 import { spacing } from '../theme/spacing';
@@ -123,6 +123,9 @@ export const PomodoroScreen: React.FC = () => {
   } = useTimerStore((state) => state);
 
   const [isTaskPickerVisible, setTaskPickerVisible] = useState(false);
+  const earlySkipInfoVisible = useAppStore((state) => state.earlySkipInfoVisible);
+  const hideEarlySkipInfo = useAppStore((state) => state.hideEarlySkipInfo);
+  const setShowEarlySkipInfoModal = useAppStore((state) => state.setShowEarlySkipInfoModal);
 
   useEffect(() => {
     if (!isRunning) {
@@ -286,6 +289,42 @@ export const PomodoroScreen: React.FC = () => {
         onClose={() => setTaskPickerVisible(false)}
         styles={styles}
       />
+
+      <Modal
+        visible={earlySkipInfoVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={hideEarlySkipInfo}
+      >
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>Skipped focus session not counted</Text>
+            <Text style={styles.modalBody}>
+              Work intervals skipped within the first 5 minutes are treated as cancelled and won&apos;t
+              appear in Analytics or Task statistics.
+            </Text>
+
+            <View style={styles.modalButtonsRow}>
+              <TouchableOpacity
+                style={[styles.modalInfoButton, styles.modalInfoButtonSecondary]}
+                onPress={() => {
+                  setShowEarlySkipInfoModal(false);
+                  hideEarlySkipInfo();
+                }}
+              >
+                <Text style={styles.modalInfoButtonText}>Don&apos;t show again</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.modalInfoButton, styles.modalInfoButtonPrimary]}
+                onPress={hideEarlySkipInfo}
+              >
+                <Text style={[styles.modalInfoButtonText, styles.modalInfoButtonPrimaryText]}>OK</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </ScreenContainer>
   );
 };
@@ -480,6 +519,12 @@ function createStyles(colors: ReturnType<typeof useThemeColors>) {
       fontSize: 13,
       color: colors.textSecondary,
     },
+    modalBody: {
+      fontSize: 14,
+      color: colors.textSecondary,
+      lineHeight: 20,
+      marginBottom: spacing.md,
+    },
     modalButton: {
       borderRadius: 16,
       paddingVertical: spacing.sm,
@@ -491,6 +536,32 @@ function createStyles(colors: ReturnType<typeof useThemeColors>) {
     modalButtonText: {
       color: colors.background,
       fontWeight: '700',
+    },
+    modalButtonsRow: {
+      flexDirection: 'row',
+      marginTop: spacing.md,
+    },
+    modalInfoButton: {
+      flex: 1,
+      borderRadius: 12,
+      paddingVertical: spacing.sm,
+      alignItems: 'center',
+    },
+    modalInfoButtonSecondary: {
+      marginRight: spacing.sm,
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    modalInfoButtonPrimary: {
+      backgroundColor: colors.primary,
+    },
+    modalInfoButtonText: {
+      fontWeight: '700',
+      color: colors.textPrimary,
+    },
+    modalInfoButtonPrimaryText: {
+      color: colors.background,
     },
   });
 }

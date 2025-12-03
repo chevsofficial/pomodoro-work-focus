@@ -56,6 +56,7 @@ export interface PomodoroSettings {
   notificationSoundKey: string;
   defaultActivityTypeId?: string;
   themeId?: ThemeId;
+  showEarlySkipInfoModal: boolean;
 }
 
 export type ProSource = 'none' | 'redeem_code' | 'iap' | 'admin' | 'promo';

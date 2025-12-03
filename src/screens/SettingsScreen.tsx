@@ -26,6 +26,7 @@ import {
   FREE_COLOR_KEYS,
 } from '../theme/activityColors';
 import { FREE_ACTIVITY_TYPE_LIMIT } from '../config/proFeatures';
+import { OTHER_ACTIVITY_TYPE_ID } from '../config/activityTypeConstants';
 import { requestNotificationPermissions } from '../utils/notificationService';
 import { playIntervalEndSound } from '../utils/soundService';
 
@@ -395,6 +396,10 @@ export const SettingsScreen: React.FC = () => {
   const settings = useEffectiveSettings();
   const storeSettings = useAppStore((state) => state.settings);
   const activityTypes = useActivityTypes();
+  const visibleActivityTypes = useMemo(
+    () => activityTypes.filter((type) => type.id !== OTHER_ACTIVITY_TYPE_ID),
+    [activityTypes],
+  );
   const isPro = useIsPro();
   const cloudSync = useAppStore((state) => state.cloudSync);
   const updateSettings = useAppStore((state) => state.updateSettings);
@@ -431,7 +436,8 @@ export const SettingsScreen: React.FC = () => {
     }, 0);
   };
 
-  const hasReachedFreeActivityLimit = !isPro && activityTypes.length >= FREE_ACTIVITY_TYPE_LIMIT;
+  const hasReachedFreeActivityLimit =
+    !isPro && visibleActivityTypes.length >= FREE_ACTIVITY_TYPE_LIMIT;
 
   const [numericValues, setNumericValues] = useState<Record<NumericSettingKey, string>>({
     workDurationMinutes: settings.workDurationMinutes.toString(),
@@ -735,10 +741,10 @@ export const SettingsScreen: React.FC = () => {
               </TouchableOpacity>
             </View>
           )}
-          {activityTypes.length === 0 && (
+          {visibleActivityTypes.length === 0 && (
             <Text style={styles.emptyStateText}>No custom activity types yet.</Text>
           )}
-          {activityTypes.map((type) => (
+          {visibleActivityTypes.map((type) => (
             <ActivityTypeRow
               key={type.id}
               type={type}
