@@ -19,6 +19,7 @@ import { ActivityType, Task } from '../models';
 import useAppStore, {
   selectCanCreateTask,
   selectRemainingFreeTasks,
+  useActiveActivityTypes,
   useActivityTypes,
   useIsPro,
   useTasks,
@@ -175,6 +176,7 @@ export const TasksScreen: React.FC = () => {
   const colors = useThemeColors();
   const tasks = useTasks();
   const activityTypes = useActivityTypes();
+  const activeActivityTypes = useActiveActivityTypes();
   const addTask = useAppStore((state) => state.addTask);
   const toggleTaskCompleted = useAppStore((state) => state.toggleTaskCompleted);
   const navigation = useNavigation<TasksNavigation>();
@@ -394,7 +396,7 @@ export const TasksScreen: React.FC = () => {
         visible={isModalVisible}
         onClose={() => setModalVisible(false)}
         onSubmit={handleAddTask}
-        activityTypes={activityTypes}
+        activityTypes={activeActivityTypes}
         colors={colors}
         styles={styles}
       />

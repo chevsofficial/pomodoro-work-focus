@@ -140,6 +140,8 @@ export interface AppStore extends AppStateSnapshot {
   addActivityType: (payload: AddActivityTypePayload) => void;
   updateActivityType: (activityTypeId: string, updates: UpdateActivityTypePayload) => void;
   deleteActivityType: (activityTypeId: string) => void;
+  archiveActivityType: (activityTypeId: string) => void;
+  unarchiveActivityType: (activityTypeId: string) => void;
   setShowEarlySkipInfoModal: (show: boolean) => void;
   showEarlySkipInfo: () => void;
   hideEarlySkipInfo: () => void;
@@ -724,6 +726,7 @@ const useAppStore = create<AppStore>((set, get) => {
     addActivityType: (payload) => {
       const newType: ActivityType = {
         id: createId(),
+        archivedAt: undefined,
         ...payload,
       };
 
@@ -738,6 +741,27 @@ const useAppStore = create<AppStore>((set, get) => {
                 ...type,
                 ...updates,
               }
+            : type,
+        ),
+      }));
+    },
+
+    archiveActivityType: (activityTypeId) => {
+      const timestamp = new Date().toISOString();
+      setStateAndPersist((state) => ({
+        activityTypes: state.activityTypes.map((type) =>
+          type.id === activityTypeId
+            ? { ...type, archivedAt: type.archivedAt ?? timestamp }
+            : type,
+        ),
+      }));
+    },
+
+    unarchiveActivityType: (activityTypeId) => {
+      setStateAndPersist((state) => ({
+        activityTypes: state.activityTypes.map((type) =>
+          type.id === activityTypeId
+            ? { ...type, archivedAt: undefined }
             : type,
         ),
       }));
@@ -844,6 +868,12 @@ export const useProStatus = () => useAppStore((state) => state.proStatus);
 export const useIsPro = () => useAppStore(selectIsProEffective);
 
 export const useActivityTypes = () => useAppStore((state) => state.activityTypes);
+
+export const useActiveActivityTypes = () =>
+  useAppStore((state) => state.activityTypes.filter((type) => !type.archivedAt));
+
+export const useArchivedActivityTypes = () =>
+  useAppStore((state) => state.activityTypes.filter((type) => !!type.archivedAt));
 
 export const useAppStateSnapshot = () =>
   useAppStore((state) => ({

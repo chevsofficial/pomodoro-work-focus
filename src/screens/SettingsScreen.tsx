@@ -16,7 +16,12 @@ import { ScreenContainer } from '../components/ScreenContainer';
 import { RootStackParamList } from '../navigation/RootNavigator';
 import { navigateToProUpsell } from '../navigation/proNavigation';
 import { ActivityType, PomodoroSettings } from '../models';
-import useAppStore, { useActivityTypes, useEffectiveSettings, useIsPro } from '../store/appStore';
+import useAppStore, {
+  useActiveActivityTypes,
+  useArchivedActivityTypes,
+  useEffectiveSettings,
+  useIsPro,
+} from '../store/appStore';
 import { signOut } from '../services/authService';
 import { spacing } from '../theme/spacing';
 import { THEMES, ThemeId, useThemeColors } from '../theme/useThemeColors';
@@ -88,33 +93,6 @@ const SettingToggleRow: React.FC<{
   );
 };
 
-const ActivityTypeRow: React.FC<{
-  type: ActivityType;
-  onPress: () => void;
-  styles: SettingsStyles;
-  colors: ReturnType<typeof useThemeColors>;
-}> = ({ type, onPress, styles, colors }) => {
-  return (
-    <TouchableOpacity style={styles.activityTypeRow} onPress={onPress}>
-      <View style={styles.activityTypeColorWrapper}>
-        <View
-          style={[
-            styles.activityTypeColor,
-            { backgroundColor: type.color ?? colors.border },
-            type.color ? styles.activityTypeColorEnabled : styles.activityTypeColorDisabled,
-          ]}
-        />
-      </View>
-      <View style={styles.activityTypeContent}>
-        <Text style={styles.activityTypeName}>{type.name}</Text>
-        <Text style={styles.activityTypeMeta}>
-          {`${type.workDurationMinutes}m work · ${type.shortBreakMinutes}m short · ${type.longBreakMinutes}m long · ${type.intervalsBeforeLongBreak} intervals`}
-        </Text>
-      </View>
-    </TouchableOpacity>
-  );
-};
-
 type ActivityTypeFormValues = {
   name: string;
   color: string;
@@ -164,7 +142,7 @@ const buildFormState = (
   };
 };
 
-const ActivityTypeModal: React.FC<ActivityTypeModalProps> = ({
+export const ActivityTypeModal: React.FC<ActivityTypeModalProps> = ({
   visible,
   onClose,
   defaults,
@@ -395,17 +373,15 @@ type NumericSettingKey =
 export const SettingsScreen: React.FC = () => {
   const settings = useEffectiveSettings();
   const storeSettings = useAppStore((state) => state.settings);
-  const activityTypes = useActivityTypes();
-  const visibleActivityTypes = useMemo(
-    () => activityTypes.filter((type) => type.id !== OTHER_ACTIVITY_TYPE_ID),
-    [activityTypes],
+  const activeActivityTypes = useActiveActivityTypes();
+  const archivedActivityTypes = useArchivedActivityTypes();
+  const visibleActiveActivityTypes = useMemo(
+    () => activeActivityTypes.filter((type) => type.id !== OTHER_ACTIVITY_TYPE_ID),
+    [activeActivityTypes],
   );
   const isPro = useIsPro();
   const cloudSync = useAppStore((state) => state.cloudSync);
   const updateSettings = useAppStore((state) => state.updateSettings);
-  const addActivityType = useAppStore((state) => state.addActivityType);
-  const updateActivityType = useAppStore((state) => state.updateActivityType);
-  const deleteActivityType = useAppStore((state) => state.deleteActivityType);
   const setCloudSyncEnabled = useAppStore((state) => state.setCloudSyncEnabled);
   const navigation = useNavigation<SettingsNavigation>();
   const colors = useThemeColors();
@@ -425,19 +401,8 @@ export const SettingsScreen: React.FC = () => {
     goToPro();
   };
 
-  const handleLockedColorPress = () => {
-    if (isPro) {
-      return;
-    }
-
-    setModalVisible(false);
-    setTimeout(() => {
-      goToPro();
-    }, 0);
-  };
-
   const hasReachedFreeActivityLimit =
-    !isPro && visibleActivityTypes.length >= FREE_ACTIVITY_TYPE_LIMIT;
+    !isPro && visibleActiveActivityTypes.length >= FREE_ACTIVITY_TYPE_LIMIT;
 
   const [numericValues, setNumericValues] = useState<Record<NumericSettingKey, string>>({
     workDurationMinutes: settings.workDurationMinutes.toString(),
@@ -524,56 +489,15 @@ export const SettingsScreen: React.FC = () => {
     setCloudSyncEnabled(value);
   };
 
-  const [isModalVisible, setModalVisible] = useState(false);
-  const [isThemeModalVisible, setThemeModalVisible] = useState(false);
-  const [editingType, setEditingType] = useState<ActivityType | undefined>(undefined);
+  const handleManageActivityTypes = () => {
+    navigation.navigate('ActivityTypesManager');
+  };
 
-  const durationDefaults = useMemo(
-    () => ({
-      workDurationMinutes: settings.workDurationMinutes,
-      shortBreakMinutes: settings.shortBreakMinutes,
-      longBreakMinutes: settings.longBreakMinutes,
-      intervalsBeforeLongBreak: settings.intervalsBeforeLongBreak,
-    }),
-    [
-      settings.workDurationMinutes,
-      settings.shortBreakMinutes,
-      settings.longBreakMinutes,
-      settings.intervalsBeforeLongBreak,
-    ],
-  );
+  const [isThemeModalVisible, setThemeModalVisible] = useState(false);
 
   const lastSyncedText = cloudSync.lastSyncedAt
     ? `Last synced: ${new Date(cloudSync.lastSyncedAt).toLocaleString()}`
     : 'Not synced yet.';
-
-  const openAddModal = () => {
-    if (hasReachedFreeActivityLimit) {
-      navigateToProUpsell(navigation);
-      return;
-    }
-    setEditingType(undefined);
-    setModalVisible(true);
-  };
-
-  const handleSelectActivityType = (type: ActivityType) => {
-    setEditingType(type);
-    setModalVisible(true);
-  };
-
-  const handleSubmitActivityType = (payload: Omit<ActivityType, 'id'>) => {
-    if (editingType) {
-      updateActivityType(editingType.id, payload);
-    } else {
-      addActivityType(payload);
-    }
-  };
-
-  const handleDeleteActivityType = () => {
-    if (editingType) {
-      deleteActivityType(editingType.id);
-    }
-  };
 
   return (
     <ScreenContainer>
@@ -720,39 +644,23 @@ export const SettingsScreen: React.FC = () => {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Activity Types</Text>
-            <TouchableOpacity onPress={openAddModal}>
-              <Text
-                style={[
-                  styles.sectionAction,
-                  hasReachedFreeActivityLimit && styles.sectionActionDisabled,
-                ]}
-              >
-                + Add Activity Type
-              </Text>
+            <TouchableOpacity onPress={handleManageActivityTypes}>
+              <Text style={styles.sectionAction}>Manage</Text>
             </TouchableOpacity>
           </View>
+          <Text style={styles.sectionHint}>
+            {visibleActiveActivityTypes.length} active · {archivedActivityTypes.length} archived
+          </Text>
           {hasReachedFreeActivityLimit && (
             <View style={styles.proBanner}>
               <Text style={styles.proBannerTitle}>
-                Free accounts can create up to {FREE_ACTIVITY_TYPE_LIMIT} activity types.
+                Free accounts can create up to {FREE_ACTIVITY_TYPE_LIMIT} active activity types.
               </Text>
               <TouchableOpacity onPress={handleUpgradePress}>
                 <Text style={styles.proBannerAction}>Upgrade to Pro to unlock more</Text>
               </TouchableOpacity>
             </View>
           )}
-          {visibleActivityTypes.length === 0 && (
-            <Text style={styles.emptyStateText}>No custom activity types yet.</Text>
-          )}
-          {visibleActivityTypes.map((type) => (
-            <ActivityTypeRow
-              key={type.id}
-              type={type}
-              onPress={() => handleSelectActivityType(type)}
-              styles={styles}
-              colors={colors}
-            />
-          ))}
         </View>
 
         <View style={styles.section}>
@@ -782,18 +690,6 @@ export const SettingsScreen: React.FC = () => {
           <Text style={styles.upgradeText}>Upgrade to Pro</Text>
         </TouchableOpacity>
       </ScrollView>
-
-      <ActivityTypeModal
-        visible={isModalVisible}
-        onClose={() => setModalVisible(false)}
-        defaults={durationDefaults}
-        initialValues={editingType}
-        onSubmit={handleSubmitActivityType}
-        onDelete={editingType ? handleDeleteActivityType : undefined}
-        onLockedColorPress={handleLockedColorPress}
-        colors={colors}
-        styles={styles}
-      />
 
       <Modal
         visible={isThemeModalVisible}

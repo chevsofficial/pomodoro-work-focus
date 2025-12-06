@@ -5,7 +5,12 @@ import { Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View 
 import { ScreenContainer } from '../components/ScreenContainer';
 import { RootStackParamList } from '../navigation/RootNavigator';
 import { ActivityType, IntervalSession } from '../models';
-import useAppStore, { useActivityTypes, useIntervalsByTask, useTasks } from '../store/appStore';
+import useAppStore, {
+  useActiveActivityTypes,
+  useActivityTypes,
+  useIntervalsByTask,
+  useTasks,
+} from '../store/appStore';
 import { spacing } from '../theme/spacing';
 import { useThemeColors } from '../theme/useThemeColors';
 import {
@@ -64,6 +69,7 @@ export const TaskDetailScreen: React.FC = () => {
   const tasks = useTasks();
   const task = tasks.find((item) => item.id === taskId);
   const intervals = useIntervalsByTask(taskId);
+  const activeActivityTypes = useActiveActivityTypes();
   const activityTypes = useActivityTypes();
 
   const updateTask = useAppStore((state) => state.updateTask);
@@ -263,7 +269,7 @@ export const TaskDetailScreen: React.FC = () => {
             >
               <Text style={styles.activityTypeOptionText}>None</Text>
             </TouchableOpacity>
-            {activityTypes.map((type) => (
+            {activeActivityTypes.map((type) => (
               <TouchableOpacity
                 key={type.id}
                 style={[
