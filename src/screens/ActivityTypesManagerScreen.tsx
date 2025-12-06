@@ -258,7 +258,6 @@ const createModalCompatStyles = (colors: ReturnType<typeof useThemeColors>) =>
     modalLabel: {
       color: colors.textSecondary,
       fontSize: 13,
-      color: colors.textSecondary,
       marginBottom: spacing.xs,
     },
     modalHint: {

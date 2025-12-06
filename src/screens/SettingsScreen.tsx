@@ -51,6 +51,19 @@ const SOUND_OPTIONS = [
   { key: 'chime3', label: 'Chime 3' },
 ];
 
+const themeDisplayOrder: ThemeId[] = [
+  'light',
+  'dark',
+  'forest',
+  'ocean',
+  'sunset',
+  'neon',
+  'spring',
+  'summer',
+  'autumn',
+  'winter',
+];
+
 type SettingsStyles = ReturnType<typeof createStyles>;
 
 const SettingInputRow: React.FC<{
@@ -707,7 +720,8 @@ export const SettingsScreen: React.FC = () => {
             <Text style={styles.themeModalTitle}>Choose a theme</Text>
 
             <ScrollView style={styles.themeModalList}>
-              {Object.values(THEMES).map((theme) => {
+              {themeDisplayOrder.map((themeId) => {
+                const theme = THEMES[themeId];
                 const isSelected = theme.id === currentTheme.id;
                 const isLocked = theme.isProOnly && !isPro;
 
@@ -737,26 +751,23 @@ export const SettingsScreen: React.FC = () => {
                       ]}
                     >
                       <View
-                        style={{
-                          flex: 1,
-                          borderRadius: 6,
-                          backgroundColor: theme.colors.primary,
-                          marginBottom: 2,
-                        }}
+                        style={[
+                          styles.themePreviewSwatch,
+                          styles.themePreviewSwatchSpacing,
+                          { backgroundColor: theme.colors.primary },
+                        ]}
                       />
                       <View
-                        style={{
-                          flex: 1,
-                          borderRadius: 6,
-                          backgroundColor: theme.colors.accent,
-                        }}
+                        style={[
+                          styles.themePreviewSwatch,
+                          { backgroundColor: theme.colors.accent },
+                        ]}
                       />
                     </View>
 
                     <View style={styles.themeTextContainer}>
                       <Text style={styles.themeName}>
                         {theme.name}
-                        {theme.isSeasonal ? ' 🎄' : ''}
                       </Text>
 
                       {isLocked && <Text style={styles.themeLockLabel}>Pro</Text>}
@@ -1064,6 +1075,13 @@ function createStyles(colors: ReturnType<typeof useThemeColors>) {
     borderWidth: 1,
     marginRight: 10,
     overflow: 'hidden',
+  },
+  themePreviewSwatch: {
+    flex: 1,
+    borderRadius: 6,
+  },
+  themePreviewSwatchSpacing: {
+    marginBottom: 2,
   },
   themeTextContainer: {
     flex: 1,
