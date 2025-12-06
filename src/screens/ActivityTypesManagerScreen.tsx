@@ -80,6 +80,11 @@ export const ActivityTypesManagerScreen: React.FC = () => {
   };
 
   const handleUnarchivePress = (id: string) => {
+    if (!isPro && visibleActiveTypes.length >= FREE_ACTIVITY_TYPE_LIMIT) {
+      navigateToProUpsell(navigation);
+      return;
+    }
+
     unarchiveActivityType(id);
   };
 
