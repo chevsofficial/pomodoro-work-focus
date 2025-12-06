@@ -17,6 +17,8 @@ import { RootStackParamList } from '../navigation/RootNavigator';
 import { navigateToProUpsell } from '../navigation/proNavigation';
 import { ActivityType, PomodoroSettings } from '../models';
 import useAppStore, {
+  FREE_ACTIVITY_TYPE_LIMIT,
+  selectCanCreateActivityType,
   useActiveActivityTypes,
   useArchivedActivityTypes,
   useEffectiveSettings,
@@ -30,7 +32,6 @@ import {
   DEFAULT_ACTIVITY_COLOR,
   FREE_COLOR_KEYS,
 } from '../theme/activityColors';
-import { FREE_ACTIVITY_TYPE_LIMIT } from '../config/proFeatures';
 import { OTHER_ACTIVITY_TYPE_ID } from '../config/activityTypeConstants';
 import { requestNotificationPermissions } from '../utils/notificationService';
 import { playIntervalEndSound } from '../utils/soundService';
@@ -375,6 +376,7 @@ export const SettingsScreen: React.FC = () => {
   const storeSettings = useAppStore((state) => state.settings);
   const activeActivityTypes = useActiveActivityTypes();
   const archivedActivityTypes = useArchivedActivityTypes();
+  const canCreateActivityType = useAppStore(selectCanCreateActivityType);
   const visibleActiveActivityTypes = useMemo(
     () => activeActivityTypes.filter((type) => type.id !== OTHER_ACTIVITY_TYPE_ID),
     [activeActivityTypes],
@@ -401,8 +403,7 @@ export const SettingsScreen: React.FC = () => {
     goToPro();
   };
 
-  const hasReachedFreeActivityLimit =
-    !isPro && visibleActiveActivityTypes.length >= FREE_ACTIVITY_TYPE_LIMIT;
+  const hasReachedFreeActivityLimit = !isPro && !canCreateActivityType;
 
   const [numericValues, setNumericValues] = useState<Record<NumericSettingKey, string>>({
     workDurationMinutes: settings.workDurationMinutes.toString(),
@@ -654,7 +655,7 @@ export const SettingsScreen: React.FC = () => {
           {hasReachedFreeActivityLimit && (
             <View style={styles.proBanner}>
               <Text style={styles.proBannerTitle}>
-                Free accounts can create up to {FREE_ACTIVITY_TYPE_LIMIT} active activity types.
+                Free accounts can create up to {FREE_ACTIVITY_TYPE_LIMIT} activity types.
               </Text>
               <TouchableOpacity onPress={handleUpgradePress}>
                 <Text style={styles.proBannerAction}>Upgrade to Pro to unlock more</Text>

@@ -183,7 +183,7 @@ export const TasksScreen: React.FC = () => {
   const [isModalVisible, setModalVisible] = useState(false);
   const [activeTab, setActiveTab] = useState<'todo' | 'done'>('todo');
   const canCreateTask = useAppStore(selectCanCreateTask);
-  const remainingFreeTasks = useAppStore(selectRemainingFreeTasks);
+  const remainingTasks = useAppStore(selectRemainingFreeTasks);
   const isPro = useIsPro();
   const styles = useMemo(() => createStyles(colors), [colors]);
 
@@ -343,6 +343,21 @@ export const TasksScreen: React.FC = () => {
         </TouchableOpacity>
       </View>
 
+      {!isPro && remainingTasks === 0 && (
+        <View style={styles.proUpsellCard}>
+          <Text style={styles.proUpsellTitle}>Task limit reached</Text>
+          <Text style={styles.proUpsellSubtitle}>
+            Upgrade to TomoFlow Pro to unlock unlimited tasks and more productivity features.
+          </Text>
+          <TouchableOpacity
+            style={styles.proUpsellButton}
+            onPress={() => navigateToProUpsell(navigation)}
+          >
+            <Text style={styles.proUpsellButtonText}>View Pro Plans</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
       {activeTab === 'todo' ? (
         todoTasks.length === 0 ? (
           <View style={styles.emptyState}>
@@ -382,7 +397,7 @@ export const TasksScreen: React.FC = () => {
       <AdBanner />
 
       {!isPro && (
-        <Text style={styles.planNote}>{remainingFreeTasks} tasks left on the free plan.</Text>
+        <Text style={styles.planNote}>{remainingTasks} tasks left on the free plan.</Text>
       )}
 
       <TouchableOpacity
@@ -440,6 +455,37 @@ function createStyles(colors: ReturnType<typeof useThemeColors>) {
     },
     tabButtonLabelActive: {
       color: colors.background,
+    },
+    proUpsellCard: {
+      borderRadius: 16,
+      backgroundColor: colors.surface,
+      padding: spacing.md,
+      marginBottom: spacing.md,
+      borderWidth: 1,
+      borderColor: colors.accent,
+    },
+    proUpsellTitle: {
+      fontSize: 15,
+      fontWeight: '700',
+      color: colors.textPrimary,
+      marginBottom: spacing.xs,
+    },
+    proUpsellSubtitle: {
+      fontSize: 13,
+      color: colors.textSecondary,
+      marginBottom: spacing.sm,
+    },
+    proUpsellButton: {
+      alignSelf: 'flex-start',
+      borderRadius: 16,
+      backgroundColor: colors.primary,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.xs,
+    },
+    proUpsellButtonText: {
+      color: colors.background,
+      fontWeight: '600',
+      fontSize: 13,
     },
     taskRow: {
       flexDirection: 'row',
