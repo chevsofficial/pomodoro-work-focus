@@ -42,6 +42,7 @@ export interface ActivityType {
   shortBreakMinutes: number;
   longBreakMinutes: number;
   intervalsBeforeLongBreak: number;
+  archivedAt?: string;
 }
 
 export interface PomodoroSettings {

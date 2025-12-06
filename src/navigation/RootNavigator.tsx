@@ -14,6 +14,7 @@ import { PaywallScreen } from '../screens/PaywallScreen';
 import { AuthScreen } from '../screens/AuthScreen';
 import { useThemeColors } from '../theme/useThemeColors';
 import { AuthCallbackScreen } from '../screens/AuthCallbackScreen';
+import { ActivityTypesManagerScreen } from '../screens/ActivityTypesManagerScreen';
 
 export type RootTabParamList = {
   Tasks: undefined;
@@ -29,6 +30,7 @@ export type RootStackParamList = {
   Paywall: undefined;
   Auth: undefined;
   AuthCallback: undefined;
+  ActivityTypesManager: undefined;
 };
 
 const Tab = createBottomTabNavigator<RootTabParamList>();
@@ -178,6 +180,13 @@ export function RootNavigator() {
         component={AuthCallbackScreen}
         options={{
           title: 'Email Confirmed',
+        }}
+      />
+      <Stack.Screen
+        name="ActivityTypesManager"
+        component={ActivityTypesManagerScreen}
+        options={{
+          title: 'Activity Types',
         }}
       />
     </AnyStackNavigator>
