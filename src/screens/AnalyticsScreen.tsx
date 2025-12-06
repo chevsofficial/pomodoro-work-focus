@@ -361,6 +361,7 @@ export const AnalyticsScreen: React.FC = () => {
           color,
           hours,
           percent: totalRangeHours > 0 ? (hours / totalRangeHours) * 100 : 0,
+          isArchived: !!type?.archivedAt,
         };
       })
       .sort((a, b) => b.hours - a.hours);
@@ -596,7 +597,12 @@ export const AnalyticsScreen: React.FC = () => {
                     ]}
                   />
                   <View style={styles.ratioContent}>
-                    <Text style={styles.ratioLabel}>{row.label}</Text>
+                    <Text style={styles.ratioLabel}>
+                      {row.label}
+                      {row.isArchived && (
+                        <Text style={styles.ratioArchivedTag}>{'  '}• Archived</Text>
+                      )}
+                    </Text>
                     <Text style={styles.ratioSubLabel}>
                       {row.hours.toFixed(1)}h · {row.percent.toFixed(0)}%
                     </Text>
@@ -947,6 +953,12 @@ function createStyles(colors: ReturnType<typeof useThemeColors>) {
     ratioLabel: {
       color: colors.textPrimary,
       fontSize: 14,
+    },
+    ratioArchivedTag: {
+      fontSize: 11,
+      fontWeight: '600',
+      color: colors.textSecondary,
+      textTransform: 'uppercase',
     },
     ratioSubLabel: {
       color: colors.textSecondary,

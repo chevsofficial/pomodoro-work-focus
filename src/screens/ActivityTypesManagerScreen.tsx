@@ -35,6 +35,7 @@ export const ActivityTypesManagerScreen: React.FC = () => {
   const updateActivityType = useAppStore((s) => s.updateActivityType);
   const archiveActivityType = useAppStore((s) => s.archiveActivityType);
   const unarchiveActivityType = useAppStore((s) => s.unarchiveActivityType);
+  const deleteActivityType = useAppStore((s) => s.deleteActivityType);
 
   const [isModalVisible, setModalVisible] = useState(false);
   const [editingType, setEditingType] = useState<ActivityType | undefined>(undefined);
@@ -46,12 +47,17 @@ export const ActivityTypesManagerScreen: React.FC = () => {
 
   const hasReachedFreeActivityLimit = !isPro && remainingActivityTypes === 0;
 
+  const closeModal = () => {
+    setModalVisible(false);
+    setEditingType(undefined);
+  };
+
   const handleLockedColorPress = () => {
     if (isPro) {
       return;
     }
 
-    setModalVisible(false);
+    closeModal();
     setTimeout(() => navigateToProUpsell(navigation), 0);
   };
 
@@ -61,7 +67,7 @@ export const ActivityTypesManagerScreen: React.FC = () => {
     } else {
       addActivityType(payload);
     }
-    setModalVisible(false);
+    closeModal();
   };
 
   const handleAddActivityTypePress = () => {
@@ -181,7 +187,7 @@ export const ActivityTypesManagerScreen: React.FC = () => {
 
       <ActivityTypeModal
         visible={isModalVisible}
-        onClose={() => setModalVisible(false)}
+        onClose={closeModal}
         defaults={{
           workDurationMinutes: settings.workDurationMinutes,
           shortBreakMinutes: settings.shortBreakMinutes,
@@ -190,6 +196,14 @@ export const ActivityTypesManagerScreen: React.FC = () => {
         }}
         initialValues={editingType}
         onSubmit={handleSubmitActivityType}
+        onDelete={
+          editingType
+            ? () => {
+                deleteActivityType(editingType.id);
+                closeModal();
+              }
+            : undefined
+        }
         onLockedColorPress={handleLockedColorPress}
         colors={{
           ...colors,

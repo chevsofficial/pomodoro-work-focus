@@ -653,7 +653,7 @@ export const SettingsScreen: React.FC = () => {
             {visibleActiveActivityTypes.length} active · {archivedActivityTypes.length} archived
           </Text>
           {hasReachedFreeActivityLimit && (
-            <View style={styles.proBanner}>
+            <View style={[styles.proBanner, styles.activityTypeUpsell]}>
               <Text style={styles.proBannerTitle}>
                 Free accounts can create up to {FREE_ACTIVITY_TYPE_LIMIT} activity types.
               </Text>
@@ -936,6 +936,9 @@ function createStyles(colors: ReturnType<typeof useThemeColors>) {
     padding: spacing.md,
     marginBottom: spacing.md,
     backgroundColor: colors.background,
+  },
+  activityTypeUpsell: {
+    marginTop: spacing.sm,
   },
   proBox: {
     borderWidth: 1,
