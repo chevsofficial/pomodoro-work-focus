@@ -25,6 +25,7 @@ import {
 const FORCE_ALL_PRO_FEATURES = false;
 
 export const FREE_TASK_LIMIT = 10;
+export const FREE_ACTIVITY_TYPE_LIMIT = 3;
 
 // How far back free users can see analytics
 const FREE_ANALYTICS_MAX_DAYS = 14;
@@ -49,6 +50,23 @@ export const selectCanCreateTask = (state: AppStore): boolean => {
 
   const activeTasksCount = selectActiveTaskCount(state);
   return activeTasksCount < FREE_TASK_LIMIT;
+};
+
+export const selectActivityTypeTotalCount = (state: AppStore): number =>
+  state.activityTypes.length;
+
+export const selectRemainingFreeActivityTypes = (state: AppStore): number => {
+  const isPro = selectIsProEffective(state);
+  if (isPro) return Infinity;
+  return Math.max(0, FREE_ACTIVITY_TYPE_LIMIT - selectActivityTypeTotalCount(state));
+};
+
+export const selectCanCreateActivityType = (state: AppStore): boolean => {
+  const isPro = selectIsProEffective(state);
+  if (isPro) return true;
+
+  const total = selectActivityTypeTotalCount(state);
+  return total < FREE_ACTIVITY_TYPE_LIMIT;
 };
 
 export const selectAnalyticsMinDate = (state: AppStore): Date | null => {

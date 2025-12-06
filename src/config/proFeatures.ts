@@ -1,5 +1,3 @@
-export const FREE_ACTIVITY_TYPE_LIMIT = 3;
-
 export const PRO_BENEFITS: string[] = [
   'Remove all ads — focus without distractions',
   'Premium themes — customize your workspace',

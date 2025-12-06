@@ -5,12 +5,14 @@ import { RootStackParamList } from '../navigation/RootNavigator';
 import { navigateToProUpsell } from '../navigation/proNavigation';
 import { ActivityType } from '../models';
 import useAppStore, {
+  FREE_ACTIVITY_TYPE_LIMIT,
+  selectCanCreateActivityType,
+  selectRemainingFreeActivityTypes,
   useActiveActivityTypes,
   useArchivedActivityTypes,
   useEffectiveSettings,
   useIsPro,
 } from '../store/appStore';
-import { FREE_ACTIVITY_TYPE_LIMIT } from '../config/proFeatures';
 import { OTHER_ACTIVITY_TYPE_ID } from '../config/activityTypeConstants';
 import { spacing } from '../theme/spacing';
 import { useThemeColors } from '../theme/useThemeColors';
@@ -26,6 +28,8 @@ export const ActivityTypesManagerScreen: React.FC = () => {
   const activeTypes = useActiveActivityTypes();
   const archivedTypes = useArchivedActivityTypes();
   const isPro = useIsPro();
+  const canCreateActivityType = useAppStore(selectCanCreateActivityType);
+  const remainingActivityTypes = useAppStore(selectRemainingFreeActivityTypes);
   const settings = useEffectiveSettings();
   const addActivityType = useAppStore((s) => s.addActivityType);
   const updateActivityType = useAppStore((s) => s.updateActivityType);
@@ -40,8 +44,7 @@ export const ActivityTypesManagerScreen: React.FC = () => {
     [activeTypes],
   );
 
-  const hasReachedFreeActivityLimit =
-    !isPro && visibleActiveTypes.length >= FREE_ACTIVITY_TYPE_LIMIT;
+  const hasReachedFreeActivityLimit = !isPro && remainingActivityTypes === 0;
 
   const handleLockedColorPress = () => {
     if (isPro) {
@@ -61,8 +64,8 @@ export const ActivityTypesManagerScreen: React.FC = () => {
     setModalVisible(false);
   };
 
-  const handleAddPress = () => {
-    if (hasReachedFreeActivityLimit) {
+  const handleAddActivityTypePress = () => {
+    if (!canCreateActivityType) {
       navigateToProUpsell(navigation);
       return;
     }
@@ -80,11 +83,6 @@ export const ActivityTypesManagerScreen: React.FC = () => {
   };
 
   const handleUnarchivePress = (id: string) => {
-    if (!isPro && visibleActiveTypes.length >= FREE_ACTIVITY_TYPE_LIMIT) {
-      navigateToProUpsell(navigation);
-      return;
-    }
-
     unarchiveActivityType(id);
   };
 
@@ -95,9 +93,11 @@ export const ActivityTypesManagerScreen: React.FC = () => {
       <View key={type.id} style={styles.typeRow}>
         <View style={styles.typeInfo}>
           <View style={[styles.colorDot, { backgroundColor: colorDot }]} />
-          <View>
-            <Text style={styles.typeName}>{type.name}</Text>
-            <Text style={styles.typeMeta}>
+          <View style={styles.typeTextContainer}>
+            <Text style={styles.typeName} numberOfLines={1}>
+              {type.name}
+            </Text>
+            <Text style={styles.typeMeta} numberOfLines={1}>
               Work {type.workDurationMinutes}m · Short {type.shortBreakMinutes}m · Long {type.longBreakMinutes}m
             </Text>
             {mode === 'archived' && type.archivedAt && (
@@ -135,10 +135,18 @@ export const ActivityTypesManagerScreen: React.FC = () => {
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <Text style={styles.headerTitle}>Activity Types</Text>
 
+        {!isPro && remainingActivityTypes !== Infinity && (
+          <Text style={styles.limitHelper}>
+            {remainingActivityTypes > 0
+              ? `${remainingActivityTypes} activity type${remainingActivityTypes === 1 ? '' : 's'} left on the free plan`
+              : 'Activity type limit reached on the free plan'}
+          </Text>
+        )}
+
         <View style={styles.section}>
           <View style={styles.sectionHeaderRow}>
             <Text style={styles.sectionTitle}>Active</Text>
-            <TouchableOpacity style={styles.addButton} onPress={handleAddPress}>
+            <TouchableOpacity style={styles.addButton} onPress={handleAddActivityTypePress}>
               <Text style={styles.addButtonText}>+ Add</Text>
             </TouchableOpacity>
           </View>
@@ -146,7 +154,7 @@ export const ActivityTypesManagerScreen: React.FC = () => {
           {hasReachedFreeActivityLimit && (
             <View style={styles.proBanner}>
               <Text style={styles.proBannerTitle}>
-                Free accounts can create up to {FREE_ACTIVITY_TYPE_LIMIT} active activity types.
+                Free accounts can create up to {FREE_ACTIVITY_TYPE_LIMIT} activity types.
               </Text>
               <TouchableOpacity onPress={() => navigateToProUpsell(navigation)}>
                 <Text style={styles.proBannerAction}>Upgrade to Pro to unlock more</Text>
@@ -358,6 +366,11 @@ const createStyles = (colors: ReturnType<typeof useThemeColors>) =>
       color: colors.textPrimary,
       marginBottom: spacing.lg,
     },
+    limitHelper: {
+      color: colors.textSecondary,
+      fontSize: 13,
+      marginBottom: spacing.md,
+    },
     section: {
       marginBottom: spacing.lg,
     },
@@ -390,6 +403,7 @@ const createStyles = (colors: ReturnType<typeof useThemeColors>) =>
     typeRow: {
       flexDirection: 'row',
       justifyContent: 'space-between',
+      alignItems: 'center',
       padding: spacing.md,
       borderRadius: 12,
       backgroundColor: colors.surface,
@@ -401,6 +415,10 @@ const createStyles = (colors: ReturnType<typeof useThemeColors>) =>
       flexDirection: 'row',
       alignItems: 'center',
       flex: 1,
+    },
+    typeTextContainer: {
+      flex: 1,
+      marginRight: spacing.sm,
     },
     colorDot: {
       width: 16,
@@ -414,7 +432,7 @@ const createStyles = (colors: ReturnType<typeof useThemeColors>) =>
     },
     typeMeta: {
       color: colors.textSecondary,
-      fontSize: 12,
+      fontSize: 11,
       marginTop: 2,
     },
     archivedLabel: {
@@ -426,6 +444,7 @@ const createStyles = (colors: ReturnType<typeof useThemeColors>) =>
     typeActions: {
       flexDirection: 'row',
       alignItems: 'center',
+      flexShrink: 0,
     },
     chipButton: {
       borderRadius: 16,
