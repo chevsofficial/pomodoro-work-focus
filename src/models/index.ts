@@ -89,6 +89,8 @@ export interface CloudSyncState {
   lastKnownRevision?: number;
 }
 
+export type Language = 'en' | 'es';
+
 export interface AppStateSnapshot {
   tasks: Task[];
   intervals: IntervalSession[];
@@ -97,4 +99,5 @@ export interface AppStateSnapshot {
   proStatus: ProStatus;
   streak: StreakState;
   cloudSync: CloudSyncState;
+  language: Language;
 }
