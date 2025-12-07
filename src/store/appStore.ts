@@ -13,8 +13,10 @@ import {
   Task,
 } from '../models';
 import { CloudSnapshot, cloudSyncApi } from '../services/cloudSyncApi';
+import { supabase } from '../services/supabaseClient';
 import {
   closeCurrentSegment,
+  getActiveDurationSeconds,
   getActiveDurationSecondsFromSegments,
   getAnalyticsDurationSeconds,
   normalizeSegments,
@@ -29,6 +31,52 @@ export const FREE_ACTIVITY_TYPE_LIMIT = 3;
 
 // How far back free users can see analytics
 const FREE_ANALYTICS_MAX_DAYS = 14;
+
+export type ExportableTask = {
+  id: string;
+  title: string;
+  status: 'todo' | 'done' | 'archived';
+  activityTypeId: string | null;
+  createdAt: string;
+  updatedAt: string | null;
+  description?: string;
+};
+
+export type ExportableActivityType = {
+  id: string;
+  name: string;
+  isArchived: boolean;
+  color?: string | null;
+  createdAt: string;
+  updatedAt: string | null;
+  workDurationMinutes?: number;
+  shortBreakMinutes?: number;
+  longBreakMinutes?: number;
+  intervalsBeforeLongBreak?: number;
+};
+
+export type ExportableSession = {
+  id: string;
+  taskId: string | null;
+  activityTypeId: string | null;
+  plannedMinutes: number;
+  actualFocusMinutes: number;
+  startedAt: string;
+  endedAt: string | null;
+  status: 'completed' | 'cancelled_early' | 'skipped' | 'other';
+};
+
+export type ExportableUserSettings = {
+  id: string;
+  settings: PomodoroSettings;
+};
+
+export type ExportableUserData = {
+  tasks: ExportableTask[];
+  activityTypes: ExportableActivityType[];
+  sessions: ExportableSession[];
+  userSettings?: ExportableUserSettings | null;
+};
 
 export const selectIsProEffective = (state: AppStore): boolean => {
   if (FORCE_ALL_PRO_FEATURES) return true;
@@ -169,6 +217,9 @@ export interface AppStore extends AppStateSnapshot {
   setCloudSyncEnabled: (enabled: boolean) => void;
   markCloudSynced: (info: { revision: number; syncedAt?: string }) => void;
   hydrateFromCloudSnapshot: (snapshot: AppStateSnapshot & { revision?: number }) => void;
+  resetLocalState: () => void;
+  deleteAllUserData: () => Promise<void>;
+  getExportableData: () => ExportableUserData;
 }
 
 export const STORAGE_KEY = 'POMODORO_APP_STATE_V1';
@@ -438,6 +489,56 @@ const cleanupIntervals = (intervals: IntervalSession[]): IntervalSession[] => {
   });
 };
 
+const mapTaskToExportable = (task: Task): ExportableTask => ({
+  id: task.id,
+  title: task.title,
+  status: task.deletedAt ? 'archived' : task.isCompleted ? 'done' : 'todo',
+  activityTypeId: task.activityTypeId ?? null,
+  createdAt: task.createdAt,
+  updatedAt: task.updatedAt ?? null,
+  description: task.description,
+});
+
+const mapActivityTypeToExportable = (type: ActivityType): ExportableActivityType => ({
+  id: type.id,
+  name: type.name,
+  isArchived: Boolean(type.archivedAt),
+  color: type.color ?? null,
+  createdAt: '',
+  updatedAt: type.archivedAt ?? null,
+  workDurationMinutes: type.workDurationMinutes,
+  shortBreakMinutes: type.shortBreakMinutes,
+  longBreakMinutes: type.longBreakMinutes,
+  intervalsBeforeLongBreak: type.intervalsBeforeLongBreak,
+});
+
+const mapIntervalToExportable = (interval: IntervalSession): ExportableSession => {
+  const plannedSeconds = interval.durationSeconds ?? getActiveDurationSeconds(interval);
+  const plannedMinutes = Math.round(plannedSeconds / 60);
+  const actualFocusMinutes = Math.round(getAnalyticsDurationSeconds(interval) / 60);
+  const status: ExportableSession['status'] = interval.wasSkipped
+    ? 'skipped'
+    : interval.endedAt
+    ? 'completed'
+    : 'other';
+
+  return {
+    id: interval.id,
+    taskId: interval.taskId ?? null,
+    activityTypeId: interval.activityTypeId ?? null,
+    plannedMinutes,
+    actualFocusMinutes,
+    startedAt: interval.startedAt,
+    endedAt: interval.endedAt ?? null,
+    status,
+  };
+};
+
+const mapSettingsToExportable = (settings: PomodoroSettings): ExportableUserSettings => ({
+  id: 'settings',
+  settings,
+});
+
 const useAppStore = create<AppStore>((set, get) => {
   const getSnapshot = (): AppStateSnapshot => {
     const { tasks, intervals, activityTypes, settings, proStatus, streak, cloudSync } = get();
@@ -546,6 +647,51 @@ const useAppStore = create<AppStore>((set, get) => {
     earlySkipInfoVisible: false,
     streak: { ...defaultStreakState },
     cloudSync: { ...defaultCloudSyncState },
+
+    resetLocalState: () => {
+      setStateAndPersist((state) => ({
+        tasks: [],
+        intervals: [],
+        activityTypes: [],
+        settings: { ...defaultSettings },
+        streak: { ...defaultStreakState },
+        cloudSync: {
+          ...state.cloudSync,
+          lastKnownRevision: undefined,
+          lastSyncedAt: undefined,
+        },
+      }));
+    },
+
+    deleteAllUserData: async () => {
+      const state = get();
+      try {
+        if (state.cloudSync.userId) {
+          const { error } = await supabase.rpc('delete_all_user_data');
+          if (error) {
+            console.warn('delete_all_user_data RPC failed', error);
+          }
+        }
+
+        await AsyncStorage.removeItem(STORAGE_KEY);
+        state.resetLocalState();
+      } catch (error) {
+        console.error('Failed to delete all data', error);
+        throw error;
+      }
+    },
+
+    getExportableData: () => {
+      const state = get();
+      const userSettings = mapSettingsToExportable(state.settings);
+
+      return {
+        tasks: state.tasks.map(mapTaskToExportable),
+        activityTypes: state.activityTypes.map(mapActivityTypeToExportable),
+        sessions: state.intervals.map(mapIntervalToExportable),
+        userSettings,
+      };
+    },
 
     addTask: ({ title, description, activityTypeId }) => {
       const timestamp = nowIso();

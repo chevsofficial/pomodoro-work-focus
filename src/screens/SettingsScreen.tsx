@@ -35,6 +35,7 @@ import {
 import { OTHER_ACTIVITY_TYPE_ID } from '../config/activityTypeConstants';
 import { requestNotificationPermissions } from '../utils/notificationService';
 import { playIntervalEndSound } from '../utils/soundService';
+import { exportAllUserDataToCsv } from '../utils/exportToCsv';
 
 const parsePositiveInt = (value: string, fallback: number) => {
   const parsed = parseInt(value, 10);
@@ -398,6 +399,7 @@ export const SettingsScreen: React.FC = () => {
   const cloudSync = useAppStore((state) => state.cloudSync);
   const updateSettings = useAppStore((state) => state.updateSettings);
   const setCloudSyncEnabled = useAppStore((state) => state.setCloudSyncEnabled);
+  const deleteAllUserData = useAppStore((state) => state.deleteAllUserData);
   const navigation = useNavigation<SettingsNavigation>();
   const colors = useThemeColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
@@ -507,7 +509,27 @@ export const SettingsScreen: React.FC = () => {
     navigation.navigate('ActivityTypesManager');
   };
 
+  const handleExportAllData = () => {
+    if (!isPro) {
+      handleUpgradePress();
+      return;
+    }
+
+    exportAllUserDataToCsv();
+  };
+
+  const handleConfirmDelete = async () => {
+    try {
+      await deleteAllUserData();
+      setShowDeleteAllModal(false);
+    } catch (error) {
+      console.error('Delete all data failed', error);
+      Alert.alert('Delete failed', 'Something went wrong while deleting your data. Please try again.');
+    }
+  };
+
   const [isThemeModalVisible, setThemeModalVisible] = useState(false);
+  const [showDeleteAllModal, setShowDeleteAllModal] = useState(false);
 
   const lastSyncedText = cloudSync.lastSyncedAt
     ? `Last synced: ${new Date(cloudSync.lastSyncedAt).toLocaleString()}`
@@ -678,6 +700,18 @@ export const SettingsScreen: React.FC = () => {
         </View>
 
         <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Data & Backup</Text>
+          <Text style={styles.sectionHint}>
+            Export your tasks, activity types, and focus sessions as a CSV file.
+          </Text>
+          <TouchableOpacity style={styles.secondaryActionButton} onPress={handleExportAllData}>
+            <Text style={styles.secondaryActionButtonText}>
+              {isPro ? 'Export all data (.CSV)' : 'Unlock export with Pro'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.section}>
           <Text style={styles.sectionTitle}>App Theme</Text>
 
           <TouchableOpacity
@@ -703,7 +737,67 @@ export const SettingsScreen: React.FC = () => {
         <TouchableOpacity style={styles.upgradeButton} onPress={handleUpgradePress}>
           <Text style={styles.upgradeText}>Upgrade to Pro</Text>
         </TouchableOpacity>
+
+        <View style={styles.dangerZoneContainer}>
+          <Text style={styles.dangerZoneTitle}>Danger zone</Text>
+          <Text style={styles.dangerZoneDescription}>
+            Permanently delete all of your Pomodoro data from this device and the cloud. This
+            cannot be undone. Export your data first if needed.
+          </Text>
+
+          <TouchableOpacity
+            style={styles.dangerZoneButton}
+            onPress={() => setShowDeleteAllModal(true)}
+          >
+            <Text style={styles.dangerZoneButtonText}>Delete all data</Text>
+          </TouchableOpacity>
+        </View>
       </ScrollView>
+
+      <Modal
+        visible={showDeleteAllModal}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setShowDeleteAllModal(false)}
+      >
+        <View style={styles.dangerModalBackdrop}>
+          <View style={styles.dangerModalContent}>
+            <Text style={styles.dangerModalTitle}>Delete all data?</Text>
+            <Text style={styles.dangerModalBody}>
+              This will permanently delete all tasks, activity types, and session history from this
+              device and your synced account.
+              {'\n\n'}We strongly recommend exporting your data as a CSV file before continuing.
+            </Text>
+
+            {isPro ? (
+              <TouchableOpacity style={styles.secondaryButton} onPress={handleExportAllData}>
+                <Text style={styles.secondaryButtonText}>Export data (.CSV)</Text>
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity
+                style={styles.secondaryButton}
+                onPress={() => {
+                  setShowDeleteAllModal(false);
+                  handleUpgradePress();
+                }}
+              >
+                <Text style={styles.secondaryButtonText}>Upgrade to Pro for export</Text>
+              </TouchableOpacity>
+            )}
+
+            <TouchableOpacity style={styles.dangerConfirmButton} onPress={handleConfirmDelete}>
+              <Text style={styles.dangerConfirmButtonText}>Yes, delete everything</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.dangerCancelButton}
+              onPress={() => setShowDeleteAllModal(false)}
+            >
+              <Text style={styles.dangerCancelButtonText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
 
       <Modal
         visible={isThemeModalVisible}
@@ -989,6 +1083,19 @@ function createStyles(colors: ReturnType<typeof useThemeColors>) {
     color: colors.primary,
     fontWeight: '600',
   },
+  secondaryActionButton: {
+    marginTop: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: 'center',
+    backgroundColor: colors.background,
+  },
+  secondaryActionButtonText: {
+    color: colors.textPrimary,
+    fontWeight: '700',
+  },
   upgradeButton: {
     backgroundColor: colors.primary,
     borderRadius: 12,
@@ -998,6 +1105,37 @@ function createStyles(colors: ReturnType<typeof useThemeColors>) {
   upgradeText: {
     color: colors.textPrimary,
     fontSize: 16,
+    fontWeight: '700',
+  },
+  dangerZoneContainer: {
+    marginTop: spacing.xl,
+    padding: spacing.lg,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#d12b2b33',
+    backgroundColor: colors.background,
+  },
+  dangerZoneTitle: {
+    fontWeight: '700',
+    fontSize: 16,
+    marginBottom: spacing.xs,
+    color: '#d12b2b',
+  },
+  dangerZoneDescription: {
+    fontSize: 13,
+    marginBottom: spacing.md,
+    color: colors.textSecondary,
+  },
+  dangerZoneButton: {
+    paddingVertical: spacing.sm,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#d12b2b',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  dangerZoneButtonText: {
+    color: '#d12b2b',
     fontWeight: '700',
   },
   themeRow: {
@@ -1097,6 +1235,63 @@ function createStyles(colors: ReturnType<typeof useThemeColors>) {
     fontSize: 12,
     fontWeight: '600',
     color: '#FF5A5F',
+  },
+  dangerModalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'center',
+    padding: spacing.lg,
+  },
+  dangerModalContent: {
+    borderRadius: 16,
+    padding: spacing.lg,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  dangerModalTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: spacing.sm,
+    color: colors.textPrimary,
+  },
+  dangerModalBody: {
+    fontSize: 14,
+    marginBottom: spacing.md,
+    color: colors.textSecondary,
+  },
+  secondaryButton: {
+    paddingVertical: spacing.sm,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: 'center',
+    marginBottom: spacing.sm,
+    backgroundColor: colors.background,
+  },
+  secondaryButtonText: {
+    fontWeight: '600',
+    color: colors.textPrimary,
+  },
+  dangerConfirmButton: {
+    paddingVertical: spacing.sm,
+    borderRadius: 10,
+    backgroundColor: '#d12b2b',
+    alignItems: 'center',
+    marginBottom: spacing.sm,
+  },
+  dangerConfirmButtonText: {
+    color: colors.surface,
+    fontWeight: '700',
+  },
+  dangerCancelButton: {
+    paddingVertical: spacing.sm,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  dangerCancelButtonText: {
+    fontWeight: '600',
+    color: colors.textPrimary,
   },
   modalBackdrop: {
     flex: 1,
