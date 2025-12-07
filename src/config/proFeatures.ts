@@ -1,11 +1,14 @@
-export const PRO_BENEFITS: string[] = [
-  'Remove all ads — focus without distractions',
-  'Premium themes — customize your workspace',
-  'Advanced analytics — track real productivity patterns',
-  'Unlimited activity types — stay organized without limits',
-  'Custom timer durations — fine-tuned to your workflow',
-  'Custom date range analytics — deep dive your history',
-  'Cloud sync (future-ready)',
+import { TranslationKey } from '../i18n/translations';
+
+export const PRO_BENEFITS: TranslationKey[] = [
+  'paywall.benefits.removeAds',
+  'paywall.benefits.premiumThemes',
+  'paywall.benefits.advancedAnalytics',
+  'paywall.benefits.unlimitedActivityTypes',
+  'paywall.benefits.customDurations',
+  'paywall.benefits.customDateRange',
+  'paywall.benefits.cloudSync',
+  'paywall.benefits.exportCsv',
 ];
 
 export const PRO_PRICING = {

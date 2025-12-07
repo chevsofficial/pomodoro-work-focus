@@ -36,6 +36,7 @@ import { OTHER_ACTIVITY_TYPE_ID } from '../config/activityTypeConstants';
 import { requestNotificationPermissions } from '../utils/notificationService';
 import { playIntervalEndSound } from '../utils/soundService';
 import { exportAllUserDataToCsv } from '../utils/exportToCsv';
+import { t, TranslationKey } from '../i18n/translations';
 
 const parsePositiveInt = (value: string, fallback: number) => {
   const parsed = parseInt(value, 10);
@@ -46,10 +47,10 @@ const parsePositiveInt = (value: string, fallback: number) => {
   return Math.max(1, parsed);
 };
 
-const SOUND_OPTIONS = [
-  { key: 'chime1', label: 'Chime 1' },
-  { key: 'chime2', label: 'Chime 2' },
-  { key: 'chime3', label: 'Chime 3' },
+const SOUND_OPTIONS: { key: string; labelKey: TranslationKey }[] = [
+  { key: 'chime1', labelKey: 'settings.sounds.chime1' },
+  { key: 'chime2', labelKey: 'settings.sounds.chime2' },
+  { key: 'chime3', labelKey: 'settings.sounds.chime3' },
 ];
 
 const themeDisplayOrder: ThemeId[] = [
@@ -186,7 +187,10 @@ export const ActivityTypeModal: React.FC<ActivityTypeModalProps> = ({
   const handleSubmit = () => {
     const trimmedName = formValues.name.trim();
     if (!trimmedName) {
-      Alert.alert('Activity Type', 'Please enter a name.');
+      Alert.alert(
+        t('settings.activityModal.nameAlertTitle'),
+        t('settings.activityModal.nameAlertBody'),
+      );
       return;
     }
 
@@ -211,10 +215,10 @@ export const ActivityTypeModal: React.FC<ActivityTypeModalProps> = ({
       return;
     }
 
-    Alert.alert('Delete Activity Type', 'Are you sure you want to delete this activity type?', [
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert(t('settings.activityModal.deleteTitle'), t('settings.activityModal.deleteBody'), [
+      { text: t('common.cancel'), style: 'cancel' },
       {
-        text: 'Delete',
+        text: t('common.delete'),
         style: 'destructive',
         onPress: () => {
           onDelete();
@@ -234,19 +238,21 @@ export const ActivityTypeModal: React.FC<ActivityTypeModalProps> = ({
     >
       <View style={styles.modalBackdrop}>
         <View style={styles.modalContent}>
-          <Text style={styles.modalTitle}>{initialValues ? 'Edit Activity Type' : 'Add Activity Type'}</Text>
+          <Text style={styles.modalTitle}>
+            {initialValues ? t('settings.activityModal.editTitle') : t('settings.activityModal.addTitle')}
+          </Text>
           <View style={styles.modalField}>
             <TextInput
               style={styles.input}
-              placeholder="Name"
+              placeholder={t('settings.activityModal.namePlaceholder')}
               placeholderTextColor={colors.textSecondary}
               value={formValues.name}
               onChangeText={(text) => handleChange('name', text)}
             />
           </View>
           <View style={styles.modalField}>
-            <Text style={styles.modalLabel}>Color</Text>
-            <Text style={styles.modalHint}>Choose the desired color for your activity type.</Text>
+            <Text style={styles.modalLabel}>{t('settings.activityModal.colorLabel')}</Text>
+            <Text style={styles.modalHint}>{t('settings.activityModal.colorHint')}</Text>
 
             <View style={styles.colorGrid}>
               {ACTIVITY_COLORS.map((c) => {
@@ -298,7 +304,7 @@ export const ActivityTypeModal: React.FC<ActivityTypeModalProps> = ({
 
           {isPro && (
             <View style={styles.modalField}>
-              <Text style={styles.modalSubLabel}>Hex color code (Pro)</Text>
+              <Text style={styles.modalSubLabel}>{t('settings.activityModal.hexLabel')}</Text>
               <TextInput
                 style={styles.input}
                 placeholder={DEFAULT_ACTIVITY_COLOR}
@@ -312,7 +318,7 @@ export const ActivityTypeModal: React.FC<ActivityTypeModalProps> = ({
           )}
           <View style={styles.modalRowGroup}>
             <View style={[styles.modalRowItem, styles.modalRowItemSpacing]}>
-              <Text style={styles.modalLabel}>Work (min)</Text>
+              <Text style={styles.modalLabel}>{t('settings.activityModal.workLabel')}</Text>
               <TextInput
                 style={styles.input}
                 keyboardType="numeric"
@@ -321,7 +327,7 @@ export const ActivityTypeModal: React.FC<ActivityTypeModalProps> = ({
               />
             </View>
             <View style={styles.modalRowItem}>
-              <Text style={styles.modalLabel}>Short Break</Text>
+              <Text style={styles.modalLabel}>{t('settings.activityModal.shortBreakLabel')}</Text>
               <TextInput
                 style={styles.input}
                 keyboardType="numeric"
@@ -332,7 +338,7 @@ export const ActivityTypeModal: React.FC<ActivityTypeModalProps> = ({
           </View>
           <View style={styles.modalRowGroup}>
             <View style={[styles.modalRowItem, styles.modalRowItemSpacing]}>
-              <Text style={styles.modalLabel}>Long Break</Text>
+              <Text style={styles.modalLabel}>{t('settings.activityModal.longBreakLabel')}</Text>
               <TextInput
                 style={styles.input}
                 keyboardType="numeric"
@@ -341,7 +347,7 @@ export const ActivityTypeModal: React.FC<ActivityTypeModalProps> = ({
               />
             </View>
             <View style={styles.modalRowItem}>
-              <Text style={styles.modalLabel}>Intervals Before Long</Text>
+              <Text style={styles.modalLabel}>{t('settings.activityModal.intervalsLabel')}</Text>
               <TextInput
                 style={styles.input}
                 keyboardType="numeric"
@@ -356,18 +362,18 @@ export const ActivityTypeModal: React.FC<ActivityTypeModalProps> = ({
                 style={[styles.modalDeleteButton, styles.modalDeleteButtonSpacing]}
                 onPress={handleDelete}
               >
-                <Text style={styles.modalDeleteText}>Delete</Text>
+                <Text style={styles.modalDeleteText}>{t('common.delete')}</Text>
               </TouchableOpacity>
             )}
             <View style={styles.modalPrimaryActions}>
               <TouchableOpacity style={[styles.modalButton, styles.modalButtonSecondary]} onPress={onClose}>
-                <Text style={styles.modalButtonText}>Cancel</Text>
+                <Text style={styles.modalButtonText}>{t('common.cancel')}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.modalButton, styles.modalButtonPrimary, styles.modalButtonSpacing]}
                 onPress={handleSubmit}
               >
-                <Text style={[styles.modalButtonText, styles.modalButtonPrimaryText]}>Save</Text>
+                <Text style={[styles.modalButtonText, styles.modalButtonPrimaryText]}>{t('common.save')}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -473,8 +479,8 @@ export const SettingsScreen: React.FC = () => {
       if (!granted) {
         updateSettings({ notificationsEnabled: false });
         Alert.alert(
-          'Notifications disabled',
-          'We could not enable notifications. Please check your system settings.',
+          t('settings.alerts.notificationsDisabledTitle'),
+          t('settings.alerts.notificationsDisabledBody'),
         );
         return;
       }
@@ -492,7 +498,7 @@ export const SettingsScreen: React.FC = () => {
       await signOut();
     } catch (error) {
       console.error('Auth: sign out failed', error);
-      Alert.alert('Sign out failed', 'Please try again.');
+      Alert.alert(t('settings.alerts.signOutFailedTitle'), t('settings.alerts.signOutFailedBody'));
     }
   };
 
@@ -523,12 +529,12 @@ export const SettingsScreen: React.FC = () => {
       await deleteAllUserData();
       setShowDeleteAllModal(false);
       Alert.alert(
-        'All data deleted',
-        'Your TomoFlow data has been successfully deleted from this device and your synced account.',
+        t('settings.alerts.deleteAllTitle'),
+        t('settings.alerts.deleteAllBody'),
       );
     } catch (error) {
       console.error('Delete all data failed', error);
-      Alert.alert('Delete failed', 'Something went wrong while deleting your data. Please try again.');
+      Alert.alert(t('settings.alerts.deleteFailedTitle'), t('settings.alerts.deleteFailedBody'));
     }
   };
 
@@ -536,40 +542,40 @@ export const SettingsScreen: React.FC = () => {
   const [showDeleteAllModal, setShowDeleteAllModal] = useState(false);
 
   const lastSyncedText = cloudSync.lastSyncedAt
-    ? `Last synced: ${new Date(cloudSync.lastSyncedAt).toLocaleString()}`
-    : 'Not synced yet.';
+    ? `${t('settings.cloud.lastSyncedPrefix')}: ${new Date(cloudSync.lastSyncedAt).toLocaleString()}`
+    : t('settings.cloud.notSynced');
 
   return (
     <ScreenContainer>
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        <Text style={styles.title}>Settings</Text>
-        <Text style={styles.subtitle}>Customize your Pomodoro workflow.</Text>
+        <Text style={styles.title}>{t('settings.title')}</Text>
+        <Text style={styles.subtitle}>{t('settings.subtitle')}</Text>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Durations</Text>
+          <Text style={styles.sectionTitle}>{t('settings.durations.title')}</Text>
           <SettingInputRow
-            label="Work Duration (minutes)"
+            label={t('settings.durations.work')}
             value={numericValues.workDurationMinutes}
             onChangeText={(text) => handleNumericChange('workDurationMinutes', text)}
             styles={styles}
             placeholderColor={colors.textSecondary}
           />
           <SettingInputRow
-            label="Short Break Duration (minutes)"
+            label={t('settings.durations.shortBreak')}
             value={numericValues.shortBreakMinutes}
             onChangeText={(text) => handleNumericChange('shortBreakMinutes', text)}
             styles={styles}
             placeholderColor={colors.textSecondary}
           />
           <SettingInputRow
-            label="Long Break Duration (minutes)"
+            label={t('settings.durations.longBreak')}
             value={numericValues.longBreakMinutes}
             onChangeText={(text) => handleNumericChange('longBreakMinutes', text)}
             styles={styles}
             placeholderColor={colors.textSecondary}
           />
           <SettingInputRow
-            label="Intervals Before Long Break"
+            label={t('settings.durations.intervalsBeforeLong')}
             value={numericValues.intervalsBeforeLongBreak}
             onChangeText={(text) => handleNumericChange('intervalsBeforeLongBreak', text)}
             styles={styles}
@@ -578,18 +584,18 @@ export const SettingsScreen: React.FC = () => {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Automation & Notifications</Text>
+          <Text style={styles.sectionTitle}>{t('settings.automation.title')}</Text>
           <SettingToggleRow
-            label="Auto-start next interval"
+            label={t('settings.automation.autoStart')}
             value={settings.autoStartNextInterval}
             onValueChange={handleToggleAutoStart}
             styles={styles}
             colors={colors}
           />
           <View style={styles.soundSectionHeader}>
-            <Text style={styles.settingLabel}>Notification sound</Text>
+            <Text style={styles.settingLabel}>{t('settings.automation.notificationSound')}</Text>
             <TouchableOpacity style={styles.testSoundButton} onPress={() => playIntervalEndSound()}>
-              <Text style={styles.testSoundButtonLabel}>Test sound</Text>
+              <Text style={styles.testSoundButtonLabel}>{t('settings.automation.testSound')}</Text>
             </TouchableOpacity>
           </View>
           <View style={styles.soundOptionsRow}>
@@ -608,27 +614,27 @@ export const SettingsScreen: React.FC = () => {
                     settings.notificationSoundKey === option.key && styles.soundOptionLabelActive,
                   ]}
                 >
-                  {option.label}
+                  {t(option.labelKey)}
                 </Text>
               </TouchableOpacity>
             ))}
           </View>
           <SettingToggleRow
-            label="Sound enabled"
+            label={t('settings.automation.soundEnabled')}
             value={settings.soundEnabled}
             onValueChange={handleToggleChange('soundEnabled')}
             styles={styles}
             colors={colors}
           />
           <SettingToggleRow
-            label="Vibration enabled"
+            label={t('settings.automation.vibrationEnabled')}
             value={settings.vibrationEnabled}
             onValueChange={handleToggleChange('vibrationEnabled')}
             styles={styles}
             colors={colors}
           />
           <SettingToggleRow
-            label="Notifications enabled"
+            label={t('settings.automation.notificationsEnabled')}
             value={settings.notificationsEnabled}
             onValueChange={handleToggleNotifications}
             styles={styles}
@@ -638,28 +644,32 @@ export const SettingsScreen: React.FC = () => {
 
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Activity Types</Text>
+            <Text style={styles.sectionTitle}>{t('settings.activityTypes.title')}</Text>
             <TouchableOpacity onPress={handleManageActivityTypes}>
-              <Text style={styles.sectionAction}>Manage</Text>
+              <Text style={styles.sectionAction}>{t('common.manage')}</Text>
             </TouchableOpacity>
           </View>
           <Text style={styles.sectionHint}>
-            {visibleActiveActivityTypes.length} active · {archivedActivityTypes.length} archived
+            {visibleActiveActivityTypes.length} {t('settings.activityTypes.activeLabel')} ·{' '}
+            {archivedActivityTypes.length} {t('settings.activityTypes.archivedLabel')}
           </Text>
           {hasReachedFreeActivityLimit && (
             <View style={[styles.proBanner, styles.activityTypeUpsell]}>
               <Text style={styles.proBannerTitle}>
-                Free accounts can create up to {FREE_ACTIVITY_TYPE_LIMIT} activity types.
+                {t('settings.activityTypes.freeLimitTitle').replace(
+                  '{limit}',
+                  FREE_ACTIVITY_TYPE_LIMIT.toString(),
+                )}
               </Text>
               <TouchableOpacity onPress={handleUpgradePress}>
-                <Text style={styles.proBannerAction}>Upgrade to Pro to unlock more</Text>
+                <Text style={styles.proBannerAction}>{t('settings.activityTypes.proUpgradeCta')}</Text>
               </TouchableOpacity>
             </View>
           )}
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>App Theme</Text>
+          <Text style={styles.sectionTitle}>{t('settings.theme.title')}</Text>
 
           <TouchableOpacity
             style={styles.themeRow}
@@ -668,7 +678,7 @@ export const SettingsScreen: React.FC = () => {
             }}
           >
             <View>
-              <Text style={styles.themeRowTitle}>Theme</Text>
+              <Text style={styles.themeRowTitle}>{t('settings.theme.rowTitle')}</Text>
               <Text style={styles.themeRowValue}>{currentThemeName}</Text>
             </View>
 
@@ -683,10 +693,10 @@ export const SettingsScreen: React.FC = () => {
 
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Cloud sync & backup</Text>
+            <Text style={styles.sectionTitle}>{t('settings.cloud.title')}</Text>
             {isPro && cloudSync.userId && (
               <TouchableOpacity onPress={handleSignOut}>
-                <Text style={styles.sectionAction}>Sign out</Text>
+                <Text style={styles.sectionAction}>{t('common.signOut')}</Text>
               </TouchableOpacity>
             )}
           </View>
@@ -695,15 +705,15 @@ export const SettingsScreen: React.FC = () => {
             <>
               {!cloudSync.userId ? (
                 <>
-                  <Text style={styles.sectionHint}>Sign in to enable Cloud Sync.</Text>
+                  <Text style={styles.sectionHint}>{t('settings.cloud.signInPrompt')}</Text>
                   <TouchableOpacity style={styles.authButton} onPress={handleGoToSignIn}>
-                    <Text style={styles.authButtonLabel}>Sign in</Text>
+                    <Text style={styles.authButtonLabel}>{t('common.signIn')}</Text>
                   </TouchableOpacity>
                 </>
               ) : (
                 <>
                   <View style={styles.settingRow}>
-                    <Text style={styles.settingLabel}>Cloud sync enabled</Text>
+                    <Text style={styles.settingLabel}>{t('settings.cloud.cloudSyncEnabled')}</Text>
                     <Switch
                       value={cloudSync.cloudSyncEnabled}
                       onValueChange={handleCloudSyncToggle}
@@ -716,37 +726,31 @@ export const SettingsScreen: React.FC = () => {
               )}
 
               <Text style={styles.sectionHint}>
-                Export your tasks, activity types, and focus sessions as a CSV file.
+                {t('settings.cloud.exportDescription')}
               </Text>
               <TouchableOpacity style={styles.secondaryActionButton} onPress={handleExportAllData}>
-                <Text style={styles.secondaryActionButtonText}>Export all data (.CSV)</Text>
+                <Text style={styles.secondaryActionButtonText}>{t('settings.cloud.exportButton')}</Text>
               </TouchableOpacity>
             </>
           ) : (
             <View style={styles.proBox}>
-              <Text style={styles.proBoxText}>
-                Unlock TomoFlow Pro to enable cloud sync across devices and export your data as a CSV
-                backup.
-              </Text>
+              <Text style={styles.proBoxText}>{t('settings.cloud.proUpsell')}</Text>
               <TouchableOpacity style={styles.proUpsellButton} onPress={handleUpgradePress}>
-                <Text style={styles.proUpsellButtonText}>View Pro plans</Text>
+                <Text style={styles.proUpsellButtonText}>{t('common.viewProPlans')}</Text>
               </TouchableOpacity>
             </View>
           )}
         </View>
 
         <View style={styles.dangerZoneContainer}>
-          <Text style={styles.dangerZoneTitle}>Danger zone</Text>
-          <Text style={styles.dangerZoneDescription}>
-            Permanently delete all of your Pomodoro data from this device and the cloud. This
-            cannot be undone. Export your data first if needed.
-          </Text>
+          <Text style={styles.dangerZoneTitle}>{t('settings.danger.title')}</Text>
+          <Text style={styles.dangerZoneDescription}>{t('settings.danger.description')}</Text>
 
           <TouchableOpacity
             style={styles.dangerZoneButton}
             onPress={() => setShowDeleteAllModal(true)}
           >
-            <Text style={styles.dangerZoneButtonText}>Delete all data</Text>
+            <Text style={styles.dangerZoneButtonText}>{t('settings.danger.deleteButton')}</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -759,16 +763,12 @@ export const SettingsScreen: React.FC = () => {
       >
         <View style={styles.dangerModalBackdrop}>
           <View style={styles.dangerModalContent}>
-            <Text style={styles.dangerModalTitle}>Delete all data?</Text>
-            <Text style={styles.dangerModalBody}>
-              This will permanently delete all tasks, activity types, and session history from this
-              device and your synced account.
-              {'\n\n'}We strongly recommend exporting your data as a CSV file before continuing.
-            </Text>
+            <Text style={styles.dangerModalTitle}>{t('settings.danger.modalTitle')}</Text>
+            <Text style={styles.dangerModalBody}>{t('settings.danger.modalBody')}</Text>
 
             {isPro ? (
               <TouchableOpacity style={styles.secondaryButton} onPress={handleExportAllData}>
-                <Text style={styles.secondaryButtonText}>Export data (.CSV)</Text>
+                <Text style={styles.secondaryButtonText}>{t('settings.danger.exportButton')}</Text>
               </TouchableOpacity>
             ) : (
               <TouchableOpacity
@@ -778,19 +778,19 @@ export const SettingsScreen: React.FC = () => {
                   handleUpgradePress();
                 }}
               >
-                <Text style={styles.secondaryButtonText}>Upgrade to Pro for export</Text>
+                <Text style={styles.secondaryButtonText}>{t('common.upgradeForExport')}</Text>
               </TouchableOpacity>
             )}
 
             <TouchableOpacity style={styles.dangerConfirmButton} onPress={handleConfirmDelete}>
-              <Text style={styles.dangerConfirmButtonText}>Yes, delete everything</Text>
+              <Text style={styles.dangerConfirmButtonText}>{t('common.yesDeleteEverything')}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               style={styles.dangerCancelButton}
               onPress={() => setShowDeleteAllModal(false)}
             >
-              <Text style={styles.dangerCancelButtonText}>Cancel</Text>
+              <Text style={styles.dangerCancelButtonText}>{t('common.cancel')}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -808,7 +808,7 @@ export const SettingsScreen: React.FC = () => {
           onPress={() => setThemeModalVisible(false)}
         >
           <View style={styles.themeModalCard}>
-            <Text style={styles.themeModalTitle}>Choose a theme</Text>
+            <Text style={styles.themeModalTitle}>{t('settings.theme.chooseTitle')}</Text>
 
             <ScrollView style={styles.themeModalList}>
               {themeDisplayOrder.map((themeId) => {
@@ -856,16 +856,16 @@ export const SettingsScreen: React.FC = () => {
                       />
                     </View>
 
-                    <View style={styles.themeTextContainer}>
-                      <Text style={styles.themeName}>
-                        {theme.name}
-                      </Text>
+                <View style={styles.themeTextContainer}>
+                  <Text style={styles.themeName}>
+                    {theme.name}
+                  </Text>
 
-                      {isLocked && <Text style={styles.themeLockLabel}>Pro</Text>}
-                    </View>
-                  </TouchableOpacity>
-                );
-              })}
+                  {isLocked && <Text style={styles.themeLockLabel}>{t('settings.theme.proLabel')}</Text>}
+                </View>
+              </TouchableOpacity>
+            );
+          })}
             </ScrollView>
           </View>
         </TouchableOpacity>
