@@ -15,6 +15,7 @@ import { RootStackParamList } from '../navigation/RootNavigator';
 import { signInWithEmail, signUpWithEmail } from '../services/authService';
 import { spacing } from '../theme/spacing';
 import { useThemeColors } from '../theme/useThemeColors';
+import { t } from '../i18n/translations';
 
 type AuthMode = 'signIn' | 'signUp';
 
@@ -35,7 +36,7 @@ export const AuthScreen: React.FC<Props> = ({ navigation }) => {
     const trimmedEmail = email.trim();
 
     if (!trimmedEmail || !password) {
-      setError('Email and password are required.');
+      setError(t('auth.errors.missingCredentials'));
       return;
     }
 
@@ -45,12 +46,12 @@ export const AuthScreen: React.FC<Props> = ({ navigation }) => {
         await signInWithEmail(trimmedEmail, password);
       } else {
         await signUpWithEmail(trimmedEmail, password);
-        Alert.alert('Check your email', 'Please verify your email to finish signing up.');
+        Alert.alert(t('auth.verifyEmailTitle'), t('auth.verifyEmailBody'));
       }
 
       navigation.goBack();
     } catch (err: any) {
-      setError(err?.message ?? 'Something went wrong. Please try again.');
+      setError(err?.message ?? t('auth.errors.generic'));
     } finally {
       setLoading(false);
     }
@@ -61,9 +62,9 @@ export const AuthScreen: React.FC<Props> = ({ navigation }) => {
     setError(undefined);
   };
 
-  const ctaLabel = mode === 'signIn' ? 'Sign in' : 'Create account';
+  const ctaLabel = mode === 'signIn' ? t('common.signIn') : t('auth.createAccount');
   const toggleLabel =
-    mode === 'signIn' ? "Don't have an account? Sign up" : 'Already have an account? Sign in';
+    mode === 'signIn' ? t('auth.toggleToSignUp') : t('auth.toggleToSignIn');
 
   return (
     <ScreenContainer>
@@ -73,12 +74,12 @@ export const AuthScreen: React.FC<Props> = ({ navigation }) => {
         keyboardVerticalOffset={80}
       >
         <View style={styles.card}>
-          <Text style={styles.title}>{mode === 'signIn' ? 'Sign in' : 'Create an account'}</Text>
-          <Text style={styles.subtitle}>Use your email and password to access Cloud Sync.</Text>
+          <Text style={styles.title}>{mode === 'signIn' ? t('auth.titleSignIn') : t('auth.titleSignUp')}</Text>
+          <Text style={styles.subtitle}>{t('auth.subtitle')}</Text>
 
           <TextInput
             style={styles.input}
-            placeholder="Email"
+            placeholder={t('auth.emailPlaceholder')}
             placeholderTextColor={colors.textSecondary}
             autoCapitalize="none"
             keyboardType="email-address"
@@ -88,7 +89,7 @@ export const AuthScreen: React.FC<Props> = ({ navigation }) => {
 
           <TextInput
             style={styles.input}
-            placeholder="Password"
+            placeholder={t('auth.passwordPlaceholder')}
             placeholderTextColor={colors.textSecondary}
             secureTextEntry
             value={password}
@@ -98,7 +99,7 @@ export const AuthScreen: React.FC<Props> = ({ navigation }) => {
           {error && <Text style={styles.error}>{error}</Text>}
 
           <TouchableOpacity style={styles.primaryButton} onPress={handleSubmit} disabled={loading}>
-            <Text style={styles.primaryButtonLabel}>{loading ? 'Please wait...' : ctaLabel}</Text>
+            <Text style={styles.primaryButtonLabel}>{loading ? t('auth.loading') : ctaLabel}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity onPress={toggleMode}>

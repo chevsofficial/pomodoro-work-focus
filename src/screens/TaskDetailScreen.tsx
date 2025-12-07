@@ -13,6 +13,7 @@ import useAppStore, {
 } from '../store/appStore';
 import { spacing } from '../theme/spacing';
 import { useThemeColors } from '../theme/useThemeColors';
+import { t } from '../i18n/translations';
 import {
   getActiveDurationSeconds,
   getAnalyticsDurationSeconds,
@@ -33,29 +34,25 @@ const formatDateTime = (value?: string) => {
   return date.toLocaleString();
 };
 
-const intervalTypeLabel: Record<string, string> = {
-  work: 'Work',
-  short_break: 'Short Break',
-  long_break: 'Long Break',
-};
-
 const formatDuration = (seconds: number) => {
   if (Number.isNaN(seconds) || seconds <= 0) {
-    return '0s';
+    return t('taskDetail.duration.zero');
   }
 
   const mins = Math.floor(seconds / 60);
   const secs = seconds % 60;
 
   if (mins > 0 && secs > 0) {
-    return `${mins}m ${secs}s`;
+    return t('taskDetail.duration.minutesSeconds')
+      .replace('{minutes}', String(mins))
+      .replace('{seconds}', String(secs));
   }
 
   if (mins > 0) {
-    return `${mins}m`;
+    return t('taskDetail.duration.minutesOnly').replace('{minutes}', String(mins));
   }
 
-  return `${secs}s`;
+  return t('taskDetail.duration.secondsOnly').replace('{seconds}', String(secs));
 };
 
 export const TaskDetailScreen: React.FC = () => {
@@ -109,7 +106,7 @@ export const TaskDetailScreen: React.FC = () => {
     const trimmedDescription = description.trim();
 
     if (!trimmedTitle) {
-      Alert.alert('Update Task', 'Title is required.');
+      Alert.alert(t('taskDetail.update.title'), t('taskDetail.update.requiredTitle'));
       return;
     }
 
@@ -119,7 +116,7 @@ export const TaskDetailScreen: React.FC = () => {
       activityTypeId,
     });
 
-    Alert.alert('Task Updated', 'Your changes have been saved.');
+    Alert.alert(t('taskDetail.update.successTitle'), t('taskDetail.update.successBody'));
   };
 
   const handleDeleteTask = () => {
@@ -127,10 +124,10 @@ export const TaskDetailScreen: React.FC = () => {
       return;
     }
 
-    Alert.alert('Delete Task', 'Are you sure you want to delete this task?', [
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert(t('taskDetail.actions.delete'), t('taskDetail.actions.confirmDelete'), [
+      { text: t('common.cancel'), style: 'cancel' },
       {
-        text: 'Delete',
+        text: t('common.delete'),
         style: 'destructive',
         onPress: () => {
           deleteTaskSoft(task.id);
@@ -155,12 +152,12 @@ export const TaskDetailScreen: React.FC = () => {
     return (
       <ScreenContainer withTopPadding={false}>
         <View style={styles.missingTaskContainer}>
-          <Text style={styles.missingTaskTitle}>Task not found</Text>
-          <Text style={styles.missingTaskSubtitle}>
-            This task may have been removed. Go back to the list and try again.
-          </Text>
+          <Text style={styles.missingTaskTitle}>{t('taskDetail.missing.title')}</Text>
+          <Text style={styles.missingTaskSubtitle}>{t('taskDetail.missing.subtitle')}</Text>
           <TouchableOpacity style={styles.modalButtonPrimary} onPress={() => navigation.goBack()}>
-            <Text style={[styles.modalButtonText, styles.modalButtonPrimaryText]}>Back to Tasks</Text>
+            <Text style={[styles.modalButtonText, styles.modalButtonPrimaryText]}>
+              {t('taskDetail.missing.back')}
+            </Text>
           </TouchableOpacity>
         </View>
       </ScreenContainer>
@@ -192,37 +189,51 @@ export const TaskDetailScreen: React.FC = () => {
     const wallSeconds = interval.endedAt ? getWallDurationSeconds(interval) : 0;
     const isShort = interval.endedAt ? focusSeconds < MIN_ANALYTICS_INTERVAL_SECONDS : false;
 
+    const intervalTypeLabels = {
+      work: t('taskDetail.intervals.types.work'),
+      short_break: t('taskDetail.intervals.types.short_break'),
+      long_break: t('taskDetail.intervals.types.long_break'),
+    } as const;
+
     let statusLabel: string;
     if (!interval.endedAt) {
-      statusLabel = 'In Progress';
+      statusLabel = t('taskDetail.intervals.status.inProgress');
     } else if (interval.wasSkipped) {
-      statusLabel = isShort ? 'Cancelled early (not counted)' : 'Skipped';
+      statusLabel = isShort
+        ? t('taskDetail.intervals.status.cancelledShort')
+        : t('taskDetail.intervals.status.skipped');
     } else {
-      statusLabel = isShort ? 'Completed (short, not counted)' : 'Completed';
+      statusLabel = isShort
+        ? t('taskDetail.intervals.status.completedShort')
+        : t('taskDetail.intervals.status.completed');
     }
 
     return (
       <View key={interval.id} style={styles.intervalRow}>
         <View style={styles.intervalHeader}>
-          <Text style={styles.intervalType}>{intervalTypeLabel[interval.type] ?? interval.type}</Text>
+          <Text style={styles.intervalType}>
+            {intervalTypeLabels[interval.type as keyof typeof intervalTypeLabels] ?? interval.type}
+          </Text>
           <Text style={styles.intervalStatus}>
             {statusLabel}
           </Text>
         </View>
         <Text style={styles.intervalDetail}>
-          Start: <Text style={styles.intervalValue}>{formatDateTime(interval.startedAt)}</Text>
+          {t('taskDetail.intervals.fields.start')}: <Text style={styles.intervalValue}>{formatDateTime(interval.startedAt)}</Text>
         </Text>
         <Text style={styles.intervalDetail}>
-          End: <Text style={styles.intervalValue}>{formatDateTime(interval.endedAt)}</Text>
+          {t('taskDetail.intervals.fields.end')}: <Text style={styles.intervalValue}>{formatDateTime(interval.endedAt)}</Text>
         </Text>
         <Text style={styles.intervalDetail}>
-          Planned: <Text style={styles.intervalValue}>{formatDuration(plannedSeconds)}</Text>
+          {t('taskDetail.intervals.fields.planned')}:{' '}
+          <Text style={styles.intervalValue}>{formatDuration(plannedSeconds)}</Text>
         </Text>
         <Text style={styles.intervalDetail}>
-          Focus time: <Text style={styles.intervalValue}>{formatDuration(focusSeconds)}</Text>
+          {t('taskDetail.intervals.fields.focus')}: <Text style={styles.intervalValue}>{formatDuration(focusSeconds)}</Text>
         </Text>
         <Text style={styles.intervalDetail}>
-          Elapsed: <Text style={styles.intervalValue}>{formatDuration(wallSeconds)}</Text>
+          {t('taskDetail.intervals.fields.elapsed')}:{' '}
+          <Text style={styles.intervalValue}>{formatDuration(wallSeconds)}</Text>
         </Text>
       </View>
     );
@@ -231,43 +242,43 @@ export const TaskDetailScreen: React.FC = () => {
   return (
     <ScreenContainer withTopPadding={false}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        <Text style={styles.headerTitle}>Task Details</Text>
+        <Text style={styles.headerTitle}>{t('taskDetail.header')}</Text>
         <TouchableOpacity style={styles.focusButton} onPress={handleStartFocus}>
-          <Text style={styles.focusButtonText}>Start Focus</Text>
-          <Text style={styles.focusButtonSubtitle}>Open the Pomodoro timer with this task.</Text>
+          <Text style={styles.focusButtonText}>{t('taskDetail.focus.cta')}</Text>
+          <Text style={styles.focusButtonSubtitle}>{t('taskDetail.focus.subtitle')}</Text>
         </TouchableOpacity>
 
         <View style={styles.section}>
-          <Text style={styles.sectionLabel}>Title</Text>
+          <Text style={styles.sectionLabel}>{t('taskDetail.fields.title')}</Text>
           <TextInput
             value={title}
             onChangeText={setTitle}
             style={styles.input}
-            placeholder="Task title"
+            placeholder={t('taskDetail.placeholders.title')}
             placeholderTextColor={colors.textSecondary}
           />
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionLabel}>Description</Text>
+          <Text style={styles.sectionLabel}>{t('taskDetail.fields.description')}</Text>
           <TextInput
             value={description}
             onChangeText={setDescription}
             style={[styles.input, styles.inputMultiline]}
-            placeholder="Add more details"
+            placeholder={t('taskDetail.placeholders.description')}
             placeholderTextColor={colors.textSecondary}
             multiline
           />
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionLabel}>Activity Type</Text>
+          <Text style={styles.sectionLabel}>{t('taskDetail.fields.activityType')}</Text>
           <View style={styles.activityTypeList}>
             <TouchableOpacity
               style={[styles.activityTypeOption, !activityTypeId && styles.activityTypeOptionSelected]}
               onPress={() => setActivityTypeId(undefined)}
             >
-              <Text style={styles.activityTypeOptionText}>None</Text>
+              <Text style={styles.activityTypeOptionText}>{t('taskDetail.fields.none')}</Text>
             </TouchableOpacity>
             {activeActivityTypes.map((type) => (
               <TouchableOpacity
@@ -309,44 +320,43 @@ export const TaskDetailScreen: React.FC = () => {
                 <Text style={styles.selectedActivityTypeText}>{selectedActivityType.name}</Text>
               </View>
               <Text style={styles.activityTypeDescription}>
-                Default work interval: {selectedActivityType.workDurationMinutes}m · Short break:{' '}
-                {selectedActivityType.shortBreakMinutes}m · Long break:{' '}
-                {selectedActivityType.longBreakMinutes}m
+                {t('taskDetail.activityTypeSummary')
+                  .replace('{work}', String(selectedActivityType.workDurationMinutes))
+                  .replace('{short}', String(selectedActivityType.shortBreakMinutes))
+                  .replace('{long}', String(selectedActivityType.longBreakMinutes))}
               </Text>
             </View>
           )}
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionLabel}>Created</Text>
+          <Text style={styles.sectionLabel}>{t('taskDetail.fields.created')}</Text>
           <Text style={styles.sectionValue}>{formatDateTime(task.createdAt)}</Text>
         </View>
 
         {task.completedAt && (
           <View style={styles.section}>
-            <Text style={styles.sectionLabel}>Completed</Text>
+            <Text style={styles.sectionLabel}>{t('taskDetail.fields.completed')}</Text>
             <Text style={styles.sectionValue}>{formatDateTime(task.completedAt)}</Text>
           </View>
         )}
 
         <View style={styles.section}>
-          <Text style={styles.sectionLabel}>Intervals History</Text>
+          <Text style={styles.sectionLabel}>{t('taskDetail.intervals.title')}</Text>
           {sortedIntervals.length === 0 ? (
-            <Text style={styles.emptyIntervals}>No intervals logged yet.</Text>
+            <Text style={styles.emptyIntervals}>{t('taskDetail.intervals.empty')}</Text>
           ) : (
             <View style={styles.intervalList}>{sortedIntervals.map(renderInterval)}</View>
           )}
-          <Text style={styles.intervalsFootnote}>
-            *Intervals under 5 minutes are shown here but not counted in Analytics.
-          </Text>
+          <Text style={styles.intervalsFootnote}>{t('taskDetail.intervals.footnote')}</Text>
         </View>
 
         <View style={styles.actionsRow}>
           <TouchableOpacity style={[styles.modalButton, styles.modalButtonSecondary]} onPress={handleDeleteTask}>
-            <Text style={styles.modalButtonText}>Delete Task</Text>
+            <Text style={styles.modalButtonText}>{t('taskDetail.actions.delete')}</Text>
           </TouchableOpacity>
           <TouchableOpacity style={[styles.modalButton, styles.modalButtonPrimary]} onPress={handleSaveChanges}>
-            <Text style={[styles.modalButtonText, styles.modalButtonPrimaryText]}>Save Changes</Text>
+            <Text style={[styles.modalButtonText, styles.modalButtonPrimaryText]}>{t('taskDetail.actions.save')}</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
