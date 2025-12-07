@@ -522,6 +522,10 @@ export const SettingsScreen: React.FC = () => {
     try {
       await deleteAllUserData();
       setShowDeleteAllModal(false);
+      Alert.alert(
+        'All data deleted',
+        'Your TomoFlow data has been successfully deleted from this device and your synced account.',
+      );
     } catch (error) {
       console.error('Delete all data failed', error);
       Alert.alert('Delete failed', 'Something went wrong while deleting your data. Please try again.');
@@ -634,51 +638,6 @@ export const SettingsScreen: React.FC = () => {
 
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Cloud Sync</Text>
-            {isPro && cloudSync.userId && (
-              <TouchableOpacity onPress={handleSignOut}>
-                <Text style={styles.sectionAction}>Sign out</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-
-          {!isPro && (
-            <TouchableOpacity style={styles.proBox} onPress={handleUpgradePress}>
-              <Text style={styles.proBoxText}>
-                Sync your tasks, activity types, settings, and analytics across devices with Pomodoro
-                Focus Pro.
-              </Text>
-              <Text style={styles.proLink}>View Plans</Text>
-            </TouchableOpacity>
-          )}
-
-          {isPro && !cloudSync.userId && (
-            <>
-              <Text style={styles.sectionHint}>Sign in to enable Cloud Sync.</Text>
-              <TouchableOpacity style={styles.authButton} onPress={handleGoToSignIn}>
-                <Text style={styles.authButtonLabel}>Sign in</Text>
-              </TouchableOpacity>
-            </>
-          )}
-
-          {isPro && cloudSync.userId && (
-            <>
-              <View style={styles.settingRow}>
-                <Text style={styles.settingLabel}>Cloud sync enabled</Text>
-                <Switch
-                  value={cloudSync.cloudSyncEnabled}
-                  onValueChange={handleCloudSyncToggle}
-                  thumbColor={cloudSync.cloudSyncEnabled ? colors.primary : colors.surface}
-                  trackColor={{ false: colors.border, true: colors.primary }}
-                />
-              </View>
-              <Text style={styles.sectionHint}>{lastSyncedText}</Text>
-            </>
-          )}
-        </View>
-
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Activity Types</Text>
             <TouchableOpacity onPress={handleManageActivityTypes}>
               <Text style={styles.sectionAction}>Manage</Text>
@@ -697,18 +656,6 @@ export const SettingsScreen: React.FC = () => {
               </TouchableOpacity>
             </View>
           )}
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Data & Backup</Text>
-          <Text style={styles.sectionHint}>
-            Export your tasks, activity types, and focus sessions as a CSV file.
-          </Text>
-          <TouchableOpacity style={styles.secondaryActionButton} onPress={handleExportAllData}>
-            <Text style={styles.secondaryActionButtonText}>
-              {isPro ? 'Export all data (.CSV)' : 'Unlock export with Pro'}
-            </Text>
-          </TouchableOpacity>
         </View>
 
         <View style={styles.section}>
@@ -734,9 +681,59 @@ export const SettingsScreen: React.FC = () => {
           </TouchableOpacity>
         </View>
 
-        <TouchableOpacity style={styles.upgradeButton} onPress={handleUpgradePress}>
-          <Text style={styles.upgradeText}>Upgrade to Pro</Text>
-        </TouchableOpacity>
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Cloud sync & backup</Text>
+            {isPro && cloudSync.userId && (
+              <TouchableOpacity onPress={handleSignOut}>
+                <Text style={styles.sectionAction}>Sign out</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+
+          {isPro ? (
+            <>
+              {!cloudSync.userId ? (
+                <>
+                  <Text style={styles.sectionHint}>Sign in to enable Cloud Sync.</Text>
+                  <TouchableOpacity style={styles.authButton} onPress={handleGoToSignIn}>
+                    <Text style={styles.authButtonLabel}>Sign in</Text>
+                  </TouchableOpacity>
+                </>
+              ) : (
+                <>
+                  <View style={styles.settingRow}>
+                    <Text style={styles.settingLabel}>Cloud sync enabled</Text>
+                    <Switch
+                      value={cloudSync.cloudSyncEnabled}
+                      onValueChange={handleCloudSyncToggle}
+                      thumbColor={cloudSync.cloudSyncEnabled ? colors.primary : colors.surface}
+                      trackColor={{ false: colors.border, true: colors.primary }}
+                    />
+                  </View>
+                  <Text style={styles.sectionHint}>{lastSyncedText}</Text>
+                </>
+              )}
+
+              <Text style={styles.sectionHint}>
+                Export your tasks, activity types, and focus sessions as a CSV file.
+              </Text>
+              <TouchableOpacity style={styles.secondaryActionButton} onPress={handleExportAllData}>
+                <Text style={styles.secondaryActionButtonText}>Export all data (.CSV)</Text>
+              </TouchableOpacity>
+            </>
+          ) : (
+            <View style={styles.proBox}>
+              <Text style={styles.proBoxText}>
+                Unlock TomoFlow Pro to enable cloud sync across devices and export your data as a CSV
+                backup.
+              </Text>
+              <TouchableOpacity style={styles.proUpsellButton} onPress={handleUpgradePress}>
+                <Text style={styles.proUpsellButtonText}>View Pro plans</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+        </View>
 
         <View style={styles.dangerZoneContainer}>
           <Text style={styles.dangerZoneTitle}>Danger zone</Text>
@@ -1056,6 +1053,18 @@ function createStyles(colors: ReturnType<typeof useThemeColors>) {
     color: colors.textPrimary,
     fontSize: 14,
   },
+  proUpsellButton: {
+    marginTop: spacing.md,
+    alignSelf: 'flex-start',
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    borderRadius: 999,
+    backgroundColor: colors.primary,
+  },
+  proUpsellButtonText: {
+    color: colors.textPrimary,
+    fontWeight: '700',
+  },
   authButton: {
     backgroundColor: colors.primary,
     borderRadius: 12,
@@ -1068,11 +1077,6 @@ function createStyles(colors: ReturnType<typeof useThemeColors>) {
     color: colors.surface,
     fontWeight: '700',
     fontSize: 15,
-  },
-  proLink: {
-    color: colors.accent,
-    fontWeight: '700',
-    marginTop: spacing.xs,
   },
   proBannerTitle: {
     fontSize: 14,
@@ -1094,17 +1098,6 @@ function createStyles(colors: ReturnType<typeof useThemeColors>) {
   },
   secondaryActionButtonText: {
     color: colors.textPrimary,
-    fontWeight: '700',
-  },
-  upgradeButton: {
-    backgroundColor: colors.primary,
-    borderRadius: 12,
-    paddingVertical: spacing.md,
-    alignItems: 'center',
-  },
-  upgradeText: {
-    color: colors.textPrimary,
-    fontSize: 16,
     fontWeight: '700',
   },
   dangerZoneContainer: {
