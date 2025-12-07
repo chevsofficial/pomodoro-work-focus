@@ -26,6 +26,7 @@ import useAppStore, {
 } from '../store/appStore';
 import { useThemeColors } from '../theme/useThemeColors';
 import { spacing } from '../theme/spacing';
+import { t } from '../i18n/translations';
 
 type TasksNavigation = NativeStackNavigationProp<RootStackParamList>;
 
@@ -95,7 +96,7 @@ const AddTaskModal: React.FC<{
     const trimmedDescription = description.trim();
 
     if (!trimmedTitle) {
-      Alert.alert('Add Task', 'Please enter a task title.');
+      Alert.alert(t('tasks.add.title'), t('tasks.add.missingTitle'));
       return;
     }
 
@@ -112,23 +113,23 @@ const AddTaskModal: React.FC<{
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <View style={styles.modalBackdrop}>
         <View style={styles.modalContent}>
-          <Text style={styles.modalTitle}>Add Task</Text>
+          <Text style={styles.modalTitle}>{t('tasks.add.title')}</Text>
           <TextInput
-            placeholder="Title"
+            placeholder={t('tasks.add.titlePlaceholder')}
             placeholderTextColor={colors.textSecondary}
             style={styles.input}
             value={title}
             onChangeText={setTitle}
           />
           <TextInput
-            placeholder="Description (optional)"
+            placeholder={t('tasks.add.descriptionPlaceholder')}
             placeholderTextColor={colors.textSecondary}
             style={[styles.input, styles.inputMultiline]}
             value={description}
             onChangeText={setDescription}
             multiline
           />
-          <Text style={styles.modalLabel}>Activity Type</Text>
+          <Text style={styles.modalLabel}>{t('tasks.add.activityTypeLabel')}</Text>
           <View style={styles.activityTypeList}>
             <TouchableOpacity
               style={[
@@ -137,7 +138,7 @@ const AddTaskModal: React.FC<{
               ]}
               onPress={() => setActivityTypeId(undefined)}
             >
-              <Text style={styles.activityTypeOptionText}>None</Text>
+              <Text style={styles.activityTypeOptionText}>{t('tasks.add.none')}</Text>
             </TouchableOpacity>
             {activityTypes.map((type) => (
               <AnyActivityTypeChip
@@ -155,14 +156,14 @@ const AddTaskModal: React.FC<{
               style={[styles.modalButton, styles.modalButtonSecondary]}
               onPress={onClose}
             >
-              <Text style={styles.modalButtonText}>Cancel</Text>
+              <Text style={styles.modalButtonText}>{t('common.cancel')}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.modalButton, styles.modalButtonPrimary]}
               onPress={handleSave}
             >
               <Text style={[styles.modalButtonText, styles.modalButtonPrimaryText]}>
-                Save
+                {t('common.save')}
               </Text>
             </TouchableOpacity>
           </View>
@@ -204,7 +205,7 @@ export const TasksScreen: React.FC = () => {
 
   const formatCompletionDateLabel = (iso: string) => {
     const date = new Date(iso);
-    if (Number.isNaN(date.getTime())) return 'Unknown date';
+    if (Number.isNaN(date.getTime())) return t('tasks.unknownDate');
 
     return date.toLocaleDateString(undefined, {
       weekday: 'long',
@@ -318,7 +319,7 @@ export const TasksScreen: React.FC = () => {
 
   return (
     <ScreenContainer>
-      <Text style={styles.headerTitle}>Tasks</Text>
+      <Text style={styles.headerTitle}>{t('tasks.header')}</Text>
       <View style={styles.tabRow}>
         <TouchableOpacity
           style={[styles.tabButton, activeTab === 'todo' && styles.tabButtonActive]}
@@ -327,7 +328,7 @@ export const TasksScreen: React.FC = () => {
           <Text
             style={[styles.tabButtonLabel, activeTab === 'todo' && styles.tabButtonLabelActive]}
           >
-            To-Do
+            {t('tasks.tabs.todo')}
           </Text>
         </TouchableOpacity>
 
@@ -338,22 +339,20 @@ export const TasksScreen: React.FC = () => {
           <Text
             style={[styles.tabButtonLabel, activeTab === 'done' && styles.tabButtonLabelActive]}
           >
-            Done
+            {t('tasks.tabs.done')}
           </Text>
         </TouchableOpacity>
       </View>
 
       {!isPro && remainingTasks === 0 && (
         <View style={styles.proUpsellCard}>
-          <Text style={styles.proUpsellTitle}>Task limit reached</Text>
-          <Text style={styles.proUpsellSubtitle}>
-            Upgrade to TomoFlow Pro to unlock unlimited tasks and more productivity features.
-          </Text>
+          <Text style={styles.proUpsellTitle}>{t('tasks.upsell.title')}</Text>
+          <Text style={styles.proUpsellSubtitle}>{t('tasks.upsell.subtitle')}</Text>
           <TouchableOpacity
             style={styles.proUpsellButton}
             onPress={() => navigateToProUpsell(navigation)}
           >
-            <Text style={styles.proUpsellButtonText}>View Pro Plans</Text>
+            <Text style={styles.proUpsellButtonText}>{t('common.viewProPlans')}</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -361,10 +360,8 @@ export const TasksScreen: React.FC = () => {
       {activeTab === 'todo' ? (
         todoTasks.length === 0 ? (
           <View style={styles.emptyState}>
-            <Text style={styles.emptyStateTitle}>No tasks in your To-Do list yet.</Text>
-            <Text style={styles.emptyStateSubtitle}>
-              Create your first focus task to get started.
-            </Text>
+            <Text style={styles.emptyStateTitle}>{t('tasks.empty.todoTitle')}</Text>
+            <Text style={styles.emptyStateSubtitle}>{t('tasks.empty.todoSubtitle')}</Text>
           </View>
         ) : (
           <ScrollView style={styles.todoList} contentContainerStyle={styles.listContent}>
@@ -377,7 +374,7 @@ export const TasksScreen: React.FC = () => {
           </ScrollView>
         )
       ) : doneTasks.length === 0 ? (
-        <Text style={styles.emptyText}>No completed tasks yet.</Text>
+        <Text style={styles.emptyText}>{t('tasks.empty.done')}</Text>
       ) : (
         <ScrollView style={styles.doneList} contentContainerStyle={styles.listContent}>
           {groupedDoneTasks.map(([dateLabel, tasksForDay]) => (
@@ -397,7 +394,9 @@ export const TasksScreen: React.FC = () => {
       <AdBanner />
 
       {!isPro && (
-        <Text style={styles.planNote}>{remainingTasks} tasks left on the free plan.</Text>
+        <Text style={styles.planNote}>
+          {t('tasks.planNote').replace('{count}', String(remainingTasks))}
+        </Text>
       )}
 
       <TouchableOpacity

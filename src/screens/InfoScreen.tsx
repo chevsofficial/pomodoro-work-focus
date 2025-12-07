@@ -87,7 +87,7 @@ export const InfoScreen: React.FC = () => {
 
   const openLink = (url: string) => {
     Linking.openURL(url).catch(() => {
-      Alert.alert('Open Link', 'Something went wrong while opening this link.');
+      Alert.alert(t('info.alerts.openLinkTitle'), t('info.alerts.openLinkBody'));
     });
   };
 
@@ -116,7 +116,7 @@ export const InfoScreen: React.FC = () => {
   const handleRedeemSubmit = () => {
     const normalizedCode = redeemCode.trim().toUpperCase();
     if (!normalizedCode) {
-      Alert.alert('Redeem Code', 'Please enter a code to continue.');
+      Alert.alert(t('info.alerts.redeemTitle'), t('info.alerts.redeemMissingCode'));
       return;
     }
 
@@ -131,91 +131,91 @@ export const InfoScreen: React.FC = () => {
         activatedAt: timestamp,
         lastVerifiedAt: timestamp,
       });
-      Alert.alert('Success', 'Code applied! TomoFlow Pro is now unlocked.');
+      Alert.alert(t('info.alerts.redeemSuccessTitle'), t('info.alerts.redeemSuccessBody'));
       closeRedeemModal();
       return;
     }
 
-    Alert.alert('Invalid Code', 'That code was not recognized. Double-check and try again.');
+    Alert.alert(t('info.alerts.redeemInvalidTitle'), t('info.alerts.redeemInvalidBody'));
   };
 
   const sections: InfoSection[] = [
     {
-      title: 'Support',
+      title: t('info.sections.support.title'),
       items: [
         {
-          title: 'Contact Support',
-          description: 'Email our team for help',
+          title: t('info.sections.support.contact.title'),
+          description: t('info.sections.support.contact.description'),
           onPress: () => openLink(`mailto:${APP_LINKS.supportEmail}`),
         },
         {
-          title: 'Rate the App',
-          description: 'Share feedback on the app store',
+          title: t('info.sections.support.rate.title'),
+          description: t('info.sections.support.rate.description'),
           onPress: () => openLink(rateUrl),
         },
       ],
     },
     {
-      title: 'About',
+      title: t('info.sections.about.title'),
       items: [
         {
-          title: 'Help Center',
-          description: 'Guides, FAQs, and feature highlights',
+          title: t('info.sections.about.helpCenter.title'),
+          description: t('info.sections.about.helpCenter.description'),
           onPress: () => openLink(APP_LINKS.website),
         },/* REMOVED FOR TOMOFLOW V1
         {
-          title: 'News & Offers',
-          description: 'Latest product updates and discounts',
+          title: t('info.sections.about.news.title'),
+          description: t('info.sections.about.news.description'),
           onPress: () => openLink(APP_LINKS.news),
         },*/
       ],
     },
     {
-      title: 'Legal',
+      title: t('info.sections.legal.title'),
       items: [
         {
-          title: 'Terms of Use',
-          description: 'Understand the agreement for using the app',
+          title: t('info.sections.legal.terms.title'),
+          description: t('info.sections.legal.terms.description'),
           onPress: () => openLink(APP_LINKS.terms),
         },
         {
-          title: 'Privacy Policy',
-          description: 'See how we protect your data',
+          title: t('info.sections.legal.privacy.title'),
+          description: t('info.sections.legal.privacy.description'),
           onPress: () => openLink(APP_LINKS.privacy),
         },
       ],
     },
     {
-      title: 'Pro & Codes',
+      title: t('info.sections.pro.title'),
       items: [
         {
-          title: 'Redeem Code',
-          description: 'Unlock special promos or betas',
+          title: t('info.sections.pro.redeem.title'),
+          description: t('info.sections.pro.redeem.description'),
           onPress: handleRedeemPress,
         },
         {
-          title: 'Upgrade to Pro',
-          description: 'See all premium focus perks',
+          title: t('info.sections.pro.upgrade.title'),
+          description: t('info.sections.pro.upgrade.description'),
           onPress: () => navigateToProUpsell(navigation),
         },
       ],
     },
     {
-      title: 'Social',
+      title: t('info.sections.social.title'),
       items: [
         {
-          title: 'X',
-          description: '@tomoflowapp',
+          title: t('info.sections.social.x.title'),
+          description: t('info.sections.social.x.description'),
           onPress: () => openLink(APP_LINKS.socials.twitter),
         },
         {
-          title: 'Instagram',
-          description: '@tomoflowapp',
+          title: t('info.sections.social.instagram.title'),
+          description: t('info.sections.social.instagram.description'),
           onPress: () => openLink(APP_LINKS.socials.instagram),
         },
         {
-          title: 'Facebook',
-          description: '@tomoflowapp',
+          title: t('info.sections.social.facebook.title'),
+          description: t('info.sections.social.facebook.description'),
           onPress: () => openLink(APP_LINKS.socials.facebook),
         },
       ],
@@ -232,10 +232,10 @@ export const InfoScreen: React.FC = () => {
   const clearLocalData = async () => {
     try {
       await AsyncStorage.removeItem(STORAGE_KEY);
-      Alert.alert('Cleared', 'Local state cleared. Restart the app.');
+      Alert.alert(t('info.alerts.clearedTitle'), t('info.alerts.clearedBody'));
     } catch (error) {
       console.error('Failed to clear local data', error);
-      Alert.alert('Clear Data', 'Something went wrong while clearing local data.');
+      Alert.alert(t('info.alerts.clearFailedTitle'), t('info.alerts.clearFailedBody'));
     }
   };
 
@@ -245,10 +245,8 @@ export const InfoScreen: React.FC = () => {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <Text style={styles.title}>Info & Support</Text>
-        <Text style={styles.subtitle}>
-          Discover help resources, learn more about TomoFlow, and connect with our team.
-        </Text>
+        <Text style={styles.title}>{t('info.title')}</Text>
+        <Text style={styles.subtitle}>{t('info.subtitle')}</Text>
 
         <View style={styles.section}>
           <Text style={styles.sectionLabel}>{t('info.languageLabel')}</Text>
@@ -283,24 +281,25 @@ export const InfoScreen: React.FC = () => {
 
         <View style={styles.upgradeCard}>
           <View style={styles.upgradeTextWrapper}>
-            <Text style={styles.upgradeTitle}>Upgrade to Pro</Text>
-            <Text style={styles.upgradeDescription}>
-              Unlock unlimited activity types, richer insights, and more customization to keep
-              your focus streak going.
-            </Text>
+            <Text style={styles.upgradeTitle}>{t('common.upgradeToPro')}</Text>
+            <Text style={styles.upgradeDescription}>{t('info.upgradeDescription')}</Text>
           </View>
           <TouchableOpacity style={styles.upgradeButton} onPress={handleUpgradePress}>
-            <Text style={styles.upgradeButtonText}>View plans</Text>
+            <Text style={styles.upgradeButtonText}>{t('common.viewProPlans')}</Text>
           </TouchableOpacity>
         </View>
 
         {__DEV__ && (
           <View style={styles.debugCard}>
-            <Text style={styles.debugTitle}>DEBUG PRO STATE</Text>
-            <Text style={styles.debugText}>isProEffective: {String(isPro)}</Text>
-            <Text style={styles.debugText}>proStatus.isPro: {String(proStatus.isPro)}</Text>
+            <Text style={styles.debugTitle}>{t('info.debug.title')}</Text>
+            <Text style={styles.debugText}>
+              {t('info.debug.isPro').replace('{value}', String(isPro))}
+            </Text>
+            <Text style={styles.debugText}>
+              {t('info.debug.proStatus').replace('{value}', String(proStatus.isPro))}
+            </Text>
             <TouchableOpacity style={styles.clearButton} onPress={clearLocalData}>
-              <Text style={styles.clearButtonText}>Clear Local App Data</Text>
+              <Text style={styles.clearButtonText}>{t('info.debug.clearLocalData')}</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -316,11 +315,11 @@ export const InfoScreen: React.FC = () => {
       >
         <View style={styles.modalBackdrop}>
           <View style={styles.modalCard}>
-            <Text style={styles.modalTitle}>Redeem Code</Text>
-            <Text style={styles.modalDescription}>Enter your promo or beta code below.</Text>
+            <Text style={styles.modalTitle}>{t('info.redeemModalTitle')}</Text>
+            <Text style={styles.modalDescription}>{t('info.redeemModalDescription')}</Text>
             <TextInput
               style={styles.modalInput}
-              placeholder="e.g. FOCUSPRO2023"
+              placeholder={t('info.redeemPlaceholder')}
               placeholderTextColor={colors.textSecondary}
               value={redeemCode}
               onChangeText={setRedeemCode}
@@ -331,10 +330,10 @@ export const InfoScreen: React.FC = () => {
             />
             <View style={styles.modalActions}>
               <TouchableOpacity style={styles.modalSecondaryButton} onPress={closeRedeemModal}>
-                <Text style={styles.modalSecondaryButtonText}>Cancel</Text>
+                <Text style={styles.modalSecondaryButtonText}>{t('common.cancel')}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.modalPrimaryButton} onPress={handleRedeemSubmit}>
-                <Text style={styles.modalPrimaryButtonText}>Redeem</Text>
+                <Text style={styles.modalPrimaryButtonText}>{t('info.redeemCta')}</Text>
               </TouchableOpacity>
             </View>
           </View>

@@ -116,6 +116,95 @@ export const translations = {
       languageModalDescription: 'Choose your preferred language for TomoFlow.',
       optionEnglish: 'English',
       optionSpanish: 'Español',
+      title: 'Info & Support',
+      subtitle: 'Discover help resources, learn more about TomoFlow, and connect with our team.',
+      redeemPlaceholder: 'e.g. FOCUSPRO2023',
+      redeemModalTitle: 'Redeem Code',
+      redeemModalDescription: 'Enter your promo or beta code below.',
+      redeemCta: 'Redeem',
+      upgradeDescription:
+        'Unlock unlimited activity types, richer insights, and more customization to keep your focus streak going.',
+      alerts: {
+        openLinkTitle: 'Open Link',
+        openLinkBody: 'Something went wrong while opening this link.',
+        redeemTitle: 'Redeem Code',
+        redeemMissingCode: 'Please enter a code to continue.',
+        redeemSuccessTitle: 'Success',
+        redeemSuccessBody: 'Code applied! TomoFlow Pro is now unlocked.',
+        redeemInvalidTitle: 'Invalid Code',
+        redeemInvalidBody: 'That code was not recognized. Double-check and try again.',
+        clearedTitle: 'Cleared',
+        clearedBody: 'Local state cleared. Restart the app.',
+        clearFailedTitle: 'Clear Data',
+        clearFailedBody: 'Something went wrong while clearing local data.',
+      },
+      sections: {
+        support: {
+          title: 'Support',
+          contact: {
+            title: 'Contact Support',
+            description: 'Email our team for help',
+          },
+          rate: {
+            title: 'Rate the App',
+            description: 'Share feedback on the app store',
+          },
+        },
+        about: {
+          title: 'About',
+          helpCenter: {
+            title: 'Help Center',
+            description: 'Guides, FAQs, and feature highlights',
+          },
+          news: {
+            title: 'News & Offers',
+            description: 'Latest product updates and discounts',
+          },
+        },
+        legal: {
+          title: 'Legal',
+          terms: {
+            title: 'Terms of Use',
+            description: 'Understand the agreement for using the app',
+          },
+          privacy: {
+            title: 'Privacy Policy',
+            description: 'See how we protect your data',
+          },
+        },
+        pro: {
+          title: 'Pro & Codes',
+          redeem: {
+            title: 'Redeem Code',
+            description: 'Unlock special promos or betas',
+          },
+          upgrade: {
+            title: 'Upgrade to Pro',
+            description: 'See all premium focus perks',
+          },
+        },
+        social: {
+          title: 'Social',
+          x: {
+            title: 'X',
+            description: '@tomoflowapp',
+          },
+          instagram: {
+            title: 'Instagram',
+            description: '@tomoflowapp',
+          },
+          facebook: {
+            title: 'Facebook',
+            description: '@tomoflowapp',
+          },
+        },
+      },
+      debug: {
+        title: 'DEBUG PRO STATE',
+        isPro: 'isProEffective: {value}',
+        proStatus: 'proStatus.isPro: {value}',
+        clearLocalData: 'Clear Local App Data',
+      },
     },
     paywall: {
       heroTitle: 'Unlock TomoFlow Pro',
@@ -146,6 +235,116 @@ export const translations = {
         annualTitle: 'Most Popular — Annual Plan',
         annualDescription: '7-day free trial • Cancel anytime',
         annualSavings: 'Save 58% compared to monthly',
+      },
+    },
+    auth: {
+      titleSignIn: 'Sign in',
+      titleSignUp: 'Create an account',
+      subtitle: 'Use your email and password to access Cloud Sync.',
+      createAccount: 'Create account',
+      toggleToSignUp: "Don't have an account? Sign up",
+      toggleToSignIn: 'Already have an account? Sign in',
+      emailPlaceholder: 'Email',
+      passwordPlaceholder: 'Password',
+      loading: 'Please wait...',
+      verifyEmailTitle: 'Check your email',
+      verifyEmailBody: 'Please verify your email to finish signing up.',
+      errors: {
+        missingCredentials: 'Email and password are required.',
+        generic: 'Something went wrong. Please try again.',
+      },
+    },
+    tasks: {
+      header: 'Tasks',
+      tabs: {
+        todo: 'To-Do',
+        done: 'Done',
+      },
+      add: {
+        title: 'Add Task',
+        missingTitle: 'Please enter a task title.',
+        titlePlaceholder: 'Title',
+        descriptionPlaceholder: 'Description (optional)',
+        activityTypeLabel: 'Activity Type',
+        none: 'None',
+      },
+      upsell: {
+        title: 'Task limit reached',
+        subtitle: 'Upgrade to TomoFlow Pro to unlock unlimited tasks and more productivity features.',
+      },
+      empty: {
+        todoTitle: 'No tasks in your To-Do list yet.',
+        todoSubtitle: 'Create your first focus task to get started.',
+        done: 'No completed tasks yet.',
+      },
+      planNote: '{count} tasks left on the free plan.',
+      unknownDate: 'Unknown date',
+    },
+    taskDetail: {
+      header: 'Task Details',
+      focus: {
+        cta: 'Start Focus',
+        subtitle: 'Open the Pomodoro timer with this task.',
+      },
+      fields: {
+        title: 'Title',
+        description: 'Description',
+        activityType: 'Activity Type',
+        none: 'None',
+        created: 'Created',
+        completed: 'Completed',
+      },
+      placeholders: {
+        title: 'Task title',
+        description: 'Add more details',
+      },
+      activityTypeSummary:
+        'Default work interval: {work}m · Short break: {short}m · Long break: {long}m',
+      intervals: {
+        title: 'Intervals History',
+        empty: 'No intervals logged yet.',
+        footnote: '*Intervals under 5 minutes are shown here but not counted in Analytics.',
+        types: {
+          work: 'Work',
+          short_break: 'Short Break',
+          long_break: 'Long Break',
+        },
+        status: {
+          inProgress: 'In Progress',
+          cancelledShort: 'Cancelled early (not counted)',
+          skipped: 'Skipped',
+          completedShort: 'Completed (short, not counted)',
+          completed: 'Completed',
+        },
+        fields: {
+          start: 'Start',
+          end: 'End',
+          planned: 'Planned',
+          focus: 'Focus time',
+          elapsed: 'Elapsed',
+        },
+      },
+      duration: {
+        minutesSeconds: '{minutes}m {seconds}s',
+        minutesOnly: '{minutes}m',
+        secondsOnly: '{seconds}s',
+        zero: '0s',
+      },
+      update: {
+        title: 'Update Task',
+        requiredTitle: 'Title is required.',
+        successTitle: 'Task Updated',
+        successBody: 'Your changes have been saved.',
+      },
+      missing: {
+        title: 'Task not found',
+        subtitle: 'This task may have been removed. Go back to the list and try again.',
+        back: 'Back to Tasks',
+      },
+      actions: {
+        delete: 'Delete Task',
+        save: 'Save Changes',
+        confirmDelete: 'Are you sure you want to delete this task?',
       },
     },
   },
@@ -264,6 +463,95 @@ export const translations = {
       languageModalDescription: 'Elige tu idioma preferido para TomoFlow.',
       optionEnglish: 'English',
       optionSpanish: 'Español',
+      title: 'Información y soporte',
+      subtitle: 'Descubre recursos de ayuda, conoce más de TomoFlow y conéctate con nuestro equipo.',
+      redeemPlaceholder: 'ej. FOCUSPRO2023',
+      redeemModalTitle: 'Canjear código',
+      redeemModalDescription: 'Ingresa tu código promocional o de beta a continuación.',
+      redeemCta: 'Canjear',
+      upgradeDescription:
+        'Desbloquea tipos de actividad ilimitados, mejores estadísticas y más personalización para mantener tu racha de enfoque.',
+      alerts: {
+        openLinkTitle: 'Abrir enlace',
+        openLinkBody: 'Ocurrió un problema al abrir este enlace.',
+        redeemTitle: 'Canjear código',
+        redeemMissingCode: 'Ingresa un código para continuar.',
+        redeemSuccessTitle: 'Éxito',
+        redeemSuccessBody: '¡Código aplicado! TomoFlow Pro está desbloqueado.',
+        redeemInvalidTitle: 'Código no válido',
+        redeemInvalidBody: 'Ese código no fue reconocido. Vuelve a revisarlo e inténtalo otra vez.',
+        clearedTitle: 'Borrado',
+        clearedBody: 'Datos locales borrados. Reinicia la app.',
+        clearFailedTitle: 'Borrar datos',
+        clearFailedBody: 'Ocurrió un problema al borrar los datos locales.',
+      },
+      sections: {
+        support: {
+          title: 'Soporte',
+          contact: {
+            title: 'Contactar soporte',
+            description: 'Envíanos un correo para obtener ayuda',
+          },
+          rate: {
+            title: 'Calificar la app',
+            description: 'Comparte tu opinión en la tienda',
+          },
+        },
+        about: {
+          title: 'Acerca de',
+          helpCenter: {
+            title: 'Centro de ayuda',
+            description: 'Guías, preguntas frecuentes y funciones destacadas',
+          },
+          news: {
+            title: 'Noticias y ofertas',
+            description: 'Actualizaciones del producto y descuentos',
+          },
+        },
+        legal: {
+          title: 'Legal',
+          terms: {
+            title: 'Términos de uso',
+            description: 'Entiende el acuerdo para usar la app',
+          },
+          privacy: {
+            title: 'Política de privacidad',
+            description: 'Conoce cómo protegemos tus datos',
+          },
+        },
+        pro: {
+          title: 'Pro y códigos',
+          redeem: {
+            title: 'Canjear código',
+            description: 'Desbloquea promos o betas especiales',
+          },
+          upgrade: {
+            title: 'Mejorar a Pro',
+            description: 'Conoce todos los beneficios premium',
+          },
+        },
+        social: {
+          title: 'Redes sociales',
+          x: {
+            title: 'X',
+            description: '@tomoflowapp',
+          },
+          instagram: {
+            title: 'Instagram',
+            description: '@tomoflowapp',
+          },
+          facebook: {
+            title: 'Facebook',
+            description: '@tomoflowapp',
+          },
+        },
+      },
+      debug: {
+        title: 'ESTADO DE PRO (DEBUG)',
+        isPro: 'isProEffective: {value}',
+        proStatus: 'proStatus.isPro: {value}',
+        clearLocalData: 'Borrar datos locales de la app',
+      },
     },
     paywall: {
       heroTitle: 'Desbloquea TomoFlow Pro',
@@ -294,6 +582,116 @@ export const translations = {
         annualTitle: 'Plan anual — el más popular',
         annualDescription: 'Prueba gratis de 7 días • Cancela en cualquier momento',
         annualSavings: 'Ahorra 58% comparado con el mensual',
+      },
+    },
+    auth: {
+      titleSignIn: 'Iniciar sesión',
+      titleSignUp: 'Crear una cuenta',
+      subtitle: 'Usa tu correo y contraseña para acceder a la sincronización en la nube.',
+      createAccount: 'Crear cuenta',
+      toggleToSignUp: '¿No tienes cuenta? Regístrate',
+      toggleToSignIn: '¿Ya tienes cuenta? Inicia sesión',
+      emailPlaceholder: 'Correo electrónico',
+      passwordPlaceholder: 'Contraseña',
+      loading: 'Por favor espera...',
+      verifyEmailTitle: 'Revisa tu correo',
+      verifyEmailBody: 'Verifica tu correo para completar el registro.',
+      errors: {
+        missingCredentials: 'El correo y la contraseña son obligatorios.',
+        generic: 'Ocurrió un problema. Inténtalo de nuevo.',
+      },
+    },
+    tasks: {
+      header: 'Tareas',
+      tabs: {
+        todo: 'Pendientes',
+        done: 'Hechas',
+      },
+      add: {
+        title: 'Agregar tarea',
+        missingTitle: 'Ingresa un título para la tarea.',
+        titlePlaceholder: 'Título',
+        descriptionPlaceholder: 'Descripción (opcional)',
+        activityTypeLabel: 'Tipo de actividad',
+        none: 'Ninguna',
+      },
+      upsell: {
+        title: 'Límite de tareas alcanzado',
+        subtitle: 'Mejora a TomoFlow Pro para desbloquear tareas ilimitadas y más funciones de productividad.',
+      },
+      empty: {
+        todoTitle: 'Aún no tienes tareas en tu lista.',
+        todoSubtitle: 'Crea tu primera tarea de enfoque para comenzar.',
+        done: 'Aún no tienes tareas completadas.',
+      },
+      planNote: '{count} tareas restantes en el plan gratis.',
+      unknownDate: 'Fecha desconocida',
+    },
+    taskDetail: {
+      header: 'Detalles de la tarea',
+      focus: {
+        cta: 'Iniciar enfoque',
+        subtitle: 'Abre el temporizador Pomodoro con esta tarea.',
+      },
+      fields: {
+        title: 'Título',
+        description: 'Descripción',
+        activityType: 'Tipo de actividad',
+        none: 'Ninguna',
+        created: 'Creada',
+        completed: 'Completada',
+      },
+      placeholders: {
+        title: 'Título de la tarea',
+        description: 'Agrega más detalles',
+      },
+      activityTypeSummary:
+        'Intervalo de trabajo predeterminado: {work} min · Descanso corto: {short} min · Descanso largo: {long} min',
+      intervals: {
+        title: 'Historial de intervalos',
+        empty: 'Aún no hay intervalos registrados.',
+        footnote: '*Los intervalos menores a 5 minutos se muestran aquí pero no cuentan en Analíticas.',
+        types: {
+          work: 'Trabajo',
+          short_break: 'Descanso corto',
+          long_break: 'Descanso largo',
+        },
+        status: {
+          inProgress: 'En progreso',
+          cancelledShort: 'Cancelado antes de tiempo (no cuenta)',
+          skipped: 'Saltado',
+          completedShort: 'Completado (corto, no cuenta)',
+          completed: 'Completado',
+        },
+        fields: {
+          start: 'Inicio',
+          end: 'Fin',
+          planned: 'Planeado',
+          focus: 'Tiempo de enfoque',
+          elapsed: 'Transcurrido',
+        },
+      },
+      duration: {
+        minutesSeconds: '{minutes} min {seconds} s',
+        minutesOnly: '{minutes} min',
+        secondsOnly: '{seconds} s',
+        zero: '0 s',
+      },
+      update: {
+        title: 'Actualizar tarea',
+        requiredTitle: 'El título es obligatorio.',
+        successTitle: 'Tarea actualizada',
+        successBody: 'Tus cambios se han guardado.',
+      },
+      missing: {
+        title: 'Tarea no encontrada',
+        subtitle: 'Esta tarea pudo haberse eliminado. Vuelve a la lista e inténtalo de nuevo.',
+        back: 'Volver a tareas',
+      },
+      actions: {
+        delete: 'Eliminar tarea',
+        save: 'Guardar cambios',
+        confirmDelete: '¿Seguro que deseas eliminar esta tarea?',
       },
     },
   },
