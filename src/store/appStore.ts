@@ -11,6 +11,7 @@ import {
   CloudSyncState,
   StreakState,
   Task,
+  Language,
 } from '../models';
 import { CloudSnapshot, cloudSyncApi } from '../services/cloudSyncApi';
 import { supabase } from '../services/supabaseClient';
@@ -220,6 +221,7 @@ export interface AppStore extends AppStateSnapshot {
   resetLocalState: () => void;
   deleteAllUserData: () => Promise<void>;
   getExportableData: () => ExportableUserData;
+  setLanguage: (language: Language) => void;
 }
 
 export const STORAGE_KEY = 'POMODORO_APP_STATE_V1';
@@ -541,8 +543,8 @@ const mapSettingsToExportable = (settings: PomodoroSettings): ExportableUserSett
 
 const useAppStore = create<AppStore>((set, get) => {
   const getSnapshot = (): AppStateSnapshot => {
-    const { tasks, intervals, activityTypes, settings, proStatus, streak, cloudSync } = get();
-    return { tasks, intervals, activityTypes, settings, proStatus, streak, cloudSync };
+    const { tasks, intervals, activityTypes, settings, proStatus, streak, cloudSync, language } = get();
+    return { tasks, intervals, activityTypes, settings, proStatus, streak, cloudSync, language };
   };
 
   const schedulePersist = debounce((snapshot: AppStateSnapshot) => {
@@ -616,6 +618,7 @@ const useAppStore = create<AppStore>((set, get) => {
           const nextCloudSync = parsed.cloudSync
             ? { ...defaultCloudSyncState, ...parsed.cloudSync }
             : { ...defaultCloudSyncState };
+          const nextLanguage = parsed.language ?? state.language ?? 'en';
 
           return {
             ...state,
@@ -627,6 +630,7 @@ const useAppStore = create<AppStore>((set, get) => {
             isPro: nextProStatus.isPro,
             streak: nextStreak,
             cloudSync: nextCloudSync,
+            language: nextLanguage,
           };
         });
       }
@@ -647,6 +651,7 @@ const useAppStore = create<AppStore>((set, get) => {
     earlySkipInfoVisible: false,
     streak: { ...defaultStreakState },
     cloudSync: { ...defaultCloudSyncState },
+    language: 'en',
 
     resetLocalState: () => {
       setStateAndPersist((state) => ({
@@ -661,6 +666,10 @@ const useAppStore = create<AppStore>((set, get) => {
           lastSyncedAt: undefined,
         },
       }));
+    },
+
+    setLanguage: (language) => {
+      setStateAndPersist(() => ({ language }));
     },
 
     deleteAllUserData: async () => {
@@ -996,6 +1005,7 @@ const useAppStore = create<AppStore>((set, get) => {
           : state.proStatus;
         const nextSettings = { ...state.settings, ...(snapshot.settings ?? {}) };
         const nextIntervals = cleanupIntervals(snapshot.intervals ?? state.intervals);
+        const nextLanguage = snapshot.language ?? state.language;
 
         return {
           ...state,
@@ -1005,6 +1015,7 @@ const useAppStore = create<AppStore>((set, get) => {
           settings: nextSettings,
           proStatus: nextProStatus,
           isPro: nextProStatus.isPro,
+          language: nextLanguage,
           cloudSync: {
             ...state.cloudSync,
             lastKnownRevision: snapshot.revision ?? state.cloudSync.lastKnownRevision,
@@ -1048,6 +1059,7 @@ export const useAppStateSnapshot = () =>
     proStatus: state.proStatus,
     streak: state.streak,
     cloudSync: state.cloudSync,
+    language: state.language,
   }));
 
 export const useStreak = () => useAppStore((state) => state.streak);
