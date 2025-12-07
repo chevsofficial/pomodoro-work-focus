@@ -1064,4 +1064,8 @@ export const useAppStateSnapshot = () =>
 
 export const useStreak = () => useAppStore((state) => state.streak);
 
+export const useLanguage = () => useAppStore((state) => state.language);
+
+export const useSetLanguage = () => useAppStore((state) => state.setLanguage);
+
 export default useAppStore;

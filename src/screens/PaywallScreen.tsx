@@ -15,6 +15,7 @@ import { fetchOfferings, purchaseProduct, restorePurchases } from '../services/r
 import useAppStore, { useIsPro, useProStatus } from '../store/appStore';
 import { spacing } from '../theme/spacing';
 import { useThemeColors } from '../theme/useThemeColors';
+import { t } from '../i18n/translations';
 
 const formatPriceText = (pkg: PurchasesPackage | null, fallback: string) =>
   pkg?.product?.priceString ?? fallback;
@@ -105,19 +106,17 @@ export const PaywallScreen: React.FC = () => {
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <Text style={styles.logo}>TomoFlow</Text>
-          <Text style={styles.heroTitle}>Unlock TomoFlow Pro</Text>
-          <Text style={styles.heroSubtitle}>Your most productive self starts here.</Text>
-          <Text style={styles.heroBody}>
-            Focus deeper, stay organized, and get powerful insights — distraction-free.
-          </Text>
+          <Text style={styles.heroTitle}>{t('paywall.heroTitle')}</Text>
+          <Text style={styles.heroSubtitle}>{t('paywall.heroSubtitle')}</Text>
+          <Text style={styles.heroBody}>{t('paywall.heroBody')}</Text>
         </View>
 
         <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Everything you get</Text>
+          <Text style={styles.sectionTitle}>{t('paywall.featuresTitle')}</Text>
           {PRO_BENEFITS.map((benefit) => (
             <View key={benefit} style={styles.benefitRow}>
               <Text style={styles.benefitIcon}>✅</Text>
-              <Text style={styles.benefitText}>{benefit}</Text>
+              <Text style={styles.benefitText}>{t(benefit)}</Text>
             </View>
           ))}
         </View>
@@ -125,12 +124,12 @@ export const PaywallScreen: React.FC = () => {
         <View style={styles.pricingWrapper}>
           <View style={[styles.pricingCard, styles.pricingCardHighlighted]}>
             <View style={styles.badgeWrapper}>
-              <Text style={styles.badgeText}>Most Popular</Text>
+              <Text style={styles.badgeText}>{t('paywall.planBadge')}</Text>
             </View>
-            <Text style={styles.planTitle}>{PRO_PRICING.annual.title}</Text>
+            <Text style={styles.planTitle}>{t('paywall.plans.annualTitle')}</Text>
             <Text style={styles.planPrice}>{annualPriceText}</Text>
-            <Text style={styles.planDescription}>{PRO_PRICING.annual.description}</Text>
-            <Text style={styles.planSavings}>{PRO_PRICING.annual.savingsText}</Text>
+            <Text style={styles.planDescription}>{t('paywall.plans.annualDescription')}</Text>
+            <Text style={styles.planSavings}>{t('paywall.plans.annualSavings')}</Text>
             <TouchableOpacity
               style={[styles.planButton, isPro && styles.planButtonDisabled]}
               onPress={() => handlePurchase(annualPackage)}
@@ -139,21 +138,21 @@ export const PaywallScreen: React.FC = () => {
               {isPurchasing ? (
                 <ActivityIndicator color={colors.background} />
               ) : (
-                <Text style={styles.planButtonText}>Start 7-Day Free Trial</Text>
+                <Text style={styles.planButtonText}>{t('paywall.startTrial')}</Text>
               )}
             </TouchableOpacity>
           </View>
 
           <View style={styles.pricingCard}>
-            <Text style={styles.planTitle}>{PRO_PRICING.monthly.title}</Text>
+            <Text style={styles.planTitle}>{t('paywall.plans.monthlyTitle')}</Text>
             <Text style={styles.planPrice}>{monthlyPriceText}</Text>
-            <Text style={styles.planDescription}>{PRO_PRICING.monthly.description}</Text>
+            <Text style={styles.planDescription}>{t('paywall.plans.monthlyDescription')}</Text>
             <TouchableOpacity
               style={[styles.secondaryButton, isPro && styles.secondaryButtonDisabled]}
               onPress={() => handlePurchase(monthlyPackage)}
               disabled={isPro || isPurchasing}
             >
-              <Text style={styles.secondaryButtonText}>Choose Monthly</Text>
+              <Text style={styles.secondaryButtonText}>{t('paywall.chooseMonthly')}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -161,12 +160,14 @@ export const PaywallScreen: React.FC = () => {
         {loadingOfferings && (
           <View style={styles.loadingRow}>
             <ActivityIndicator color={colors.primary} />
-            <Text style={styles.loadingText}>Loading plans…</Text>
+            <Text style={styles.loadingText}>{t('paywall.loadingPlans')}</Text>
           </View>
         )}
 
         {proStatus.isPro && (
-          <Text style={styles.secondaryText}>Unlocked via {proStatus.source ?? 'iap'}.</Text>
+          <Text style={styles.secondaryText}>
+            {t('paywall.unlockedVia').replace('{source}', proStatus.source ?? 'iap')}
+          </Text>
         )}
 
         <TouchableOpacity
@@ -177,14 +178,11 @@ export const PaywallScreen: React.FC = () => {
           {isRestoring ? (
             <ActivityIndicator color={colors.textSecondary} />
           ) : (
-            <Text style={styles.restoreText}>Restore Purchases</Text>
+            <Text style={styles.restoreText}>{t('paywall.restore')}</Text>
           )}
         </TouchableOpacity>
 
-        <Text style={styles.legalText}>
-          Payment will be charged to your Apple/Google account. Subscription auto-renews unless
-          cancelled at least 24 hours before the end of the current period.
-        </Text>
+        <Text style={styles.legalText}>{t('paywall.legal')}</Text>
 
         {__DEV__ && (
           <TouchableOpacity style={styles.devUnlock} onPress={handleDevUnlock}>

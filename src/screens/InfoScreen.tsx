@@ -19,9 +19,17 @@ import { AdBanner } from '../components/AdBanner';
 import { APP_LINKS } from '../config/links';
 import { RootStackParamList } from '../navigation/RootNavigator';
 import { navigateToProUpsell } from '../navigation/proNavigation';
-import useAppStore, { STORAGE_KEY, useIsPro, useProStatus } from '../store/appStore';
+import useAppStore, {
+  STORAGE_KEY,
+  useIsPro,
+  useLanguage,
+  useProStatus,
+  useSetLanguage,
+} from '../store/appStore';
 import { spacing } from '../theme/spacing';
 import { useThemeColors } from '../theme/useThemeColors';
+import { Language } from '../models';
+import { t } from '../i18n/translations';
 
 type InfoItem = {
   title: string;
@@ -64,7 +72,10 @@ export const InfoScreen: React.FC = () => {
   const colors = useThemeColors();
   const proStatus = useProStatus();
   const isPro = useIsPro();
+  const language = useLanguage();
+  const setLanguage = useSetLanguage();
   const [isRedeemModalVisible, setRedeemModalVisible] = useState(false);
+  const [isLanguageModalVisible, setLanguageModalVisible] = useState(false);
   const [redeemCode, setRedeemCode] = useState('');
   const styles = useMemo(() => createStyles(colors), [colors]);
 
@@ -84,9 +95,22 @@ export const InfoScreen: React.FC = () => {
     setRedeemModalVisible(true);
   };
 
+  const handleLanguagePress = () => {
+    setLanguageModalVisible(true);
+  };
+
   const closeRedeemModal = () => {
     setRedeemModalVisible(false);
     setRedeemCode('');
+  };
+
+  const closeLanguageModal = () => {
+    setLanguageModalVisible(false);
+  };
+
+  const handleLanguageSelect = (nextLanguage: Language) => {
+    setLanguage(nextLanguage);
+    setLanguageModalVisible(false);
   };
 
   const handleRedeemSubmit = () => {
@@ -198,6 +222,9 @@ export const InfoScreen: React.FC = () => {
     },
   ];
 
+  const currentLanguageLabel =
+    language === 'es' ? t('common.spanish') : t('common.english');
+
   const handleUpgradePress = () => {
     navigateToProUpsell(navigation);
   };
@@ -222,6 +249,19 @@ export const InfoScreen: React.FC = () => {
         <Text style={styles.subtitle}>
           Discover help resources, learn more about TomoFlow, and connect with our team.
         </Text>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionLabel}>{t('info.languageLabel')}</Text>
+          <View style={styles.card}>
+            <InfoRow
+              title={t('info.languageLabel')}
+              description={currentLanguageLabel}
+              onPress={handleLanguagePress}
+              isLast
+              styles={styles}
+            />
+          </View>
+        </View>
 
         {sections.map((section) => (
           <View key={section.title} style={styles.section}>
@@ -297,6 +337,37 @@ export const InfoScreen: React.FC = () => {
                 <Text style={styles.modalPrimaryButtonText}>Redeem</Text>
               </TouchableOpacity>
             </View>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal
+        animationType="fade"
+        transparent
+        visible={isLanguageModalVisible}
+        onRequestClose={closeLanguageModal}
+      >
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>{t('info.languageModalTitle')}</Text>
+            <Text style={styles.modalDescription}>{t('info.languageModalDescription')}</Text>
+            <View style={styles.modalActionsColumn}>
+              <TouchableOpacity
+                style={[styles.modalPrimaryButton, styles.modalLanguageButton]}
+                onPress={() => handleLanguageSelect('en')}
+              >
+                <Text style={styles.modalPrimaryButtonText}>{t('info.optionEnglish')}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalPrimaryButton, styles.modalLanguageButton]}
+                onPress={() => handleLanguageSelect('es')}
+              >
+                <Text style={styles.modalPrimaryButtonText}>{t('info.optionSpanish')}</Text>
+              </TouchableOpacity>
+            </View>
+            <TouchableOpacity style={styles.modalSecondaryButton} onPress={closeLanguageModal}>
+              <Text style={styles.modalSecondaryButtonText}>{t('common.cancel')}</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>
@@ -481,6 +552,14 @@ function createStyles(colors: ReturnType<typeof useThemeColors>) {
       borderRadius: 999,
       backgroundColor: colors.primary,
       marginLeft: spacing.sm,
+    },
+    modalLanguageButton: {
+      width: '100%',
+      marginBottom: spacing.sm,
+    },
+    modalActionsColumn: {
+      width: '100%',
+      marginBottom: spacing.md,
     },
     modalPrimaryButtonText: {
       color: colors.textPrimary,
