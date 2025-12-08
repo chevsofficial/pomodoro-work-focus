@@ -21,6 +21,7 @@ import {
 } from '../utils/intervalUtils';
 import { spacing } from '../theme/spacing';
 import { useThemeColors } from '../theme/useThemeColors';
+import { t } from '../i18n/translations';
 
 type AnalyticsRangeKey =
   | 'today'
@@ -43,21 +44,6 @@ const PRO_ONLY_RANGE_KEYS: AnalyticsRangeKey[] = [
   'all_time',
   'custom',
 ];
-
-const DATE_RANGE_OPTIONS: { key: AnalyticsRangeKey; label: string }[] = [
-  { key: 'today', label: 'Today' },
-  { key: 'yesterday', label: 'Yesterday' },
-  { key: 'this_week', label: 'This week' },
-  { key: 'previous_week', label: 'Previous week' },
-  { key: 'this_month', label: 'This month' },
-  { key: 'previous_month', label: 'Previous month' },
-  { key: 'this_year', label: 'This year' },
-  { key: 'previous_year', label: 'Previous year' },
-  { key: 'all_time', label: 'All data' },
-  { key: 'custom', label: 'Custom' },
-];
-
-const DEFAULT_ACTIVITY_NAME = 'No activity type';
 
 const getEffectiveActivityTypeId = (
   interval: IntervalSession,
@@ -190,8 +176,25 @@ export const AnalyticsScreen: React.FC = () => {
   const intervals = useAppStore((state) => state.intervals);
   const tasks = useAppStore((state) => state.tasks);
   const activityTypes = useAppStore((state) => state.activityTypes);
+  const language = useAppStore((state) => state.language);
   const colors = useThemeColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
+  const dateRangeOptions = useMemo(
+    () => [
+      { key: 'today', label: t('analytics.rangeToday') },
+      { key: 'yesterday', label: t('analytics.rangeYesterday') },
+      { key: 'this_week', label: t('analytics.rangeWeek') },
+      { key: 'previous_week', label: t('analytics.rangePreviousWeek') },
+      { key: 'this_month', label: t('analytics.rangeMonth') },
+      { key: 'previous_month', label: t('analytics.rangePreviousMonth') },
+      { key: 'this_year', label: t('analytics.rangeYear') },
+      { key: 'previous_year', label: t('analytics.rangePreviousYear') },
+      { key: 'all_time', label: t('analytics.rangeAllTime') },
+      { key: 'custom', label: t('analytics.rangeCustom') },
+    ],
+    [language],
+  );
+  const defaultActivityName = useMemo(() => t('tasks.add.none'), [language]);
 
   const freezeUsesLeftThisWeek = isPro
     ? Math.max(0, 1 - (streak.freezeUsesThisWeek ?? 0))
@@ -349,7 +352,7 @@ export const AnalyticsScreen: React.FC = () => {
         const label =
           activityTypeId === OTHER_ACTIVITY_TYPE_ID
             ? OTHER_ACTIVITY_TYPE_LABEL
-            : type?.name ?? DEFAULT_ACTIVITY_NAME;
+            : type?.name ?? defaultActivityName;
         const color =
           type?.color ??
           ACTIVITY_TYPE_COLORS[activityTypeId] ??
@@ -384,15 +387,13 @@ export const AnalyticsScreen: React.FC = () => {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        <Text style={styles.title}>Analytics</Text>
-        <Text style={styles.subtitle}>
-          Your focus analytics will appear here once you start using the app.
-        </Text>
+        <Text style={styles.title}>{t('analytics.title')}</Text>
+        <Text style={styles.subtitle}>{t('analytics.subtitle')}</Text>
 
         <View style={styles.card}>
           <View style={styles.totalRow}>
             <View style={styles.totalColumn}>
-              <Text style={styles.totalLabel}>Total Pomodoros</Text>
+              <Text style={styles.totalLabel}>{t('analytics.totalPomodoros')}</Text>
               <View style={styles.totalValueRow}>
                 <Image
                   source={require('../../assets/tomato-happy.png')}
@@ -404,7 +405,7 @@ export const AnalyticsScreen: React.FC = () => {
             </View>
 
             <View style={styles.totalColumn}>
-              <Text style={styles.totalLabel}>Total Focus</Text>
+              <Text style={styles.totalLabel}>{t('analytics.totalFocus')}</Text>
               <Text style={styles.totalValue}>{lifetimeFocusHours.toFixed(1)}h</Text>
             </View>
           </View>
@@ -412,44 +413,49 @@ export const AnalyticsScreen: React.FC = () => {
 
         <View style={styles.section}>
           <View style={styles.streakCard}>
-            <Text style={styles.sectionTitle}>Streak</Text>
+            <Text style={styles.sectionTitle}>{t('analytics.streakTitle')}</Text>
 
             <View style={styles.streakRow}>
               <View style={styles.streakCol}>
-                <Text style={styles.streakValue}>{streak.currentStreak} days</Text>
-                <Text style={styles.streakLabel}>Current streak</Text>
+                <Text style={styles.streakValue}>
+                  {t('analytics.streakDays').replace('{count}', streak.currentStreak.toString())}
+                </Text>
+                <Text style={styles.streakLabel}>{t('analytics.streakCurrent')}</Text>
               </View>
               <View style={styles.streakCol}>
-                <Text style={styles.streakValue}>{streak.bestStreak} days</Text>
-                <Text style={styles.streakLabel}>Best streak</Text>
+                <Text style={styles.streakValue}>
+                  {t('analytics.streakDays').replace('{count}', streak.bestStreak.toString())}
+                </Text>
+                <Text style={styles.streakLabel}>{t('analytics.streakBest')}</Text>
               </View>
             </View>
 
             {isPro ? (
               <Text style={styles.streakHint}>
                 {freezeUsesLeftThisWeek > 0
-                  ? `Streak Freeze available this week (${freezeUsesLeftThisWeek} left)`
-                  : 'Streak Freeze used this week'}
+                  ? t('analytics.streakFreezeAvailable').replace(
+                      '{count}',
+                      freezeUsesLeftThisWeek.toString(),
+                    )
+                  : t('analytics.streakFreezeUsed')}
               </Text>
             ) : (
               <TouchableOpacity onPress={() => navigateToProUpsell(navigation)}>
-                <Text style={styles.streakProHint}>
-                  Missed a day? Keep your streak with Streak Freeze in Pomodoro Focus Pro →
-                </Text>
+                <Text style={styles.streakProHint}>{t('analytics.streakFreezeUpsell')}</Text>
               </TouchableOpacity>
             )}
           </View>
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Date range</Text>
+          <Text style={styles.sectionTitle}>{t('analytics.dateRangeTitle')}</Text>
           <View style={styles.rangeRow}>
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.rangeScrollContent}
             >
-              {DATE_RANGE_OPTIONS.map((opt) => {
+              {dateRangeOptions.map((opt) => {
                 const isActive = selectedRangeKey === opt.key;
                 const isLocked = !isPro && PRO_ONLY_RANGE_KEYS.includes(opt.key);
                 const iconColor = isActive ? colors.background : colors.textSecondary;
@@ -487,7 +493,7 @@ export const AnalyticsScreen: React.FC = () => {
 
         <View style={styles.dateRow}>
           <View style={styles.dateColumn}>
-            <Text style={styles.dateLabel}>Start</Text>
+            <Text style={styles.dateLabel}>{t('analytics.dateStart')}</Text>
             <TouchableOpacity
               style={styles.dateValueButton}
               onPress={() => {
@@ -512,7 +518,7 @@ export const AnalyticsScreen: React.FC = () => {
           </View>
 
           <View style={styles.dateColumn}>
-            <Text style={styles.dateLabel}>End</Text>
+            <Text style={styles.dateLabel}>{t('analytics.dateEnd')}</Text>
             <TouchableOpacity
               style={styles.dateValueButton}
               onPress={() => {
@@ -538,18 +544,18 @@ export const AnalyticsScreen: React.FC = () => {
         </View>
 
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>Focus</Text>
-          <Text style={styles.cardSubtitle}>Work focus in selected range</Text>
+          <Text style={styles.cardTitle}>{t('analytics.focusCardTitle')}</Text>
+          <Text style={styles.cardSubtitle}>{t('analytics.focusCardSubtitle')}</Text>
 
           <View style={styles.focusMetricsRow}>
             <View>
-              <Text style={styles.focusMetricLabel}>Focus this range</Text>
+              <Text style={styles.focusMetricLabel}>{t('analytics.focusThisRange')}</Text>
               <Text style={styles.focusMetricValue}>{rangeFocusHours.toFixed(1)}h</Text>
             </View>
           </View>
 
           {totalRangeHours <= 0 ? (
-            <Text style={styles.emptyText}>No work pomodoros in this range yet.</Text>
+            <Text style={styles.emptyText}>{t('analytics.emptyRange')}</Text>
           ) : (
             <View style={styles.focusChartRow}>
               <View style={styles.focusYAxis}>
@@ -581,11 +587,11 @@ export const AnalyticsScreen: React.FC = () => {
         </View>
 
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>Activity Type Ratio</Text>
-          <Text style={styles.cardSubtitle}>Focus split by activity type</Text>
+          <Text style={styles.cardTitle}>{t('analytics.activityRatioTitle')}</Text>
+          <Text style={styles.cardSubtitle}>{t('analytics.activityRatioSubtitle')}</Text>
 
           {activityTypeRatio.length === 0 ? (
-            <Text style={styles.emptyText}>No focus data for this range yet.</Text>
+            <Text style={styles.emptyText}>{t('analytics.activityRatioEmpty')}</Text>
           ) : (
             <View style={styles.ratioList}>
               {activityTypeRatio.map((row) => (
@@ -600,7 +606,7 @@ export const AnalyticsScreen: React.FC = () => {
                     <Text style={styles.ratioLabel}>
                       {row.label}
                       {row.isArchived && (
-                        <Text style={styles.ratioArchivedTag}>{'  '}• Archived</Text>
+                        <Text style={styles.ratioArchivedTag}>{`  ${t('analytics.archivedTag')}`}</Text>
                       )}
                     </Text>
                     <Text style={styles.ratioSubLabel}>
@@ -614,7 +620,7 @@ export const AnalyticsScreen: React.FC = () => {
         </View>
 
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>Pomodoro Details</Text>
+          <Text style={styles.cardTitle}>{t('analytics.detailsTitle')}</Text>
 
           <View style={styles.pomoStatsRow}>
             <View style={styles.pomoStat}>
@@ -624,7 +630,7 @@ export const AnalyticsScreen: React.FC = () => {
                   style={styles.tomatoIconSmall}
                   resizeMode="contain"
                 />
-                <Text style={styles.pomoStatLabel}>Completed</Text>
+                <Text style={styles.pomoStatLabel}>{t('analytics.completedLabel')}</Text>
               </View>
               <Text style={styles.pomoStatValue}>{rangeCompletedWork}</Text>
             </View>
@@ -636,7 +642,7 @@ export const AnalyticsScreen: React.FC = () => {
                   style={styles.tomatoIconSmall}
                   resizeMode="contain"
                 />
-                <Text style={styles.pomoStatLabel}>Skipped</Text>
+                <Text style={styles.pomoStatLabel}>{t('analytics.skippedLabel')}</Text>
               </View>
               <Text style={styles.pomoStatValue}>{rangeSkippedWork}</Text>
             </View>

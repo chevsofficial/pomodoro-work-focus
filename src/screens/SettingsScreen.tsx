@@ -403,6 +403,7 @@ export const SettingsScreen: React.FC = () => {
   );
   const isPro = useIsPro();
   const cloudSync = useAppStore((state) => state.cloudSync);
+  const language = useAppStore((state) => state.language);
   const updateSettings = useAppStore((state) => state.updateSettings);
   const setCloudSyncEnabled = useAppStore((state) => state.setCloudSyncEnabled);
   const deleteAllUserData = useAppStore((state) => state.deleteAllUserData);
@@ -419,7 +420,10 @@ export const SettingsScreen: React.FC = () => {
 
     return requested;
   }, [currentThemeId, isPro]);
-  const currentThemeName = currentTheme.name;
+  const currentThemeName = useMemo(
+    () => t(`themes.${currentTheme.id}` as any),
+    [currentTheme.id, language],
+  );
   const handleUpgradePress = () => {
     goToPro();
   };
@@ -862,7 +866,7 @@ export const SettingsScreen: React.FC = () => {
 
                 <View style={styles.themeTextContainer}>
                   <Text style={styles.themeName}>
-                    {theme.name}
+                    {t(`themes.${theme.id}` as any)}
                   </Text>
 
                   {isLocked && <Text style={styles.themeLockLabel}>{t('settings.theme.proLabel')}</Text>}

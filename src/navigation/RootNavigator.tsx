@@ -15,6 +15,8 @@ import { AuthScreen } from '../screens/AuthScreen';
 import { useThemeColors } from '../theme/useThemeColors';
 import { AuthCallbackScreen } from '../screens/AuthCallbackScreen';
 import { ActivityTypesManagerScreen } from '../screens/ActivityTypesManagerScreen';
+import { t } from '../i18n/translations';
+import useAppStore from '../store/appStore';
 
 export type RootTabParamList = {
   Tasks: undefined;
@@ -110,6 +112,17 @@ const renderTabBarIcon = (routeName: keyof RootTabParamList): TabBarIconRenderer
 function TabNavigator() {
   const colors = useThemeColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
+  const language = useAppStore((state) => state.language);
+  const tabLabels = useMemo(
+    () => ({
+      Pomodoro: t('nav.tabTimer'),
+      Tasks: t('nav.tabTasks'),
+      Analytics: t('nav.tabAnalytics'),
+      Settings: t('nav.tabSettings'),
+      Info: t('nav.tabInfo'),
+    }),
+    [language],
+  );
 
   return (
     <AnyTabNavigator
@@ -126,6 +139,7 @@ function TabNavigator() {
         tabBarInactiveTintColor: colors.textSecondary,
         tabBarLabelStyle: styles.tabLabel,
         tabBarIcon: renderTabBarIcon(route.name as keyof RootTabParamList),
+        tabBarLabel: tabLabels[route.name],
       })}
     >
       <Tab.Screen name="Tasks" component={TasksScreen} />
@@ -157,9 +171,6 @@ export function RootNavigator() {
       <Stack.Screen
         name="TaskDetail"
         component={TaskDetailScreen}
-        options={{
-          title: 'Task Detail',
-        }}
       />
       <Stack.Screen
         name="Paywall"
@@ -185,9 +196,6 @@ export function RootNavigator() {
       <Stack.Screen
         name="ActivityTypesManager"
         component={ActivityTypesManagerScreen}
-        options={{
-          title: 'Activity Types',
-        }}
       />
     </AnyStackNavigator>
   );

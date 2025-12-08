@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { ScreenContainer } from '../components/ScreenContainer';
 import { RootStackParamList } from '../navigation/RootNavigator';
@@ -19,11 +19,17 @@ import { useThemeColors } from '../theme/useThemeColors';
 import { ActivityTypeModal } from './SettingsScreen';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useNavigation } from '@react-navigation/native';
+import { t } from '../i18n/translations';
 
 export const ActivityTypesManagerScreen: React.FC = () => {
   const colors = useThemeColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const language = useAppStore((state) => state.language);
+
+  useEffect(() => {
+    navigation.setOptions({ title: t('nav.activityTypes') });
+  }, [navigation, language]);
 
   const activeTypes = useActiveActivityTypes();
   const archivedTypes = useArchivedActivityTypes();
@@ -104,11 +110,17 @@ export const ActivityTypesManagerScreen: React.FC = () => {
               {type.name}
             </Text>
             <Text style={styles.typeMeta} numberOfLines={1}>
-              Work {type.workDurationMinutes}m · Short {type.shortBreakMinutes}m · Long {type.longBreakMinutes}m
+              {t('activityTypes.meta')
+                .replace('{work}', type.workDurationMinutes.toString())
+                .replace('{short}', type.shortBreakMinutes.toString())
+                .replace('{long}', type.longBreakMinutes.toString())}
             </Text>
             {mode === 'archived' && type.archivedAt && (
               <Text style={styles.archivedLabel}>
-                Archived {new Date(type.archivedAt).toLocaleDateString()}
+                {t('activityTypes.archivedOn').replace(
+                  '{date}',
+                  new Date(type.archivedAt).toLocaleDateString(),
+                )}
               </Text>
             )}
           </View>
@@ -117,18 +129,18 @@ export const ActivityTypesManagerScreen: React.FC = () => {
           {mode === 'active' ? (
             <>
               <TouchableOpacity style={styles.chipButton} onPress={() => handleEditPress(type)}>
-                <Text style={styles.chipButtonText}>Edit</Text>
+                <Text style={styles.chipButtonText}>{t('activityTypes.editButton')}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.chipButtonDanger}
                 onPress={() => handleArchivePress(type.id)}
               >
-                <Text style={styles.chipButtonDangerText}>Archive</Text>
+                <Text style={styles.chipButtonDangerText}>{t('activityTypes.archiveButton')}</Text>
               </TouchableOpacity>
             </>
           ) : (
             <TouchableOpacity style={styles.chipButton} onPress={() => handleUnarchivePress(type.id)}>
-              <Text style={styles.chipButtonText}>Unarchive</Text>
+              <Text style={styles.chipButtonText}>{t('activityTypes.unarchiveButton')}</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -139,46 +151,54 @@ export const ActivityTypesManagerScreen: React.FC = () => {
   return (
     <ScreenContainer>
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        <Text style={styles.headerTitle}>Activity Types</Text>
+        <Text style={styles.headerTitle}>{t('activityTypes.header')}</Text>
 
         {!isPro && remainingActivityTypes !== Infinity && (
           <Text style={styles.limitHelper}>
             {remainingActivityTypes > 0
-              ? `${remainingActivityTypes} activity type${remainingActivityTypes === 1 ? '' : 's'} left on the free plan`
-              : 'Activity type limit reached on the free plan'}
+              ? remainingActivityTypes === 1
+                ? t('activityTypes.limitHelperSingle')
+                : t('activityTypes.limitHelperPlural').replace(
+                    '{count}',
+                    remainingActivityTypes.toString(),
+                  )
+              : t('activityTypes.limitHelperReached')}
           </Text>
         )}
 
         <View style={styles.section}>
           <View style={styles.sectionHeaderRow}>
-            <Text style={styles.sectionTitle}>Active</Text>
+            <Text style={styles.sectionTitle}>{t('activityTypes.activeLabel')}</Text>
             <TouchableOpacity style={styles.addButton} onPress={handleAddActivityTypePress}>
-              <Text style={styles.addButtonText}>+ Add</Text>
+              <Text style={styles.addButtonText}>{t('activityTypes.addShort')}</Text>
             </TouchableOpacity>
           </View>
 
           {hasReachedFreeActivityLimit && (
             <View style={styles.proBanner}>
               <Text style={styles.proBannerTitle}>
-                Free accounts can create up to {FREE_ACTIVITY_TYPE_LIMIT} activity types.
+                {t('activityTypes.freeLimitTitle').replace(
+                  '{limit}',
+                  FREE_ACTIVITY_TYPE_LIMIT.toString(),
+                )}
               </Text>
               <TouchableOpacity onPress={() => navigateToProUpsell(navigation)}>
-                <Text style={styles.proBannerAction}>Upgrade to Pro to unlock more</Text>
+                <Text style={styles.proBannerAction}>{t('activityTypes.proUpgradeCta')}</Text>
               </TouchableOpacity>
             </View>
           )}
 
           {visibleActiveTypes.length === 0 ? (
-            <Text style={styles.emptyText}>No active activity types yet.</Text>
+            <Text style={styles.emptyText}>{t('activityTypes.noActive')}</Text>
           ) : (
             visibleActiveTypes.map((type) => renderTypeRow(type, 'active'))
           )}
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Archived</Text>
+          <Text style={styles.sectionTitle}>{t('activityTypes.archivedLabel')}</Text>
           {archivedTypes.length === 0 ? (
-            <Text style={styles.emptyText}>No archived activity types.</Text>
+            <Text style={styles.emptyText}>{t('activityTypes.noArchived')}</Text>
           ) : (
             archivedTypes.map((type) => renderTypeRow(type, 'archived'))
           )}
