@@ -63,6 +63,12 @@ export const TaskDetailScreen: React.FC = () => {
   const colors = useThemeColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
 
+  const language = useAppStore((state) => state.language);
+
+  useEffect(() => {
+    navigation.setOptions({ title: t('nav.taskDetail') });
+  }, [navigation, language]);
+
   const tasks = useTasks();
   const task = tasks.find((item) => item.id === taskId);
   const intervals = useIntervalsByTask(taskId);

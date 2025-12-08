@@ -17,12 +17,7 @@ import useAppStore, { useTasks } from '../store/appStore';
 import { useTimerStore } from '../store/useTimerStore';
 import { useThemeColors } from '../theme/useThemeColors';
 import { spacing } from '../theme/spacing';
-
-const intervalLabels: Record<string, string> = {
-  work: 'Work',
-  short_break: 'Short Break',
-  long_break: 'Long Break',
-};
+import { t } from '../i18n/translations';
 
 const formatTime = (seconds: number) => {
   const safeSeconds = Math.max(0, Math.floor(seconds));
@@ -45,7 +40,7 @@ const TaskPickerModal: React.FC<{
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <View style={styles.modalBackdrop}>
         <View style={styles.modalCard}>
-          <Text style={styles.modalTitle}>Choose a task</Text>
+          <Text style={styles.modalTitle}>{t('pomodoro.taskPickerTitle')}</Text>
           <ScrollView style={styles.modalList}>
             <TouchableOpacity
               style={[styles.modalTaskRow, !selectedTaskId && styles.modalTaskRowSelected]}
@@ -54,9 +49,9 @@ const TaskPickerModal: React.FC<{
                 onClose();
               }}
             >
-              <Text style={styles.modalTaskTitle}>No task selected</Text>
+              <Text style={styles.modalTaskTitle}>{t('pomodoro.noTaskSelected')}</Text>
               <Text style={styles.modalTaskSubtitle}>
-                Track interval without linking a task.
+                {t('pomodoro.taskPickerNoTaskBody')}
               </Text>
             </TouchableOpacity>
 
@@ -86,7 +81,7 @@ const TaskPickerModal: React.FC<{
             style={[styles.modalButton, styles.modalCloseButton]}
             onPress={onClose}
           >
-            <Text style={styles.modalButtonText}>Close</Text>
+            <Text style={styles.modalButtonText}>{t('pomodoro.close')}</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -126,6 +121,16 @@ export const PomodoroScreen: React.FC = () => {
   const earlySkipInfoVisible = useAppStore((state) => state.earlySkipInfoVisible);
   const hideEarlySkipInfo = useAppStore((state) => state.hideEarlySkipInfo);
   const setShowEarlySkipInfoModal = useAppStore((state) => state.setShowEarlySkipInfoModal);
+  const language = useAppStore((state) => state.language);
+
+  const intervalLabels: Record<string, string> = useMemo(
+    () => ({
+      work: t('pomodoro.workLabel'),
+      short_break: t('pomodoro.shortBreakLabel'),
+      long_break: t('pomodoro.longBreakLabel'),
+    }),
+    [language],
+  );
 
   useEffect(() => {
     if (!isRunning) {
@@ -174,9 +179,9 @@ export const PomodoroScreen: React.FC = () => {
   );
 
   const intervalOptions = [
-    { label: 'Work', value: 'work' as IntervalType },
-    { label: 'Short Break', value: 'short_break' as IntervalType },
-    { label: 'Long Break', value: 'long_break' as IntervalType },
+    { label: t('pomodoro.workLabel'), value: 'work' as IntervalType },
+    { label: t('pomodoro.shortBreakLabel'), value: 'short_break' as IntervalType },
+    { label: t('pomodoro.longBreakLabel'), value: 'long_break' as IntervalType },
   ];
 
   const intervalLabel = intervalLabels[currentIntervalType];
@@ -189,8 +194,8 @@ export const PomodoroScreen: React.FC = () => {
   return (
     <ScreenContainer>
       <View style={styles.header}>
-        <Text style={styles.title}>Pomodoro</Text>
-        <Text style={styles.subtitle}>Stay on track with focused intervals.</Text>
+        <Text style={styles.title}>{t('pomodoro.title')}</Text>
+        <Text style={styles.subtitle}>{t('pomodoro.subtitle')}</Text>
       </View>
 
       <View style={styles.segmentedControl}>
@@ -221,26 +226,26 @@ export const PomodoroScreen: React.FC = () => {
         <Text style={styles.timerValue}>{formattedTime}</Text>
         <Text style={styles.intervalCounter}>
           {currentIntervalType === 'work'
-            ? `Focus #${focusCount}`
+            ? t('pomodoro.focusCount').replace('{count}', String(focusCount))
             : currentIntervalType === 'short_break'
-            ? 'Short break'
-            : 'Long break'}
+            ? t('pomodoro.shortBreakLabel')
+            : t('pomodoro.longBreakLabel')}
         </Text>
       </View>
 
       <View style={styles.taskSelector}>
-        <Text style={styles.taskSelectorLabel}>Linked Task</Text>
+        <Text style={styles.taskSelectorLabel}>{t('pomodoro.linkedTask')}</Text>
         <TouchableOpacity
           style={styles.taskSelectorButton}
           onPress={() => setTaskPickerVisible(true)}
         >
           <View style={styles.taskSelectorContent}>
             <Text style={styles.taskSelectorValue} numberOfLines={1}>
-              {selectedTask ? selectedTask.title : 'No task selected'}
+              {selectedTask ? selectedTask.title : t('pomodoro.noTaskSelected')}
             </Text>
-            <Text style={styles.taskSelectorHint}>Tap to choose a task</Text>
+            <Text style={styles.taskSelectorHint}>{t('pomodoro.chooseTaskHint')}</Text>
           </View>
-          <Text style={styles.taskSelectorAction}>Change</Text>
+          <Text style={styles.taskSelectorAction}>{t('pomodoro.changeTask')}</Text>
         </TouchableOpacity>
       </View>
 
@@ -253,7 +258,7 @@ export const PomodoroScreen: React.FC = () => {
           onPress={isRunning ? pauseTimer : startTimer}
         >
           <Text style={styles.primaryButtonText}>
-            {isRunning ? 'Pause' : 'Start'}
+            {isRunning ? t('pomodoro.pause') : t('pomodoro.start')}
           </Text>
         </TouchableOpacity>
       </View>
@@ -266,14 +271,14 @@ export const PomodoroScreen: React.FC = () => {
               onPress={endIntervalNow}
             >
               <Text style={[styles.secondaryButtonText, styles.endNowButtonText]}>
-                End & Save
+                {t('pomodoro.endAndSave')}
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.secondaryButton, styles.skipButton]}
               onPress={skipCurrentInterval}
             >
-              <Text style={styles.secondaryButtonText}>Skip</Text>
+              <Text style={styles.secondaryButtonText}>{t('pomodoro.skip')}</Text>
             </TouchableOpacity>
           </>
         )}
@@ -293,36 +298,35 @@ export const PomodoroScreen: React.FC = () => {
       <Modal
         visible={earlySkipInfoVisible}
         transparent
-        animationType="fade"
-        onRequestClose={hideEarlySkipInfo}
-      >
-        <View style={styles.modalBackdrop}>
-          <View style={styles.modalCard}>
-            <Text style={styles.modalTitle}>Skipped focus session not counted</Text>
-            <Text style={styles.modalBody}>
-              Work intervals skipped within the first 5 minutes are treated as cancelled and won&apos;t
-              appear in Analytics or Task statistics.
-            </Text>
+            animationType="fade"
+            onRequestClose={hideEarlySkipInfo}
+          >
+            <View style={styles.modalBackdrop}>
+              <View style={styles.modalCard}>
+                <Text style={styles.modalTitle}>{t('pomodoro.earlySkipTitle')}</Text>
+                <Text style={styles.modalBody}>{t('pomodoro.earlySkipBody')}</Text>
 
-            <View style={styles.modalButtonsRow}>
-              <TouchableOpacity
-                style={[styles.modalInfoButton, styles.modalInfoButtonSecondary]}
-                onPress={() => {
-                  setShowEarlySkipInfoModal(false);
-                  hideEarlySkipInfo();
-                }}
-              >
-                <Text style={styles.modalInfoButtonText}>Don&apos;t show again</Text>
-              </TouchableOpacity>
+                <View style={styles.modalButtonsRow}>
+                  <TouchableOpacity
+                    style={[styles.modalInfoButton, styles.modalInfoButtonSecondary]}
+                    onPress={() => {
+                      setShowEarlySkipInfoModal(false);
+                      hideEarlySkipInfo();
+                    }}
+                  >
+                    <Text style={styles.modalInfoButtonText}>{t('pomodoro.earlySkipDismiss')}</Text>
+                  </TouchableOpacity>
 
-              <TouchableOpacity
-                style={[styles.modalInfoButton, styles.modalInfoButtonPrimary]}
-                onPress={hideEarlySkipInfo}
-              >
-                <Text style={[styles.modalInfoButtonText, styles.modalInfoButtonPrimaryText]}>OK</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
+                  <TouchableOpacity
+                    style={[styles.modalInfoButton, styles.modalInfoButtonPrimary]}
+                    onPress={hideEarlySkipInfo}
+                  >
+                    <Text style={[styles.modalInfoButtonText, styles.modalInfoButtonPrimaryText]}>
+                      {t('pomodoro.earlySkipOk')}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
         </View>
       </Modal>
     </ScreenContainer>
