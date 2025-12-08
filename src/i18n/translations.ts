@@ -1,7 +1,8 @@
 import useAppStore from '../store/appStore';
-import { Language } from '../models';
 
-export const translations = {
+export type Language = 'en' | 'es';
+
+export const translations: Record<Language, Record<string, any>> = {
   en: {
     common: {
       start: 'Start',
@@ -934,32 +935,20 @@ export const translations = {
       },
     },
   },
-} as const;
-
-type TranslationTree = typeof translations.en;
-
-type NestedKeyOf<T> = {
-  [K in keyof T]: T[K] extends Record<string, any>
-    ? `${Extract<K, string>}` | `${Extract<K, string>}.${NestedKeyOf<T[K]>}`
-    : `${Extract<K, string>}`;
-}[keyof T];
-
-export type TranslationKey = NestedKeyOf<TranslationTree>;
-
-const lookupTranslation = (
-  language: Language,
-  key: TranslationKey,
-): string | undefined => {
-  return key.split('.').reduce<unknown>((current, part) => {
-    if (current && typeof current === 'object' && part in current) {
-      return (current as Record<string, unknown>)[part];
-    }
-    return undefined;
-  }, translations[language]) as string | undefined;
 };
 
-export const t = (key: TranslationKey): string => {
+export type TranslationKey = string;
+
+export function t(key: TranslationKey): string {
   const language = useAppStore.getState().language;
-  const translated = lookupTranslation(language, key) ?? lookupTranslation('en', key);
-  return typeof translated === 'string' ? translated : key;
-};
+  const lang = translations[language] ?? translations.en;
+
+  const segments = key.split('.');
+  let value: any = lang;
+
+  for (const segment of segments) {
+    value = value?.[segment];
+  }
+
+  return typeof value === 'string' ? value : key;
+}

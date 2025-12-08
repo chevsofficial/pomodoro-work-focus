@@ -121,16 +121,13 @@ export const PomodoroScreen: React.FC = () => {
   const earlySkipInfoVisible = useAppStore((state) => state.earlySkipInfoVisible);
   const hideEarlySkipInfo = useAppStore((state) => state.hideEarlySkipInfo);
   const setShowEarlySkipInfoModal = useAppStore((state) => state.setShowEarlySkipInfoModal);
-  const language = useAppStore((state) => state.language);
+  useAppStore((state) => state.language);
 
-  const intervalLabels: Record<string, string> = useMemo(
-    () => ({
-      work: t('pomodoro.workLabel'),
-      short_break: t('pomodoro.shortBreakLabel'),
-      long_break: t('pomodoro.longBreakLabel'),
-    }),
-    [language],
-  );
+  const intervalLabels: Record<string, string> = {
+    work: t('pomodoro.workLabel'),
+    short_break: t('pomodoro.shortBreakLabel'),
+    long_break: t('pomodoro.longBreakLabel'),
+  };
 
   useEffect(() => {
     if (!isRunning) {

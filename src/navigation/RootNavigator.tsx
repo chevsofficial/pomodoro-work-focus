@@ -113,19 +113,10 @@ function TabNavigator() {
   const colors = useThemeColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const language = useAppStore((state) => state.language);
-  const tabLabels = useMemo(
-    () => ({
-      Pomodoro: t('nav.tabTimer'),
-      Tasks: t('nav.tabTasks'),
-      Analytics: t('nav.tabAnalytics'),
-      Settings: t('nav.tabSettings'),
-      Info: t('nav.tabInfo'),
-    }),
-    [language],
-  );
 
   return (
     <AnyTabNavigator
+      key={language}
       screenOptions={({
         route,
       }: {
@@ -139,7 +130,16 @@ function TabNavigator() {
         tabBarInactiveTintColor: colors.textSecondary,
         tabBarLabelStyle: styles.tabLabel,
         tabBarIcon: renderTabBarIcon(route.name as keyof RootTabParamList),
-        tabBarLabel: tabLabels[route.name],
+        tabBarLabel:
+          route.name === 'Pomodoro'
+            ? t('nav.tabTimer')
+            : route.name === 'Tasks'
+            ? t('nav.tabTasks')
+            : route.name === 'Analytics'
+            ? t('nav.tabAnalytics')
+            : route.name === 'Settings'
+            ? t('nav.tabSettings')
+            : t('nav.tabInfo'),
       })}
     >
       <Tab.Screen name="Tasks" component={TasksScreen} />

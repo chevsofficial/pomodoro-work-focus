@@ -176,25 +176,22 @@ export const AnalyticsScreen: React.FC = () => {
   const intervals = useAppStore((state) => state.intervals);
   const tasks = useAppStore((state) => state.tasks);
   const activityTypes = useAppStore((state) => state.activityTypes);
-  const language = useAppStore((state) => state.language);
+  useAppStore((state) => state.language);
   const colors = useThemeColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
-  const dateRangeOptions = useMemo(
-    () => [
-      { key: 'today', label: t('analytics.rangeToday') },
-      { key: 'yesterday', label: t('analytics.rangeYesterday') },
-      { key: 'this_week', label: t('analytics.rangeWeek') },
-      { key: 'previous_week', label: t('analytics.rangePreviousWeek') },
-      { key: 'this_month', label: t('analytics.rangeMonth') },
-      { key: 'previous_month', label: t('analytics.rangePreviousMonth') },
-      { key: 'this_year', label: t('analytics.rangeYear') },
-      { key: 'previous_year', label: t('analytics.rangePreviousYear') },
-      { key: 'all_time', label: t('analytics.rangeAllTime') },
-      { key: 'custom', label: t('analytics.rangeCustom') },
-    ],
-    [language],
-  );
-  const defaultActivityName = useMemo(() => t('tasks.add.none'), [language]);
+  const dateRangeOptions: { key: AnalyticsRangeKey; label: string }[] = [
+    { key: 'today', label: t('analytics.rangeToday') },
+    { key: 'yesterday', label: t('analytics.rangeYesterday') },
+    { key: 'this_week', label: t('analytics.rangeWeek') },
+    { key: 'previous_week', label: t('analytics.rangePreviousWeek') },
+    { key: 'this_month', label: t('analytics.rangeMonth') },
+    { key: 'previous_month', label: t('analytics.rangePreviousMonth') },
+    { key: 'this_year', label: t('analytics.rangeYear') },
+    { key: 'previous_year', label: t('analytics.rangePreviousYear') },
+    { key: 'all_time', label: t('analytics.rangeAllTime') },
+    { key: 'custom', label: t('analytics.rangeCustom') },
+  ];
+  const defaultActivityName = t('tasks.add.none');
 
   const freezeUsesLeftThisWeek = isPro
     ? Math.max(0, 1 - (streak.freezeUsesThisWeek ?? 0))
@@ -312,14 +309,14 @@ export const AnalyticsScreen: React.FC = () => {
   const rangeFocusHours = rangeFocusSeconds / 3600;
 
   const activityTypeMap = useMemo(() => {
-    const entries = activityTypes.map((t) => [t.id, t] as const);
+    const entries = activityTypes.map((type) => [type.id, type] as const);
     return Object.fromEntries(entries) as Record<string, (typeof activityTypes)[number]>;
   }, [activityTypes]);
 
   const taskMap = useMemo(() => {
     const map: Record<string, (typeof tasks)[number] | undefined> = {};
-    tasks.forEach((t) => {
-      map[t.id] = t;
+    tasks.forEach((task) => {
+      map[task.id] = task;
     });
     return map;
   }, [tasks]);
@@ -368,7 +365,7 @@ export const AnalyticsScreen: React.FC = () => {
         };
       })
       .sort((a, b) => b.hours - a.hours);
-  }, [activityTypeMap, focusByActivityType, totalRangeHours]);
+  }, [activityTypeMap, defaultActivityName, focusByActivityType, totalRangeHours]);
 
   const focusBarSegments = useMemo(() => {
     if (totalRangeHours <= 0) return [] as { key: string; color: string; fraction: number }[];

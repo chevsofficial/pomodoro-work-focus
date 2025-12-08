@@ -11,7 +11,7 @@ import {
 import { PurchasesPackage } from 'react-native-purchases';
 import { ScreenContainer } from '../components/ScreenContainer';
 import { PRO_BENEFITS, PRO_PRICING } from '../config/proFeatures';
-import { fetchOfferings, purchaseProduct, restorePurchases } from '../services/revenuecat';
+import { fetchOfferings, purchasePackage, restorePurchases } from '../services/revenuecat';
 import useAppStore, { useIsPro, useProStatus } from '../store/appStore';
 import { spacing } from '../theme/spacing';
 import { useThemeColors } from '../theme/useThemeColors';
@@ -59,7 +59,7 @@ export const PaywallScreen: React.FC = () => {
 
     try {
       setIsPurchasing(true);
-      await purchaseProduct(pkg);
+      await purchasePackage(pkg);
     } catch (error: any) {
       if (!error?.userCancelled) {
         Alert.alert('Purchase failed', 'Something went wrong while starting your subscription.');

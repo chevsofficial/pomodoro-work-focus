@@ -403,7 +403,7 @@ export const SettingsScreen: React.FC = () => {
   );
   const isPro = useIsPro();
   const cloudSync = useAppStore((state) => state.cloudSync);
-  const language = useAppStore((state) => state.language);
+  useAppStore((state) => state.language);
   const updateSettings = useAppStore((state) => state.updateSettings);
   const setCloudSyncEnabled = useAppStore((state) => state.setCloudSyncEnabled);
   const deleteAllUserData = useAppStore((state) => state.deleteAllUserData);
@@ -420,10 +420,7 @@ export const SettingsScreen: React.FC = () => {
 
     return requested;
   }, [currentThemeId, isPro]);
-  const currentThemeName = useMemo(
-    () => t(`themes.${currentTheme.id}` as any),
-    [currentTheme.id, language],
-  );
+  const currentThemeName = t(`themes.${currentTheme.id}` as any);
   const handleUpgradePress = () => {
     goToPro();
   };
