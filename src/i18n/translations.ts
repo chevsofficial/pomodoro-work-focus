@@ -74,11 +74,11 @@ export const translations = {
       danger: {
         title: 'Danger zone',
         description:
-          'Permanently delete all of your Pomodoro data from this device and the cloud. This cannot be undone. Export your data first if needed.',
+          'Permanently delete all Pomodoro data from this device and the cloud. This cannot be undone. Export a backup first if needed.',
         deleteButton: 'Delete all data',
         modalTitle: 'Delete all data?',
         modalBody:
-          'This will permanently delete all tasks, activity types, and session history from this device and your synced account.\n\nWe strongly recommend exporting your data as a CSV file before continuing.',
+          'This will permanently delete all tasks, activity types, and session history from this device and your synced account.\n\nWe strongly recommend exporting a CSV backup of your data before continuing.',
         exportButton: 'Export data (.CSV)',
       },
       activityModal: {
@@ -421,11 +421,11 @@ export const translations = {
       danger: {
         title: 'Zona de peligro',
         description:
-          'Elimina permanentemente todos tus datos de Pomodoro de este dispositivo y de la nube. Esto no se puede deshacer. Exporta tus datos primero si es necesario.',
+          'Elimina permanentemente todos tus datos de Pomodoro de este dispositivo y de la nube. Esto no se puede deshacer. Exporta una copia de seguridad primero si es necesario.',
         deleteButton: 'Borrar todos los datos',
         modalTitle: '¿Borrar todos los datos?',
         modalBody:
-          'Esto eliminará permanentemente todas las tareas, tipos de actividad e historial de sesiones de este dispositivo y de tu cuenta sincronizada.\n\nRecomendamos exportar tus datos como archivo CSV antes de continuar.',
+          'Esto eliminará permanentemente todas las tareas, tipos de actividad e historial de sesiones de este dispositivo y de tu cuenta sincronizada.\n\nRecomendamos exportar una copia de seguridad en CSV antes de continuar.',
         exportButton: 'Exportar datos (.CSV)',
       },
       activityModal: {

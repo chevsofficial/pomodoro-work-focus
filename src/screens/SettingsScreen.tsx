@@ -703,34 +703,38 @@ export const SettingsScreen: React.FC = () => {
 
           {isPro ? (
             <>
-              {!cloudSync.userId ? (
-                <>
-                  <Text style={styles.sectionHint}>{t('settings.cloud.signInPrompt')}</Text>
-                  <TouchableOpacity style={styles.authButton} onPress={handleGoToSignIn}>
-                    <Text style={styles.authButtonLabel}>{t('common.signIn')}</Text>
-                  </TouchableOpacity>
-                </>
-              ) : (
-                <>
-                  <View style={styles.settingRow}>
-                    <Text style={styles.settingLabel}>{t('settings.cloud.cloudSyncEnabled')}</Text>
-                    <Switch
-                      value={cloudSync.cloudSyncEnabled}
-                      onValueChange={handleCloudSyncToggle}
-                      thumbColor={cloudSync.cloudSyncEnabled ? colors.primary : colors.surface}
-                      trackColor={{ false: colors.border, true: colors.primary }}
-                    />
-                  </View>
-                  <Text style={styles.sectionHint}>{lastSyncedText}</Text>
-                </>
-              )}
+              <View style={styles.cloudSettings}>
+                {!cloudSync.userId ? (
+                  <>
+                    <Text style={styles.sectionHint}>{t('settings.cloud.signInPrompt')}</Text>
+                    <TouchableOpacity style={styles.authButton} onPress={handleGoToSignIn}>
+                      <Text style={styles.authButtonLabel}>{t('common.signIn')}</Text>
+                    </TouchableOpacity>
+                  </>
+                ) : (
+                  <>
+                    <View style={styles.settingRow}>
+                      <Text style={styles.settingLabel}>{t('settings.cloud.cloudSyncEnabled')}</Text>
+                      <Switch
+                        value={cloudSync.cloudSyncEnabled}
+                        onValueChange={handleCloudSyncToggle}
+                        thumbColor={cloudSync.cloudSyncEnabled ? colors.primary : colors.surface}
+                        trackColor={{ false: colors.border, true: colors.primary }}
+                      />
+                    </View>
+                    <Text style={styles.sectionHint}>{lastSyncedText}</Text>
+                  </>
+                )}
+              </View>
 
-              <Text style={styles.sectionHint}>
-                {t('settings.cloud.exportDescription')}
-              </Text>
-              <TouchableOpacity style={styles.secondaryActionButton} onPress={handleExportAllData}>
-                <Text style={styles.secondaryActionButtonText}>{t('settings.cloud.exportButton')}</Text>
-              </TouchableOpacity>
+              <View style={styles.cloudExportSection}>
+                <Text style={styles.sectionHint}>
+                  {t('settings.cloud.exportDescription')}
+                </Text>
+                <TouchableOpacity style={styles.secondaryActionButton} onPress={handleExportAllData}>
+                  <Text style={styles.secondaryActionButtonText}>{t('settings.cloud.exportButton')}</Text>
+                </TouchableOpacity>
+              </View>
             </>
           ) : (
             <View style={styles.proBox}>
@@ -1048,6 +1052,13 @@ function createStyles(colors: ReturnType<typeof useThemeColors>) {
     borderRadius: 12,
     padding: spacing.md,
     backgroundColor: colors.background,
+  },
+  cloudSettings: {
+    gap: spacing.xs,
+  },
+  cloudExportSection: {
+    marginTop: spacing.md,
+    gap: spacing.sm,
   },
   proBoxText: {
     color: colors.textPrimary,
