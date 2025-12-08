@@ -44,7 +44,7 @@ export const translations: Record<Language, Record<string, any>> = {
       close: 'Close',
       earlySkipTitle: 'Skipped focus session not counted',
       earlySkipBody:
-        "Work intervals skipped within the first 5 minutes are treated as cancelled and won't appear in Analytics or Task statistics.",
+        "Work intervals skipped within the first 5 minutes are treated as cancelled and won't appear in Analytics.",
       earlySkipDismiss: "Don't show again",
       earlySkipOk: 'OK',
     },
@@ -138,6 +138,7 @@ export const translations: Record<Language, Record<string, any>> = {
       taskDetail: 'Task detail',
       activityTypes: 'Activity types',
       themePicker: 'Themes',
+      upgrade: 'Upgrade',
     },
     settings: {
       title: 'Settings',
@@ -433,7 +434,7 @@ export const translations: Record<Language, Record<string, any>> = {
           inProgress: 'In Progress',
           cancelledShort: 'Cancelled early (not counted)',
           skipped: 'Skipped',
-          completedShort: 'Completed (short, not counted)',
+          completedShort: 'Completed (short)',
           completed: 'Completed',
         },
         fields: {
@@ -509,7 +510,7 @@ export const translations: Record<Language, Record<string, any>> = {
       close: 'Cerrar',
       earlySkipTitle: 'Sesión omitida no contada',
       earlySkipBody:
-        'Los intervalos de trabajo omitidos en los primeros 5 minutos se tratan como cancelados y no aparecerán en Analíticas ni en las estadísticas de tareas.',
+        'Los intervalos de trabajo omitidos en los primeros 5 minutos se tratan como cancelados y no aparecerán en Analíticas.',
       earlySkipDismiss: 'No mostrar de nuevo',
       earlySkipOk: 'OK',
     },
@@ -604,6 +605,7 @@ export const translations: Record<Language, Record<string, any>> = {
       taskDetail: 'Detalle de la tarea',
       activityTypes: 'Tipos de actividad',
       themePicker: 'Temas',
+      upgrade: 'Mejorar a Pro',
     },
     settings: {
       title: 'Ajustes',
@@ -900,7 +902,7 @@ export const translations: Record<Language, Record<string, any>> = {
           inProgress: 'En progreso',
           cancelledShort: 'Cancelado antes de tiempo (no cuenta)',
           skipped: 'Saltado',
-          completedShort: 'Completado (corto, no cuenta)',
+          completedShort: 'Completado (corto)',
           completed: 'Completado',
         },
         fields: {

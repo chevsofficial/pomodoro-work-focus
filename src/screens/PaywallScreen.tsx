@@ -9,6 +9,7 @@ import {
   View,
 } from 'react-native';
 import { PurchasesPackage } from 'react-native-purchases';
+import { useNavigation } from '@react-navigation/native';
 import { ScreenContainer } from '../components/ScreenContainer';
 import { PRO_BENEFITS, PRO_PRICING } from '../config/proFeatures';
 import { fetchOfferings, purchasePackage, restorePurchases } from '../services/revenuecat';
@@ -26,6 +27,8 @@ export const PaywallScreen: React.FC = () => {
   const isPro = useIsPro();
   const proStatus = useProStatus();
   const styles = useMemo(() => createStyles(colors), [colors]);
+  const navigation = useNavigation();
+  const language = useAppStore((state) => state.language);
 
   const [annualPackage, setAnnualPackage] = useState<PurchasesPackage | null>(null);
   const [monthlyPackage, setMonthlyPackage] = useState<PurchasesPackage | null>(null);
@@ -101,6 +104,12 @@ export const PaywallScreen: React.FC = () => {
   const annualPriceText = formatPriceText(annualPackage, PRO_PRICING.annual.priceText);
   const monthlyPriceText = formatPriceText(monthlyPackage, PRO_PRICING.monthly.priceText);
 
+  useEffect(() => {
+    navigation.setOptions({
+      title: t('nav.upgrade'),
+    });
+  }, [language, navigation]);
+
   return (
     <ScreenContainer withTopPadding={false}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
@@ -138,7 +147,9 @@ export const PaywallScreen: React.FC = () => {
               {isPurchasing ? (
                 <ActivityIndicator color={colors.background} />
               ) : (
-                <Text style={styles.planButtonText}>{t('paywall.startTrial')}</Text>
+                <Text style={styles.planButtonText} numberOfLines={2} ellipsizeMode="tail">
+                  {t('paywall.startTrial')}
+                </Text>
               )}
             </TouchableOpacity>
           </View>
@@ -310,7 +321,9 @@ function createStyles(colors: ReturnType<typeof useThemeColors>) {
       backgroundColor: colors.primary,
       borderRadius: 14,
       paddingVertical: spacing.md,
+      paddingHorizontal: spacing.md,
       alignItems: 'center',
+      justifyContent: 'center',
       marginTop: spacing.sm,
     },
     planButtonDisabled: {
@@ -318,8 +331,11 @@ function createStyles(colors: ReturnType<typeof useThemeColors>) {
     },
     planButtonText: {
       color: colors.background,
-      fontSize: 16,
+      fontSize: 14,
       fontWeight: '700',
+      textAlign: 'center',
+      alignSelf: 'center',
+      flexShrink: 1,
     },
     secondaryButton: {
       borderRadius: 14,

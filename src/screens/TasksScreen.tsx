@@ -27,6 +27,7 @@ import useAppStore, {
 import { useThemeColors } from '../theme/useThemeColors';
 import { spacing } from '../theme/spacing';
 import { t } from '../i18n/translations';
+import { formatDateHeader } from '../utils/dateFormatting';
 
 type TasksNavigation = NativeStackNavigationProp<RootStackParamList>;
 
@@ -207,12 +208,7 @@ export const TasksScreen: React.FC = () => {
     const date = new Date(iso);
     if (Number.isNaN(date.getTime())) return t('tasks.unknownDate');
 
-    return date.toLocaleDateString(undefined, {
-      weekday: 'long',
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-    });
+    return formatDateHeader(date);
   };
 
   const groupedDoneTasks = useMemo(() => {
