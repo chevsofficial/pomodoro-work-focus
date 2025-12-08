@@ -109,7 +109,7 @@ export const ActivityTypesManagerScreen: React.FC = () => {
             <Text style={styles.typeName} numberOfLines={1}>
               {type.name}
             </Text>
-            <Text style={styles.typeMeta} numberOfLines={1}>
+            <Text style={styles.typeMeta} numberOfLines={2}>
               {t('activityTypes.meta')
                 .replace('{work}', type.workDurationMinutes.toString())
                 .replace('{short}', type.shortBreakMinutes.toString())
@@ -436,7 +436,7 @@ const createStyles = (colors: ReturnType<typeof useThemeColors>) =>
     typeRow: {
       flexDirection: 'row',
       justifyContent: 'space-between',
-      alignItems: 'center',
+      alignItems: 'flex-start',
       padding: spacing.md,
       borderRadius: 12,
       backgroundColor: colors.surface,
@@ -452,6 +452,7 @@ const createStyles = (colors: ReturnType<typeof useThemeColors>) =>
     typeTextContainer: {
       flex: 1,
       marginRight: spacing.sm,
+      paddingRight: spacing.sm,
     },
     colorDot: {
       width: 16,
@@ -465,8 +466,9 @@ const createStyles = (colors: ReturnType<typeof useThemeColors>) =>
     },
     typeMeta: {
       color: colors.textSecondary,
-      fontSize: 11,
+      fontSize: 12,
       marginTop: 2,
+      flexShrink: 1,
     },
     archivedLabel: {
       color: colors.textSecondary,

@@ -175,9 +175,6 @@ export function RootNavigator() {
       <Stack.Screen
         name="Paywall"
         component={PaywallScreen}
-        options={{
-          title: 'Upgrade',
-        }}
       />
       <Stack.Screen
         name="Auth"

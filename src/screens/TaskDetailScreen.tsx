@@ -217,12 +217,15 @@ export const TaskDetailScreen: React.FC = () => {
     return (
       <View key={interval.id} style={styles.intervalRow}>
         <View style={styles.intervalHeader}>
-          <Text style={styles.intervalType}>
-            {intervalTypeLabels[interval.type as keyof typeof intervalTypeLabels] ?? interval.type}
-          </Text>
-          <Text style={styles.intervalStatus}>
-            {statusLabel}
-          </Text>
+          <View style={styles.intervalTextContainer}>
+            <Text style={styles.intervalType}>
+              {intervalTypeLabels[interval.type as keyof typeof intervalTypeLabels] ?? interval.type}
+            </Text>
+            <Text style={styles.intervalStatus} numberOfLines={0}>
+              {statusLabel}
+            </Text>
+          </View>
+          <Text style={styles.intervalDuration}>{formatDuration(focusSeconds)}</Text>
         </View>
         <Text style={styles.intervalDetail}>
           {t('taskDetail.intervals.fields.start')}: <Text style={styles.intervalValue}>{formatDateTime(interval.startedAt)}</Text>
@@ -522,15 +525,30 @@ function createStyles(colors: ReturnType<typeof useThemeColors>) {
     intervalHeader: {
       flexDirection: 'row',
       justifyContent: 'space-between',
+      alignItems: 'flex-start',
       marginBottom: spacing.sm,
+    },
+    intervalTextContainer: {
+      flex: 1,
+      paddingRight: spacing.sm,
+      flexShrink: 1,
     },
     intervalType: {
       fontWeight: '700',
       color: colors.textPrimary,
+      fontSize: 13,
+      marginBottom: 2,
     },
     intervalStatus: {
       color: colors.textSecondary,
       fontWeight: '600',
+      fontSize: 12,
+      flexShrink: 1,
+    },
+    intervalDuration: {
+      fontSize: 12,
+      fontWeight: '600',
+      color: colors.textPrimary,
     },
     intervalDetail: {
       color: colors.textSecondary,
