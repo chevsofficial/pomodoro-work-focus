@@ -8,7 +8,10 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { PurchasesOfferings, PurchasesPackage } from 'react-native-purchases';
+import type {
+  PurchasesOfferings,
+  PurchasesPackage,
+} from 'react-native-purchases';
 import { useNavigation } from '@react-navigation/native';
 import { ScreenContainer } from '../components/ScreenContainer';
 import { PRO_BENEFITS, PRO_PRICING } from '../config/proFeatures';
@@ -65,11 +68,29 @@ export const PaywallScreen: React.FC = () => {
         return;
       }
 
-      const monthly = current.packages.find((pkg) => pkg.identifier === '$rc_monthly');
-      const annual = current.packages.find((pkg) => pkg.identifier === '$rc_annual');
+      let monthly: PurchasesPackage | null = null;
+      let annual: PurchasesPackage | null = null;
 
-      setAnnualPackage(annual ?? null);
-      setMonthlyPackage(monthly ?? null);
+      // Prefer the convenience fields if available.
+      monthly = current.monthly ?? null;
+      annual = current.annual ?? null;
+
+      // Fall back to availablePackages by identifier.
+      if (!monthly && current.availablePackages) {
+        monthly =
+          current.availablePackages.find(
+            (pkg: PurchasesPackage) => pkg.identifier === 'monthly'
+          ) ?? null;
+      }
+      if (!annual && current.availablePackages) {
+        annual =
+          current.availablePackages.find(
+            (pkg: PurchasesPackage) => pkg.identifier === 'annual'
+          ) ?? null;
+      }
+
+      setAnnualPackage(annual);
+      setMonthlyPackage(monthly);
       setOfferings(result);
       setStoreError(null);
       setLoadingOfferings(false);
@@ -219,7 +240,7 @@ export const PaywallScreen: React.FC = () => {
             <TouchableOpacity
               style={[
                 styles.planButton,
-                (isPro || storeError || !offerings?.current) && styles.planButtonDisabled,
+                (isPro || !!storeError || !offerings?.current) && styles.planButtonDisabled,
               ]}
               onPress={() => handlePurchase(annualPackage)}
               disabled={isPro || isPurchasing || !!storeError || !offerings?.current}
@@ -241,10 +262,17 @@ export const PaywallScreen: React.FC = () => {
             <TouchableOpacity
               style={[
                 styles.secondaryButton,
-                (isPro || storeError || !offerings?.current) && styles.secondaryButtonDisabled,
+                (isPro || isPurchasing || !!storeError || !offerings?.current || !monthlyPackage) &&
+                  styles.secondaryButtonDisabled,
               ]}
               onPress={() => handlePurchase(monthlyPackage)}
-              disabled={isPro || isPurchasing || !!storeError || !offerings?.current}
+              disabled={
+                isPro ||
+                isPurchasing ||
+                !!storeError ||
+                !offerings?.current ||
+                !monthlyPackage
+              }
             >
               <Text style={styles.secondaryButtonText}>{monthlyButtonLabel}</Text>
             </TouchableOpacity>
