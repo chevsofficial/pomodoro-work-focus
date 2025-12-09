@@ -9,7 +9,7 @@ import useAppStore from '../store/appStore';
 import { getRevenueCatApiKey } from '../config/revenuecat';
 
 // Helper: detect if we're running inside Expo Go
-function isExpoGo() {
+export function isExpoGo() {
   // In Expo Go this will be "expo"
   return Constants.appOwnership === 'expo';
 }
