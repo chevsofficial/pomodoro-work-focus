@@ -68,6 +68,40 @@ const themeDisplayOrder: ThemeId[] = [
 
 type SettingsStyles = ReturnType<typeof createStyles>;
 
+export type ActivityTypeModalStyles = Pick<
+  SettingsStyles,
+  | 'modalBackdrop'
+  | 'modalContent'
+  | 'modalTitle'
+  | 'modalField'
+  | 'input'
+  | 'modalLabel'
+  | 'modalHint'
+  | 'modalSubLabel'
+  | 'colorGrid'
+  | 'colorSwatchWrapper'
+  | 'colorSwatchWrapperSelected'
+  | 'colorSwatch'
+  | 'colorSwatchLocked'
+  | 'colorLockIcon'
+  | 'colorLabel'
+  | 'colorLabelSelected'
+  | 'modalRowGroup'
+  | 'modalRowItem'
+  | 'modalRowItemSpacing'
+  | 'modalActions'
+  | 'modalPrimaryActions'
+  | 'modalButton'
+  | 'modalButtonSecondary'
+  | 'modalButtonText'
+  | 'modalButtonPrimary'
+  | 'modalButtonSpacing'
+  | 'modalButtonPrimaryText'
+  | 'modalDeleteButton'
+  | 'modalDeleteButtonSpacing'
+  | 'modalDeleteText'
+>;
+
 const SettingInputRow: React.FC<{
   label: string;
   value: string;
@@ -130,7 +164,7 @@ type ActivityTypeModalProps = {
   onDelete?: () => void;
   onLockedColorPress?: () => void;
   colors: ReturnType<typeof useThemeColors>;
-  styles: SettingsStyles;
+  styles: ActivityTypeModalStyles;
 };
 
 const buildFormState = (
