@@ -8,11 +8,16 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { PurchasesPackage } from 'react-native-purchases';
+import { PurchasesOfferings, PurchasesPackage } from 'react-native-purchases';
 import { useNavigation } from '@react-navigation/native';
 import { ScreenContainer } from '../components/ScreenContainer';
 import { PRO_BENEFITS, PRO_PRICING } from '../config/proFeatures';
-import { fetchOfferings, purchasePackage, restorePurchases } from '../services/revenuecat';
+import {
+  fetchOfferings,
+  isExpoGo,
+  purchasePackage,
+  restorePurchases,
+} from '../services/revenuecat';
 import useAppStore, { useIsPro, useProStatus } from '../store/appStore';
 import { spacing } from '../theme/spacing';
 import { useThemeColors } from '../theme/useThemeColors';
@@ -29,6 +34,7 @@ export const PaywallScreen: React.FC = () => {
   const styles = useMemo(() => createStyles(colors), [colors]);
   const navigation = useNavigation();
   const language = useAppStore((state) => state.language);
+  const expoGo = isExpoGo();
 
   const [annualPackage, setAnnualPackage] = useState<PurchasesPackage | null>(null);
   const [monthlyPackage, setMonthlyPackage] = useState<PurchasesPackage | null>(null);
@@ -36,18 +42,24 @@ export const PaywallScreen: React.FC = () => {
   const [isPurchasing, setIsPurchasing] = useState(false);
   const [isRestoring, setIsRestoring] = useState(false);
   const [offeringsUnavailable, setOfferingsUnavailable] = useState(false);
+  const [offerings, setOfferings] = useState<PurchasesOfferings | null>(null);
+  const [storeError, setStoreError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (expoGo) return;
+
     const loadOfferings = async () => {
       setLoadingOfferings(true);
       setOfferingsUnavailable(false);
-      const offerings = await fetchOfferings();
+      const result = await fetchOfferings();
 
-      const current = offerings?.current;
+      const current = result?.current;
 
-      if (!current) {
+      if (!result || !current) {
         setAnnualPackage(null);
         setMonthlyPackage(null);
+        setOfferings(null);
+        setStoreError('We could not load products. Please try again later.');
         setOfferingsUnavailable(true);
         setLoadingOfferings(false);
         return;
@@ -58,13 +70,23 @@ export const PaywallScreen: React.FC = () => {
 
       setAnnualPackage(annual ?? null);
       setMonthlyPackage(monthly ?? null);
+      setOfferings(result);
+      setStoreError(null);
       setLoadingOfferings(false);
     };
 
     loadOfferings();
-  }, []);
+  }, [expoGo]);
 
   const handlePurchase = async (pkg: PurchasesPackage | null) => {
+    if (expoGo) {
+      Alert.alert(
+        'Purchases unavailable in Expo Go',
+        'To test subscriptions, install a development build created with EAS.'
+      );
+      return;
+    }
+
     if (isPro) {
       Alert.alert('Already Pro', 'Thanks for supporting TomoFlow!');
       return;
@@ -88,16 +110,27 @@ export const PaywallScreen: React.FC = () => {
   };
 
   const handleRestore = async () => {
+    if (expoGo) {
+      Alert.alert(
+        'Purchases unavailable in Expo Go',
+        'To restore purchases, install a development build created with EAS.'
+      );
+      return;
+    }
+
     try {
       setIsRestoring(true);
-      const entitlement = await restorePurchases();
-      if (entitlement) {
+      const info = await restorePurchases();
+      const hasPro = Object.keys(info.entitlements.active).length > 0;
+
+      if (hasPro) {
         Alert.alert('Restored', 'Your TomoFlow Pro access has been restored.');
       } else {
-        Alert.alert('No purchases found', 'We could not find an active Pro subscription to restore.');
+        Alert.alert('No purchases found', 'We did not find any previous purchases for this account.');
       }
-    } catch (error) {
-      Alert.alert('Restore failed', 'Something went wrong while restoring purchases.');
+    } catch (error: any) {
+      if (error?.userCancelled) return;
+      Alert.alert('Restore failed', 'We could not restore purchases. Please try again later.');
     } finally {
       setIsRestoring(false);
     }
@@ -131,6 +164,29 @@ export const PaywallScreen: React.FC = () => {
     });
   }, [language, navigation]);
 
+  if (expoGo) {
+    return (
+      <ScreenContainer withTopPadding={false}>
+        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+          <View style={styles.header}>
+            <Text style={styles.logo}>TomoFlow</Text>
+            <Text style={styles.heroTitle}>{t('paywall.heroTitle')}</Text>
+            <Text style={styles.heroSubtitle}>{t('paywall.heroSubtitle')}</Text>
+            <Text style={styles.heroBody}>{t('paywall.heroBody')}</Text>
+          </View>
+
+          <View style={styles.card}>
+            <Text style={styles.sectionTitle}>TomoFlow Pro</Text>
+            <Text style={styles.heroBody}>
+              Subscription purchases can’t be tested inside Expo Go. Install a development build (EAS)
+              to try the full upgrade flow.
+            </Text>
+          </View>
+        </ScrollView>
+      </ScreenContainer>
+    );
+  }
+
   return (
     <ScreenContainer withTopPadding={false}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
@@ -161,9 +217,12 @@ export const PaywallScreen: React.FC = () => {
             <Text style={styles.planDescription}>{t('paywall.plans.annualDescription')}</Text>
             <Text style={styles.planSavings}>{t('paywall.plans.annualSavings')}</Text>
             <TouchableOpacity
-              style={[styles.planButton, isPro && styles.planButtonDisabled]}
+              style={[
+                styles.planButton,
+                (isPro || storeError || !offerings?.current) && styles.planButtonDisabled,
+              ]}
               onPress={() => handlePurchase(annualPackage)}
-              disabled={isPro || isPurchasing}
+              disabled={isPro || isPurchasing || !!storeError || !offerings?.current}
             >
               {isPurchasing ? (
                 <ActivityIndicator color={colors.background} />
@@ -180,14 +239,19 @@ export const PaywallScreen: React.FC = () => {
             <Text style={styles.planPrice}>{monthlyPriceText}</Text>
             <Text style={styles.planDescription}>{t('paywall.plans.monthlyDescription')}</Text>
             <TouchableOpacity
-              style={[styles.secondaryButton, isPro && styles.secondaryButtonDisabled]}
+              style={[
+                styles.secondaryButton,
+                (isPro || storeError || !offerings?.current) && styles.secondaryButtonDisabled,
+              ]}
               onPress={() => handlePurchase(monthlyPackage)}
-              disabled={isPro || isPurchasing}
+              disabled={isPro || isPurchasing || !!storeError || !offerings?.current}
             >
               <Text style={styles.secondaryButtonText}>{monthlyButtonLabel}</Text>
             </TouchableOpacity>
           </View>
         </View>
+
+        {storeError && <Text style={styles.secondaryText}>Store unavailable. Please try again later.</Text>}
 
         {loadingOfferings && (
           <View style={styles.loadingRow}>
@@ -196,7 +260,7 @@ export const PaywallScreen: React.FC = () => {
           </View>
         )}
 
-        {!loadingOfferings && offeringsUnavailable && (
+        {!loadingOfferings && offeringsUnavailable && !storeError && (
           <Text style={styles.secondaryText}>Plans are not available right now.</Text>
         )}
 
