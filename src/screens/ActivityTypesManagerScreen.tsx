@@ -270,12 +270,14 @@ const createModalCompatStyles = (
       marginBottom: spacing.md,
     },
     input: {
+      backgroundColor: colors.background,
+      borderRadius: 8,
       borderWidth: 1,
       borderColor: colors.border,
-      borderRadius: 8,
-      padding: spacing.sm,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
       color: colors.textPrimary,
-      backgroundColor: colors.surface,
+      minWidth: 80,
     },
     modalLabel: {
       color: colors.textSecondary,
