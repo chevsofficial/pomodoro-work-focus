@@ -79,13 +79,13 @@ export const PaywallScreen: React.FC = () => {
       if (!monthly && current.availablePackages) {
         monthly =
           current.availablePackages.find(
-            (pkg: PurchasesPackage) => pkg.identifier === 'monthly'
+            (pkg: PurchasesPackage) => pkg.identifier === '$rc_monthly'
           ) ?? null;
       }
       if (!annual && current.availablePackages) {
         annual =
           current.availablePackages.find(
-            (pkg: PurchasesPackage) => pkg.identifier === 'annual'
+            (pkg: PurchasesPackage) => pkg.identifier === '$rc_annual'
           ) ?? null;
       }
 
@@ -185,6 +185,11 @@ export const PaywallScreen: React.FC = () => {
     });
   }, [language, navigation]);
 
+  const isAnnualDisabled = isPro || isPurchasing || !!storeError || !offerings?.current;
+
+  const isMonthlyDisabled =
+    isPro || isPurchasing || !!storeError || !offerings?.current || !monthlyPackage;
+
   if (expoGo) {
     return (
       <ScreenContainer withTopPadding={false}>
@@ -240,10 +245,10 @@ export const PaywallScreen: React.FC = () => {
             <TouchableOpacity
               style={[
                 styles.planButton,
-                (isPro || !!storeError || !offerings?.current) && styles.planButtonDisabled,
+                isAnnualDisabled ? styles.planButtonDisabled : undefined,
               ]}
               onPress={() => handlePurchase(annualPackage)}
-              disabled={isPro || isPurchasing || !!storeError || !offerings?.current}
+              disabled={isAnnualDisabled}
             >
               {isPurchasing ? (
                 <ActivityIndicator color={colors.background} />
@@ -262,17 +267,10 @@ export const PaywallScreen: React.FC = () => {
             <TouchableOpacity
               style={[
                 styles.secondaryButton,
-                (isPro || isPurchasing || !!storeError || !offerings?.current || !monthlyPackage) &&
-                  styles.secondaryButtonDisabled,
+                isMonthlyDisabled ? styles.secondaryButtonDisabled : undefined,
               ]}
               onPress={() => handlePurchase(monthlyPackage)}
-              disabled={
-                isPro ||
-                isPurchasing ||
-                !!storeError ||
-                !offerings?.current ||
-                !monthlyPackage
-              }
+              disabled={isMonthlyDisabled}
             >
               <Text style={styles.secondaryButtonText}>{monthlyButtonLabel}</Text>
             </TouchableOpacity>
