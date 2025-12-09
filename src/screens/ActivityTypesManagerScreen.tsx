@@ -16,7 +16,7 @@ import useAppStore, {
 import { OTHER_ACTIVITY_TYPE_ID } from '../config/activityTypeConstants';
 import { spacing } from '../theme/spacing';
 import { useThemeColors } from '../theme/useThemeColors';
-import { ActivityTypeModal } from './SettingsScreen';
+import { ActivityTypeModal, ActivityTypeModalStyles } from './SettingsScreen';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useNavigation } from '@react-navigation/native';
 import { t } from '../i18n/translations';
@@ -241,7 +241,9 @@ export const ActivityTypesManagerScreen: React.FC = () => {
   );
 };
 
-const createModalCompatStyles = (colors: ReturnType<typeof useThemeColors>) =>
+const createModalCompatStyles = (
+  colors: ReturnType<typeof useThemeColors>,
+): ActivityTypeModalStyles =>
   StyleSheet.create({
     modalBackdrop: {
       flex: 1,
