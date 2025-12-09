@@ -35,14 +35,29 @@ export const PaywallScreen: React.FC = () => {
   const [loadingOfferings, setLoadingOfferings] = useState(true);
   const [isPurchasing, setIsPurchasing] = useState(false);
   const [isRestoring, setIsRestoring] = useState(false);
+  const [offeringsUnavailable, setOfferingsUnavailable] = useState(false);
 
   useEffect(() => {
     const loadOfferings = async () => {
       setLoadingOfferings(true);
+      setOfferingsUnavailable(false);
       const offerings = await fetchOfferings();
 
-      setAnnualPackage(offerings?.current?.annual ?? null);
-      setMonthlyPackage(offerings?.current?.monthly ?? null);
+      const current = offerings?.current;
+
+      if (!current) {
+        setAnnualPackage(null);
+        setMonthlyPackage(null);
+        setOfferingsUnavailable(true);
+        setLoadingOfferings(false);
+        return;
+      }
+
+      const monthly = current.packages.find((pkg) => pkg.identifier === '$rc_monthly');
+      const annual = current.packages.find((pkg) => pkg.identifier === '$rc_annual');
+
+      setAnnualPackage(annual ?? null);
+      setMonthlyPackage(monthly ?? null);
       setLoadingOfferings(false);
     };
 
@@ -103,6 +118,12 @@ export const PaywallScreen: React.FC = () => {
 
   const annualPriceText = formatPriceText(annualPackage, PRO_PRICING.annual.priceText);
   const monthlyPriceText = formatPriceText(monthlyPackage, PRO_PRICING.monthly.priceText);
+  const annualButtonLabel = annualPackage
+    ? `Buy ${annualPackage.product.priceString}`
+    : t('paywall.startTrial');
+  const monthlyButtonLabel = monthlyPackage
+    ? `Buy ${monthlyPackage.product.priceString}`
+    : t('paywall.chooseMonthly');
 
   useEffect(() => {
     navigation.setOptions({
@@ -148,7 +169,7 @@ export const PaywallScreen: React.FC = () => {
                 <ActivityIndicator color={colors.background} />
               ) : (
                 <Text style={styles.planButtonText} numberOfLines={2} ellipsizeMode="tail">
-                  {t('paywall.startTrial')}
+                  {annualButtonLabel}
                 </Text>
               )}
             </TouchableOpacity>
@@ -163,7 +184,7 @@ export const PaywallScreen: React.FC = () => {
               onPress={() => handlePurchase(monthlyPackage)}
               disabled={isPro || isPurchasing}
             >
-              <Text style={styles.secondaryButtonText}>{t('paywall.chooseMonthly')}</Text>
+              <Text style={styles.secondaryButtonText}>{monthlyButtonLabel}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -173,6 +194,10 @@ export const PaywallScreen: React.FC = () => {
             <ActivityIndicator color={colors.primary} />
             <Text style={styles.loadingText}>{t('paywall.loadingPlans')}</Text>
           </View>
+        )}
+
+        {!loadingOfferings && offeringsUnavailable && (
+          <Text style={styles.secondaryText}>Plans are not available right now.</Text>
         )}
 
         {proStatus.isPro && (
