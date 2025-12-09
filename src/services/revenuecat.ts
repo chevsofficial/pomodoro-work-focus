@@ -35,6 +35,7 @@ export async function initRevenueCat() {
   }
 
   try {
+    console.log('[RevenueCat] Using API key:', apiKey);
     await Purchases.configure({ apiKey });
     console.log('[RevenueCat] Purchases configured successfully');
   } catch (error) {
