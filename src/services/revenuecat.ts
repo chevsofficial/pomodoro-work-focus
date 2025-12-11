@@ -1,12 +1,8 @@
 // src/services/revenuecat.ts
 
-import Purchases, {
-  LOG_LEVEL,
-  PurchasesConfiguration,
-  PurchasesOfferings,
-  PurchasesPackage,
-} from 'react-native-purchases';
+import Purchases, { LOG_LEVEL, PurchasesOfferings, PurchasesPackage } from 'react-native-purchases';
 import Constants from 'expo-constants';
+import { Platform } from 'react-native';
 import useAppStore from '../store/appStore';
 import { getRevenueCatApiKey } from '../config/revenuecat';
 
@@ -41,9 +37,11 @@ export async function configureRevenueCat() {
 
     console.log('[RevenueCat] Using API key:', apiKey);
 
-    const config = new PurchasesConfiguration(apiKey);
-    await Purchases.configure(config);
-    console.log('[RevenueCat] Purchases configured successfully');
+    await Purchases.configure({ apiKey });
+    console.log('[RevenueCat] Purchases configured successfully', {
+      apiKey,
+      platform: Platform.OS,
+    });
   } catch (error) {
     console.warn('[RevenueCat] Purchases.configure failed', error);
   }
