@@ -8,15 +8,11 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import type {
-  PurchasesOfferings,
-  PurchasesPackage,
-} from 'react-native-purchases';
+import Purchases, { Offerings, PurchasesPackage } from 'react-native-purchases';
 import { useNavigation } from '@react-navigation/native';
 import { ScreenContainer } from '../components/ScreenContainer';
 import { PRO_BENEFITS, PRO_PRICING } from '../config/proFeatures';
 import {
-  fetchOfferings,
   isExpoGo,
   purchasePackage,
   restorePurchases,
@@ -45,7 +41,7 @@ export const PaywallScreen: React.FC = () => {
   const [isPurchasing, setIsPurchasing] = useState(false);
   const [isRestoring, setIsRestoring] = useState(false);
   const [offeringsUnavailable, setOfferingsUnavailable] = useState(false);
-  const [offerings, setOfferings] = useState<PurchasesOfferings | null>(null);
+  const [offerings, setOfferings] = useState<Offerings | null>(null);
   const [storeError, setStoreError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -54,46 +50,58 @@ export const PaywallScreen: React.FC = () => {
     const loadOfferings = async () => {
       setLoadingOfferings(true);
       setOfferingsUnavailable(false);
-      const result = await fetchOfferings();
+      setStoreError(null);
 
-      const current = result?.current;
+      try {
+        const result: Offerings | null = await Purchases.getOfferings();
 
-      if (!result || !current) {
+        if (!result || !result.current || Object.keys(result.all).length === 0) {
+          console.warn('[RevenueCat] Offerings are empty (Test Store?)');
+          setAnnualPackage(null);
+          setMonthlyPackage(null);
+          setOfferings(null);
+          setStoreError('We could not load products. Please try again later.');
+          setOfferingsUnavailable(true);
+          return;
+        }
+
+        const current = result.current;
+        console.log('[RevenueCat] Offerings loaded', Object.keys(result.all));
+
+        let monthly: PurchasesPackage | null = current.monthly ?? null;
+        let annual: PurchasesPackage | null = current.annual ?? null;
+
+        // Fall back to availablePackages by identifier.
+        if (!monthly && current.availablePackages) {
+          monthly =
+            current.availablePackages.find(
+              (pkg: PurchasesPackage) => pkg.identifier === '$rc_monthly'
+            ) ?? null;
+        }
+        if (!annual && current.availablePackages) {
+          annual =
+            current.availablePackages.find(
+              (pkg: PurchasesPackage) => pkg.identifier === '$rc_annual'
+            ) ?? null;
+        }
+
+        setAnnualPackage(annual);
+        setMonthlyPackage(monthly);
+        setOfferings(result);
+        setStoreError(null);
+      } catch (e: any) {
+        console.error('[RevenueCat] Error fetching offerings', e);
+        if (e?.userInfo?.underlyingErrorMessage) {
+          console.error('[RevenueCat underlying]', e.userInfo.underlyingErrorMessage);
+        }
         setAnnualPackage(null);
         setMonthlyPackage(null);
         setOfferings(null);
         setStoreError('We could not load products. Please try again later.');
         setOfferingsUnavailable(true);
+      } finally {
         setLoadingOfferings(false);
-        return;
       }
-
-      let monthly: PurchasesPackage | null = null;
-      let annual: PurchasesPackage | null = null;
-
-      // Prefer the convenience fields if available.
-      monthly = current.monthly ?? null;
-      annual = current.annual ?? null;
-
-      // Fall back to availablePackages by identifier.
-      if (!monthly && current.availablePackages) {
-        monthly =
-          current.availablePackages.find(
-            (pkg: PurchasesPackage) => pkg.identifier === '$rc_monthly'
-          ) ?? null;
-      }
-      if (!annual && current.availablePackages) {
-        annual =
-          current.availablePackages.find(
-            (pkg: PurchasesPackage) => pkg.identifier === '$rc_annual'
-          ) ?? null;
-      }
-
-      setAnnualPackage(annual);
-      setMonthlyPackage(monthly);
-      setOfferings(result);
-      setStoreError(null);
-      setLoadingOfferings(false);
     };
 
     loadOfferings();
