@@ -1,6 +1,8 @@
 // src/services/revenuecat.ts
 
 import Purchases, {
+  LOG_LEVEL,
+  PurchasesConfiguration,
   PurchasesOfferings,
   PurchasesPackage,
 } from 'react-native-purchases';
@@ -19,7 +21,7 @@ export function isExpoGo() {
  * - In Expo Go: we SKIP configuring, to avoid crashes.
  * - In dev/production builds: we call Purchases.configure with your API key.
  */
-export async function initRevenueCat() {
+export async function configureRevenueCat() {
   if (isExpoGo()) {
     console.log('[RevenueCat] Expo Go detected, skipping Purchases.configure');
     return;
@@ -35,8 +37,12 @@ export async function initRevenueCat() {
   }
 
   try {
+    Purchases.setLogLevel(LOG_LEVEL.DEBUG);
+
     console.log('[RevenueCat] Using API key:', apiKey);
-    await Purchases.configure({ apiKey });
+
+    const config = new PurchasesConfiguration(apiKey);
+    await Purchases.configure(config);
     console.log('[RevenueCat] Purchases configured successfully');
   } catch (error) {
     console.warn('[RevenueCat] Purchases.configure failed', error);
@@ -49,9 +55,20 @@ export async function initRevenueCat() {
 export async function fetchOfferings(): Promise<PurchasesOfferings | null> {
   try {
     const offerings = await Purchases.getOfferings();
+
+    if (!offerings || !offerings.current || Object.keys(offerings.all).length === 0) {
+      console.warn('[RevenueCat] Offerings are empty (Test Store?)');
+      return null;
+    }
+
+    console.log('[RevenueCat] Offerings fetched', Object.keys(offerings.all));
+
     return offerings;
-  } catch (error) {
-    console.warn('[RevenueCat] getOfferings failed', error);
+  } catch (error: any) {
+    console.error('[RevenueCat] Error fetching offerings', error);
+    if (error?.userInfo?.underlyingErrorMessage) {
+      console.error('[RevenueCat underlying]', error.userInfo.underlyingErrorMessage);
+    }
     return null;
   }
 }
@@ -76,7 +93,10 @@ export async function purchasePackage(pkg: PurchasesPackage) {
     if (error?.userCancelled) {
       console.log('[RevenueCat] Purchase cancelled by user');
     } else {
-      console.warn('[RevenueCat] purchasePackage failed', error);
+      console.error('[RevenueCat] Purchase failed', error);
+      if (error?.userInfo?.underlyingErrorMessage) {
+        console.error('[RevenueCat underlying]', error.userInfo.underlyingErrorMessage);
+      }
     }
     throw error;
   }
