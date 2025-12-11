@@ -8,7 +8,10 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import Purchases, { Offerings, PurchasesPackage } from 'react-native-purchases';
+import Purchases, {
+  PurchasesOfferings,
+  PurchasesPackage,
+} from 'react-native-purchases';
 import { useNavigation } from '@react-navigation/native';
 import { ScreenContainer } from '../components/ScreenContainer';
 import { PRO_BENEFITS, PRO_PRICING } from '../config/proFeatures';
@@ -41,7 +44,7 @@ export const PaywallScreen: React.FC = () => {
   const [isPurchasing, setIsPurchasing] = useState(false);
   const [isRestoring, setIsRestoring] = useState(false);
   const [offeringsUnavailable, setOfferingsUnavailable] = useState(false);
-  const [offerings, setOfferings] = useState<Offerings | null>(null);
+  const [offerings, setOfferings] = useState<PurchasesOfferings | null>(null);
   const [storeError, setStoreError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -53,7 +56,7 @@ export const PaywallScreen: React.FC = () => {
       setStoreError(null);
 
       try {
-        const result: Offerings | null = await Purchases.getOfferings();
+        const result = await Purchases.getOfferings();
 
         if (!result || !result.current || Object.keys(result.all).length === 0) {
           console.warn('[RevenueCat] Offerings are empty (Test Store?)');
