@@ -3,7 +3,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Image, KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { ScreenContainer } from '../components/ScreenContainer';
 import { RootStackParamList } from '../navigation/RootNavigator';
-import { sendPasswordResetEmail, signInWithEmail, signUpWithEmail } from '../services/authService';
+import { signInWithEmail, signUpWithEmail } from '../services/authService';
 import { spacing } from '../theme/spacing';
 import { useThemeColors } from '../theme/useThemeColors';
 import { t } from '../i18n/translations';
@@ -70,23 +70,11 @@ export const AuthScreen: React.FC<Props> = ({ navigation }) => {
     setError(undefined);
   };
 
-  const handleForgotPassword = async () => {
+  const handleForgotPassword = () => {
     setError(undefined);
-    const trimmedEmail = email.trim();
 
-    if (!trimmedEmail) {
-      setError(t('auth.errors.missingResetEmail'));
-      return;
-    }
-
-    setLoading(true);
-    try {
-      await sendPasswordResetEmail(trimmedEmail);
-      showToast(t('auth.resetEmailSent'), 'success');
-    } catch (err: any) {
-      setError(err?.message ?? t('auth.errors.generic'));
-    } finally {
-      setLoading(false);
+    if (mode === 'signIn') {
+      navigation.navigate('ForgotPassword');
     }
   };
 
@@ -234,10 +222,11 @@ const createStyles = (colors: ReturnType<typeof useThemeColors>) =>
       textAlign: 'center',
     },
     forgotPassword: {
-      color: colors.accent,
-      fontWeight: '600',
+      color: colors.primary,
+      fontWeight: '700',
       marginTop: spacing.sm,
       textAlign: 'center',
+      textDecorationLine: 'underline',
     },
     error: {
       color: colors.danger ?? '#ff6b6b',
