@@ -11,7 +11,7 @@ export const signInWithEmail = async (email: string, password: string) => {
 };
 
 export const signUpWithEmail = async (email: string, password: string) => {
-  const emailRedirectTo = 'tomoflow://auth-callback';
+  const emailRedirectTo = 'https://tomoflow.app/auth-callback';
 
   const { data, error } = await supabaseClient.auth.signUp({
     email,
