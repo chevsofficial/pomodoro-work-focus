@@ -14,6 +14,7 @@ import { cloudSyncApi } from './src/services/cloudSyncApi';
 import { configureRevenueCat } from './src/services/revenuecat';
 import { ToastProvider } from './src/components/ToastProvider';
 import { AuthCallbackHandler } from './src/components/AuthCallbackHandler';
+import { handlePendingNavigation, navigationRef } from './src/navigation/navigationRef';
 
 const App: React.FC = () => {
   const colors = useThemeColors();
@@ -66,7 +67,8 @@ const App: React.FC = () => {
             },
           },
           AuthCallback: 'auth-callback',
-          AuthRecovery: 'auth-recovery',
+          ResetPassword: 'auth-recovery',
+          ForgotPassword: 'forgot-password',
           TaskDetail: 'task/:taskId',
           Paywall: 'paywall',
           Auth: 'auth',
@@ -119,7 +121,12 @@ const App: React.FC = () => {
     <SafeAreaProvider>
       <ThemeProvider>
         <ToastProvider>
-          <NavigationContainer linking={linking as any} theme={navigationTheme}>
+          <NavigationContainer
+            linking={linking as any}
+            theme={navigationTheme}
+            ref={navigationRef}
+            onReady={handlePendingNavigation}
+          >
             <StatusBar style={statusBarStyle} backgroundColor={colors.background} />
             <AuthCallbackHandler />
             <RootNavigator />

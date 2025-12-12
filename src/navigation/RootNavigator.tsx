@@ -17,7 +17,8 @@ import { AuthCallbackScreen } from '../screens/AuthCallbackScreen';
 import { ActivityTypesManagerScreen } from '../screens/ActivityTypesManagerScreen';
 import { t } from '../i18n/translations';
 import useAppStore from '../store/appStore';
-import { AuthRecoveryScreen } from '../screens/AuthRecoveryScreen';
+import { ForgotPasswordScreen } from '../screens/ForgotPasswordScreen';
+import { ResetPasswordScreen } from '../screens/ResetPasswordScreen';
 
 export type RootTabParamList = {
   Tasks: undefined;
@@ -33,7 +34,8 @@ export type RootStackParamList = {
   Paywall: undefined;
   Auth: undefined;
   AuthCallback: undefined;
-  AuthRecovery: undefined;
+  ForgotPassword: undefined;
+  ResetPassword: undefined;
   ActivityTypesManager: undefined;
 };
 
@@ -193,10 +195,17 @@ export function RootNavigator() {
         }}
       />
       <Stack.Screen
-        name="AuthRecovery"
-        component={AuthRecoveryScreen}
+        name="ForgotPassword"
+        component={ForgotPasswordScreen}
         options={{
-          title: 'Reset Password',
+          title: 'Reset password',
+        }}
+      />
+      <Stack.Screen
+        name="ResetPassword"
+        component={ResetPasswordScreen}
+        options={{
+          title: 'Set new password',
         }}
       />
       <Stack.Screen
