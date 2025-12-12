@@ -1,6 +1,6 @@
 import { supabaseClient } from './supabaseClient';
 
-export type SignUpStatus = 'signedUp' | 'existingAccount' | 'existingUnverified';
+export type SignUpStatus = 'signedUp' | 'existingAccount';
 
 export interface SignUpResult {
   status: SignUpStatus;
@@ -42,9 +42,8 @@ export const signUpWithEmail = async (email: string, password: string): Promise<
   const userAlreadyExists = Boolean(data.user) && identities.length === 0;
 
   if (userAlreadyExists) {
-    const isVerified = Boolean(data.user?.email_confirmed_at);
-
-    return { status: isVerified ? 'existingAccount' : 'existingUnverified', data };
+    // Supabase does not reliably return email_confirmed_at for already-existing accounts.
+    return { status: 'existingAccount', data };
   }
 
   return { status: 'signedUp', data };
