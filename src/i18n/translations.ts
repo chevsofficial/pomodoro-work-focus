@@ -374,7 +374,7 @@ export const translations: Record<Language, Record<string, any>> = {
       errors: {
         missingCredentials: 'Email and password are required.',
         generic: 'Something went wrong. Please try again.',
-        accountExists: 'An account with that email already exists. Please log in.',
+        accountExists: 'An account with that email already exists. Please use another email.',
         accountUnverified:
           "That account exists but isn't verified yet. Check your inbox or resend the verification email.",
       },
@@ -846,7 +846,7 @@ export const translations: Record<Language, Record<string, any>> = {
       errors: {
         missingCredentials: 'El correo y la contraseña son obligatorios.',
         generic: 'Ocurrió un problema. Inténtalo de nuevo.',
-        accountExists: 'Ya existe una cuenta con ese correo. Inicia sesión.',
+        accountExists: 'Ya existe una cuenta con ese correo. Por favor utiliza otro.',
         accountUnverified:
           'Esa cuenta existe pero aún no está verificada. Revisa tu bandeja de entrada o reenvía el correo de verificación.',
       },
