@@ -22,6 +22,7 @@ export const AuthScreen: React.FC<Props> = ({ navigation }) => {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | undefined>();
+  const [passwordVisible, setPasswordVisible] = useState(false);
   
 
   const handleSubmit = async () => {
@@ -48,14 +49,16 @@ export const AuthScreen: React.FC<Props> = ({ navigation }) => {
         return;
       }
 
-      if (signUpResult.status === 'existingUnverified') {
+      showToast(t('auth.verifyEmailBody'), 'success');
+      navigation.goBack();
+    } catch (err: any) {
+      const message = err?.message?.toLowerCase?.() ?? '';
+
+      if (message.includes('email not confirmed')) {
         setError(t('auth.errors.accountUnverified'));
         return;
       }
 
-      showToast(t('auth.verifyEmailBody'), 'success');
-      navigation.goBack();
-    } catch (err: any) {
       setError(err?.message ?? t('auth.errors.generic'));
     } finally {
       setLoading(false);
@@ -92,14 +95,24 @@ export const AuthScreen: React.FC<Props> = ({ navigation }) => {
             onChangeText={setEmail}
           />
 
-          <TextInput
-            style={styles.input}
-            placeholder={t('auth.passwordPlaceholder')}
-            placeholderTextColor={colors.textSecondary}
-            secureTextEntry
-            value={password}
-            onChangeText={setPassword}
-          />
+          <View style={styles.passwordRow}>
+            <TextInput
+              style={[styles.input, styles.passwordInput]}
+              placeholder={t('auth.passwordPlaceholder')}
+              placeholderTextColor={colors.textSecondary}
+              secureTextEntry={!passwordVisible}
+              value={password}
+              onChangeText={setPassword}
+            />
+            <TouchableOpacity
+              style={styles.eyeButton}
+              onPress={() => setPasswordVisible((v) => !v)}
+              accessibilityRole="button"
+              accessibilityLabel={passwordVisible ? 'Hide password' : 'Show password'}
+            >
+              <Text style={styles.eyeText}>{passwordVisible ? '🙈' : '👁️'}</Text>
+            </TouchableOpacity>
+          </View>
 
           {error && <Text style={styles.error}>{error}</Text>}
 
@@ -148,6 +161,24 @@ const createStyles = (colors: ReturnType<typeof useThemeColors>) =>
       color: colors.textPrimary,
       backgroundColor: colors.background,
       marginBottom: spacing.md,
+    },
+    passwordRow: {
+      position: 'relative',
+      marginBottom: spacing.md,
+    },
+    passwordInput: {
+      paddingRight: 44,
+      marginBottom: 0,
+    },
+    eyeButton: {
+      position: 'absolute',
+      right: spacing.md,
+      top: 0,
+      bottom: 0,
+      justifyContent: 'center',
+    },
+    eyeText: {
+      fontSize: 18,
     },
     primaryButton: {
       backgroundColor: colors.primary,
