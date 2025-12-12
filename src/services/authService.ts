@@ -53,3 +53,14 @@ export const signOut = async () => {
   const { error } = await supabaseClient.auth.signOut();
   if (error) throw error;
 };
+
+export const sendPasswordResetEmail = async (email: string) => {
+  const redirectTo = 'https://tomoflow.app/auth-recovery';
+
+  const { data, error } = await supabaseClient.auth.resetPasswordForEmail(email, {
+    redirectTo,
+  });
+
+  if (error) throw error;
+  return data;
+};

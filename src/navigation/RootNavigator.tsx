@@ -17,6 +17,7 @@ import { AuthCallbackScreen } from '../screens/AuthCallbackScreen';
 import { ActivityTypesManagerScreen } from '../screens/ActivityTypesManagerScreen';
 import { t } from '../i18n/translations';
 import useAppStore from '../store/appStore';
+import { AuthRecoveryScreen } from '../screens/AuthRecoveryScreen';
 
 export type RootTabParamList = {
   Tasks: undefined;
@@ -32,6 +33,7 @@ export type RootStackParamList = {
   Paywall: undefined;
   Auth: undefined;
   AuthCallback: undefined;
+  AuthRecovery: undefined;
   ActivityTypesManager: undefined;
 };
 
@@ -188,6 +190,13 @@ export function RootNavigator() {
         component={AuthCallbackScreen}
         options={{
           title: 'Email Confirmed',
+        }}
+      />
+      <Stack.Screen
+        name="AuthRecovery"
+        component={AuthRecoveryScreen}
+        options={{
+          title: 'Reset Password',
         }}
       />
       <Stack.Screen

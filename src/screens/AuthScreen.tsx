@@ -1,9 +1,9 @@
 import React, { useMemo, useState } from 'react';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Image, KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { ScreenContainer } from '../components/ScreenContainer';
 import { RootStackParamList } from '../navigation/RootNavigator';
-import { signInWithEmail, signUpWithEmail } from '../services/authService';
+import { sendPasswordResetEmail, signInWithEmail, signUpWithEmail } from '../services/authService';
 import { spacing } from '../theme/spacing';
 import { useThemeColors } from '../theme/useThemeColors';
 import { t } from '../i18n/translations';
@@ -70,6 +70,26 @@ export const AuthScreen: React.FC<Props> = ({ navigation }) => {
     setError(undefined);
   };
 
+  const handleForgotPassword = async () => {
+    setError(undefined);
+    const trimmedEmail = email.trim();
+
+    if (!trimmedEmail) {
+      setError(t('auth.errors.missingResetEmail'));
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await sendPasswordResetEmail(trimmedEmail);
+      showToast(t('auth.resetEmailSent'), 'success');
+    } catch (err: any) {
+      setError(err?.message ?? t('auth.errors.generic'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const ctaLabel = mode === 'signIn' ? t('common.signIn') : t('auth.createAccount');
   const toggleLabel =
     mode === 'signIn' ? t('auth.toggleToSignUp') : t('auth.toggleToSignIn');
@@ -110,7 +130,15 @@ export const AuthScreen: React.FC<Props> = ({ navigation }) => {
               accessibilityRole="button"
               accessibilityLabel={passwordVisible ? 'Hide password' : 'Show password'}
             >
-              <Text style={styles.eyeText}>{passwordVisible ? '🙈' : '👁️'}</Text>
+              <Image
+                source={
+                  passwordVisible
+                    ? require('../../assets/icons/tomato-hide.png')
+                    : require('../../assets/icons/tomato-show.png')
+                }
+                style={styles.eyeIcon}
+                resizeMode="contain"
+              />
             </TouchableOpacity>
           </View>
 
@@ -123,6 +151,12 @@ export const AuthScreen: React.FC<Props> = ({ navigation }) => {
           <TouchableOpacity onPress={toggleMode}>
             <Text style={styles.toggle}>{toggleLabel}</Text>
           </TouchableOpacity>
+
+          {mode === 'signIn' && (
+            <TouchableOpacity onPress={handleForgotPassword}>
+              <Text style={styles.forgotPassword}>{t('auth.forgotPassword')}</Text>
+            </TouchableOpacity>
+          )}
         </View>
       </KeyboardAvoidingView>
     </ScreenContainer>
@@ -177,8 +211,9 @@ const createStyles = (colors: ReturnType<typeof useThemeColors>) =>
       bottom: 0,
       justifyContent: 'center',
     },
-    eyeText: {
-      fontSize: 18,
+    eyeIcon: {
+      width: 22,
+      height: 22,
     },
     primaryButton: {
       backgroundColor: colors.primary,
@@ -196,6 +231,12 @@ const createStyles = (colors: ReturnType<typeof useThemeColors>) =>
       color: colors.accent,
       fontWeight: '600',
       marginTop: spacing.md,
+      textAlign: 'center',
+    },
+    forgotPassword: {
+      color: colors.accent,
+      fontWeight: '600',
+      marginTop: spacing.sm,
       textAlign: 'center',
     },
     error: {
