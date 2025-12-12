@@ -66,6 +66,7 @@ const App: React.FC = () => {
             },
           },
           AuthCallback: 'auth-callback',
+          AuthRecovery: 'auth-recovery',
           TaskDetail: 'task/:taskId',
           Paywall: 'paywall',
           Auth: 'auth',
