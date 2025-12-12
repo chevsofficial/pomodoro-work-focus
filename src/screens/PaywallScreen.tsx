@@ -183,12 +183,9 @@ export const PaywallScreen: React.FC = () => {
 
   const annualPriceText = formatPriceText(annualPackage, PRO_PRICING.annual.priceText);
   const monthlyPriceText = formatPriceText(monthlyPackage, PRO_PRICING.monthly.priceText);
-  const annualButtonLabel = annualPackage
-    ? `Buy ${annualPackage.product.priceString}`
-    : t('paywall.startTrial');
-  const monthlyButtonLabel = monthlyPackage
-    ? `Buy ${monthlyPackage.product.priceString}`
-    : t('paywall.chooseMonthly');
+  // Always use translation-based labels; price is displayed above the button
+  const annualButtonLabel = t('paywall.startTrial');
+  const monthlyButtonLabel = t('paywall.chooseMonthly');
 
   useEffect(() => {
     navigation.setOptions({
