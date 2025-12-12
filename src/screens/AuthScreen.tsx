@@ -1,21 +1,13 @@
 import React, { useMemo, useState } from 'react';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import {
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { ScreenContainer } from '../components/ScreenContainer';
 import { RootStackParamList } from '../navigation/RootNavigator';
 import { signInWithEmail, signUpWithEmail } from '../services/authService';
 import { spacing } from '../theme/spacing';
 import { useThemeColors } from '../theme/useThemeColors';
 import { t } from '../i18n/translations';
+import { useToast } from '../components/ToastProvider';
 
 type AuthMode = 'signIn' | 'signUp';
 
@@ -24,6 +16,7 @@ type Props = NativeStackScreenProps<RootStackParamList, 'Auth'>;
 export const AuthScreen: React.FC<Props> = ({ navigation }) => {
   const colors = useThemeColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
+  const { showToast } = useToast();
   const [mode, setMode] = useState<AuthMode>('signIn');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -44,11 +37,23 @@ export const AuthScreen: React.FC<Props> = ({ navigation }) => {
     try {
       if (mode === 'signIn') {
         await signInWithEmail(trimmedEmail, password);
-      } else {
-        await signUpWithEmail(trimmedEmail, password);
-        Alert.alert(t('auth.verifyEmailTitle'), t('auth.verifyEmailBody'));
+        navigation.goBack();
+        return;
       }
 
+      const signUpResult = await signUpWithEmail(trimmedEmail, password);
+
+      if (signUpResult.status === 'existingAccount') {
+        setError(t('auth.errors.accountExists'));
+        return;
+      }
+
+      if (signUpResult.status === 'existingUnverified') {
+        setError(t('auth.errors.accountUnverified'));
+        return;
+      }
+
+      showToast(t('auth.verifyEmailBody'), 'success');
       navigation.goBack();
     } catch (err: any) {
       setError(err?.message ?? t('auth.errors.generic'));
