@@ -370,9 +370,13 @@ export const translations: Record<Language, Record<string, any>> = {
       loading: 'Please wait...',
       verifyEmailTitle: 'Check your email',
       verifyEmailBody: 'Please verify your email to finish signing up.',
+      verificationSuccess: 'Your account has been successfully verified.',
       errors: {
         missingCredentials: 'Email and password are required.',
         generic: 'Something went wrong. Please try again.',
+        accountExists: 'An account with that email already exists. Please log in.',
+        accountUnverified:
+          "That account exists but isn't verified yet. Check your inbox or resend the verification email.",
       },
     },
     tasks: {
@@ -838,9 +842,13 @@ export const translations: Record<Language, Record<string, any>> = {
       loading: 'Por favor espera...',
       verifyEmailTitle: 'Revisa tu correo',
       verifyEmailBody: 'Verifica tu correo para completar el registro.',
+      verificationSuccess: 'Tu cuenta ha sido verificada exitosamente.',
       errors: {
         missingCredentials: 'El correo y la contraseña son obligatorios.',
         generic: 'Ocurrió un problema. Inténtalo de nuevo.',
+        accountExists: 'Ya existe una cuenta con ese correo. Inicia sesión.',
+        accountUnverified:
+          'Esa cuenta existe pero aún no está verificada. Revisa tu bandeja de entrada o reenvía el correo de verificación.',
       },
     },
     tasks: {

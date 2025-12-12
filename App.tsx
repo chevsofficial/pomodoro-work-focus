@@ -12,6 +12,8 @@ import { initializeNotifications, requestNotificationPermissions } from './src/u
 import { supabase } from './src/services/supabaseClient';
 import { cloudSyncApi } from './src/services/cloudSyncApi';
 import { configureRevenueCat } from './src/services/revenuecat';
+import { ToastProvider } from './src/components/ToastProvider';
+import { AuthCallbackHandler } from './src/components/AuthCallbackHandler';
 
 const App: React.FC = () => {
   const colors = useThemeColors();
@@ -51,7 +53,7 @@ const App: React.FC = () => {
 
   const linking = useMemo(
     () => ({
-      prefixes: ['tomoflow://', Linking.createURL('/')],
+      prefixes: ['tomoflow://', 'https://tomoflow.app', Linking.createURL('/')],
       config: {
         screens: {
           RootTabs: {
@@ -88,56 +90,6 @@ const App: React.FC = () => {
   }, [settings.notificationsEnabled]);
 
   useEffect(() => {
-    const handleAuthCallback = async (url: string) => {
-      const { path } = Linking.parse(url);
-
-      if (path !== 'auth-callback') {
-        return;
-      }
-
-      try {
-        const parsedUrl = new URL(url);
-        const hash = parsedUrl.hash.startsWith('#') ? parsedUrl.hash.slice(1) : parsedUrl.hash;
-
-        if (!hash) {
-          return;
-        }
-
-        const params = new URLSearchParams(hash);
-        const accessToken = params.get('access_token');
-        const refreshToken = params.get('refresh_token');
-        const expiresIn = params.get('expires_in');
-
-        if (!accessToken || !refreshToken) {
-          return;
-        }
-
-        await supabase.auth.setSession({
-          access_token: accessToken,
-          refresh_token: refreshToken,
-          ...(expiresIn ? { expires_in: Number(expiresIn) } : {}),
-        });
-      } catch (error) {
-        console.warn('Failed to handle auth callback URL', error);
-      }
-    };
-
-    const subscription = Linking.addEventListener('url', ({ url }) => {
-      handleAuthCallback(url);
-    });
-
-    Linking.getInitialURL().then((initialUrl) => {
-      if (initialUrl) {
-        handleAuthCallback(initialUrl);
-      }
-    });
-
-    return () => {
-      subscription.remove();
-    };
-  }, []);
-
-  useEffect(() => {
     const appStore = useAppStore.getState();
 
     const { data: subscription } = supabase.auth.onAuthStateChange(async (_event, session) => {
@@ -165,10 +117,13 @@ const App: React.FC = () => {
   return (
     <SafeAreaProvider>
       <ThemeProvider>
-        <NavigationContainer linking={linking as any} theme={navigationTheme}>
-          <StatusBar style={statusBarStyle} backgroundColor={colors.background} />
-          <RootNavigator />
-        </NavigationContainer>
+        <ToastProvider>
+          <NavigationContainer linking={linking as any} theme={navigationTheme}>
+            <StatusBar style={statusBarStyle} backgroundColor={colors.background} />
+            <AuthCallbackHandler />
+            <RootNavigator />
+          </NavigationContainer>
+        </ToastProvider>
       </ThemeProvider>
     </SafeAreaProvider>
   );
