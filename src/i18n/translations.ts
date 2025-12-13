@@ -375,7 +375,7 @@ export const translations: Record<Language, Record<string, any>> = {
       loading: 'Please wait...',
       verifyEmailTitle: 'Check your email',
       verifyEmailBody: 'Please verify your email to finish signing up.',
-      resetEmailSent: 'Reset email sent.',
+      resetEmailSent: 'If an account exists for that email, a reset link will be sent.',
       verificationSuccess: 'Your account has been successfully verified.',
       errors: {
         missingCredentials: 'Email and password are required.',
@@ -865,7 +865,7 @@ export const translations: Record<Language, Record<string, any>> = {
       loading: 'Por favor espera...',
       verifyEmailTitle: 'Revisa tu correo',
       verifyEmailBody: 'Verifica tu correo para completar el registro.',
-      resetEmailSent: 'Correo de restablecimiento enviado.',
+      resetEmailSent: 'Si existe una cuenta con ese correo, se enviará un enlace para restablecerla.',
       verificationSuccess: 'Tu cuenta ha sido verificada exitosamente.',
       errors: {
         missingCredentials: 'El correo y la contraseña son obligatorios.',

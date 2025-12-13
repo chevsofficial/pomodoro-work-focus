@@ -57,6 +57,17 @@ export const ResetPasswordScreen: React.FC = () => {
 
     setLoading(true);
     try {
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+
+      if (sessionError) {
+        throw sessionError;
+      }
+
+      if (!sessionData.session) {
+        setError(t('auth.recovery.sessionExpired'));
+        return;
+      }
+
       await supabase.auth.updateUser({ password: trimmedPassword });
       showToast(t('auth.recovery.successToast'), 'success');
       navigation.reset({ index: 0, routes: [{ name: 'Auth' }] });
