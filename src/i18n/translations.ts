@@ -860,7 +860,7 @@ export const translations: Record<Language, Record<string, any>> = {
       forgotPassword: '¿Olvidaste tu contraseña?',
       forgotPasswordTitle: 'Restablece tu contraseña',
       forgotPasswordSubtitle: 'Ingresa tu correo para recibir un enlace de restablecimiento.',
-      sendResetEmail: 'Si una cuenta existe con este correo, se enviará un link de restablecimiento',
+      sendResetEmail: 'Enviar correo de restablecimiento',
       backToSignIn: 'Volver a iniciar sesión',
       loading: 'Por favor espera...',
       verifyEmailTitle: 'Revisa tu correo',
