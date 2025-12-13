@@ -35,7 +35,7 @@ export type RootStackParamList = {
   Auth: undefined;
   AuthCallback: undefined;
   ForgotPassword: undefined;
-  ResetPassword: undefined;
+  ResetPassword: { errorCode?: string } | undefined;
   ActivityTypesManager: undefined;
 };
 
