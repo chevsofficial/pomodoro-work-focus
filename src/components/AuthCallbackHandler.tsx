@@ -4,7 +4,7 @@ import { supabase } from '../services/supabaseClient';
 import { navigate } from '../navigation/navigationRef';
 
 const AUTH_CALLBACK_PATH = 'auth-callback';
-const AUTH_CALLBACK_HOST = 'tomoflow.app';
+const AUTH_CALLBACK_HOSTS = new Set(['tomoflow.app', 'www.tomoflow.app']);
 const AUTH_RECOVERY_PATH = 'auth-recovery';
 
 export const AuthCallbackHandler: React.FC = () => {
@@ -16,12 +16,11 @@ export const AuthCallbackHandler: React.FC = () => {
     }
 
     const parsed = Linking.parse(url);
+    const hostOk = parsed.hostname ? AUTH_CALLBACK_HOSTS.has(parsed.hostname) : false;
     const isAuthCallback =
-      parsed.path === AUTH_CALLBACK_PATH ||
-      (parsed.hostname === AUTH_CALLBACK_HOST && parsed.path === AUTH_CALLBACK_PATH);
+      parsed.path === AUTH_CALLBACK_PATH || (hostOk && parsed.path === AUTH_CALLBACK_PATH);
     const isAuthRecovery =
-      parsed.path === AUTH_RECOVERY_PATH ||
-      (parsed.hostname === AUTH_CALLBACK_HOST && parsed.path === AUTH_RECOVERY_PATH);
+      parsed.path === AUTH_RECOVERY_PATH || (hostOk && parsed.path === AUTH_RECOVERY_PATH);
 
     if (!isAuthCallback && !isAuthRecovery) {
       return;
