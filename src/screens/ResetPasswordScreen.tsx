@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Image,
   KeyboardAvoidingView,
@@ -10,7 +10,7 @@ import {
   View,
 } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useNavigation } from '@react-navigation/native';
+import { RouteProp, useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
 import { ScreenContainer } from '../components/ScreenContainer';
 import { RootStackParamList } from '../navigation/RootNavigator';
 import { spacing } from '../theme/spacing';
@@ -24,6 +24,7 @@ export const ResetPasswordScreen: React.FC = () => {
   const colors = useThemeColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const { showToast } = useToast();
+  const route = useRoute<RouteProp<RootStackParamList, 'ResetPassword'>>();
 
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -32,13 +33,33 @@ export const ResetPasswordScreen: React.FC = () => {
   const [error, setError] = useState<string | undefined>();
   const [loading, setLoading] = useState(false);
 
+  useFocusEffect(
+    useCallback(() => {
+      let isMounted = true;
+
+      supabase.auth.getSession().then(({ data }) => {
+        if (!isMounted) {
+          return;
+        }
+
+        if (!data.session) {
+          setError(t('auth.recovery.sessionExpired'));
+        } else {
+          setError(undefined);
+        }
+      });
+
+      return () => {
+        isMounted = false;
+      };
+    }, []),
+  );
+
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      if (!data.session) {
-        setError(t('auth.recovery.sessionExpired'));
-      }
-    });
-  }, []);
+    if (route.params?.errorCode === 'otp_expired') {
+      setError(t('auth.recovery.linkExpired'));
+    }
+  }, [route.params?.errorCode]);
 
   const handleSubmit = async () => {
     setError(undefined);
@@ -70,7 +91,9 @@ export const ResetPasswordScreen: React.FC = () => {
 
       await supabase.auth.updateUser({ password: trimmedPassword });
       showToast(t('auth.recovery.successToast'), 'success');
-      navigation.reset({ index: 0, routes: [{ name: 'Auth' }] });
+      setTimeout(() => {
+        navigation.reset({ index: 0, routes: [{ name: 'Auth' }] });
+      }, 800);
     } catch (err: any) {
       setError(err?.message ?? t('auth.errors.generic'));
     } finally {

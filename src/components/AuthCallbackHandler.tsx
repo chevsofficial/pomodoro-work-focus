@@ -7,6 +7,27 @@ const AUTH_CALLBACK_PATH = 'auth-callback';
 const AUTH_CALLBACK_HOSTS = new Set(['tomoflow.app', 'www.tomoflow.app']);
 const AUTH_RECOVERY_PATH = 'auth-recovery';
 
+function getTokens(url: string) {
+  const parsedUrl = new URL(url);
+
+  const hashParams = new URLSearchParams(
+    parsedUrl.hash.startsWith('#') ? parsedUrl.hash.slice(1) : parsedUrl.hash,
+  );
+  const queryParams = new URLSearchParams(
+    parsedUrl.search.startsWith('?') ? parsedUrl.search.slice(1) : parsedUrl.search,
+  );
+
+  const get = (key: string) => hashParams.get(key) ?? queryParams.get(key);
+
+  return {
+    accessToken: get('access_token'),
+    refreshToken: get('refresh_token'),
+    expiresIn: get('expires_in'),
+    type: get('type'),
+    errorCode: get('error_code'),
+  };
+}
+
 export const AuthCallbackHandler: React.FC = () => {
   const lastHandledUrl = useRef<string | null>(null);
 
@@ -29,17 +50,20 @@ export const AuthCallbackHandler: React.FC = () => {
     lastHandledUrl.current = url;
 
     try {
-      const parsedUrl = new URL(url);
-      const hash = parsedUrl.hash.startsWith('#') ? parsedUrl.hash.slice(1) : parsedUrl.hash;
+      const { accessToken, refreshToken, expiresIn, errorCode } = getTokens(url);
 
-      if (!hash) {
+      if (isAuthRecovery) {
+        if (accessToken && refreshToken) {
+          await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken,
+            ...(expiresIn ? { expires_in: Number(expiresIn) } : {}),
+          });
+        }
+
+        navigate('ResetPassword', errorCode ? { errorCode } : undefined);
         return;
       }
-
-      const params = new URLSearchParams(hash);
-      const accessToken = params.get('access_token');
-      const refreshToken = params.get('refresh_token');
-      const expiresIn = params.get('expires_in');
 
       if (!accessToken || !refreshToken) {
         return;
@@ -50,10 +74,6 @@ export const AuthCallbackHandler: React.FC = () => {
         refresh_token: refreshToken,
         ...(expiresIn ? { expires_in: Number(expiresIn) } : {}),
       });
-
-      if (isAuthRecovery) {
-        navigate('ResetPassword');
-      }
     } catch (error) {
       console.warn('Failed to handle auth callback URL', error);
     }
