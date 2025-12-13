@@ -54,7 +54,7 @@ const App: React.FC = () => {
 
   const linking = useMemo(
     () => ({
-      prefixes: ['tomoflow://', 'https://tomoflow.app', Linking.createURL('/')],
+      prefixes: ['tomoflow://', 'https://tomoflow.app', 'https://www.tomoflow.app', Linking.createURL('/')],
       config: {
         screens: {
           RootTabs: {
