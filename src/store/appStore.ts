@@ -193,6 +193,7 @@ type SkipIntervalPayload = {
 
 export interface AppStore extends AppStateSnapshot {
   isPro: boolean;
+  isPasswordRecovery: boolean;
   earlySkipInfoVisible: boolean;
   addTask: (payload: AddTaskPayload) => void;
   updateTask: (taskId: string, updates: UpdateTaskPayload) => void;
@@ -222,6 +223,7 @@ export interface AppStore extends AppStateSnapshot {
   deleteAllUserData: () => Promise<void>;
   getExportableData: () => ExportableUserData;
   setLanguage: (language: Language) => void;
+  setPasswordRecovery: (flag: boolean) => void;
 }
 
 export const STORAGE_KEY = 'POMODORO_APP_STATE_V1';
@@ -648,6 +650,7 @@ const useAppStore = create<AppStore>((set, get) => {
     settings: { ...defaultSettings },
     proStatus: { ...defaultProStatus },
     isPro: defaultProStatus.isPro,
+    isPasswordRecovery: false,
     earlySkipInfoVisible: false,
     streak: { ...defaultStreakState },
     cloudSync: { ...defaultCloudSyncState },
@@ -670,6 +673,10 @@ const useAppStore = create<AppStore>((set, get) => {
 
     setLanguage: (language) => {
       setStateAndPersist(() => ({ language }));
+    },
+
+    setPasswordRecovery: (flag) => {
+      set({ isPasswordRecovery: flag });
     },
 
     deleteAllUserData: async () => {

@@ -2,10 +2,9 @@ import React, { useCallback, useEffect, useRef } from 'react';
 import * as Linking from 'expo-linking';
 import { supabase } from '../services/supabaseClient';
 import { resetTo } from '../navigation/navigationRef';
+import useAppStore from '../store/appStore';
 
 const AUTH_CALLBACK_PATH = 'auth-callback';
-const AUTH_CALLBACK_HOST = 'tomoflow.app';
-const AUTH_CALLBACK_HOSTS = new Set([AUTH_CALLBACK_HOST, 'www.tomoflow.app']);
 const AUTH_RECOVERY_PATH = 'auth-recovery';
 
 const normalizePath = (value?: string | null) => {
@@ -34,35 +33,60 @@ export const AuthCallbackHandler: React.FC = () => {
   const lastHandledUrl = useRef<string | null>(null);
 
   const handleAuthCallback = useCallback(async (url: string) => {
+    console.log('[AuthCallbackHandler] raw url:', url);
+    let parsed: Linking.ParsedURL;
+
+    try {
+      parsed = Linking.parse(url);
+      console.log('[AuthCallbackHandler] Linking.parse:', parsed);
+    } catch (e) {
+      console.log('[AuthCallbackHandler] Linking.parse failed', e);
+      parsed = { hostname: null, path: null, queryParams: null, scheme: null };
+    }
+
     if (lastHandledUrl.current === url) {
       return;
     }
 
-    const parsed = Linking.parse(url);
-
     const path = normalizePath(parsed.path);
-    const host = normalizePath(parsed.hostname);
 
-    const isAuthRecovery =
-      path === AUTH_RECOVERY_PATH ||
-      host === AUTH_RECOVERY_PATH ||
-      (host === AUTH_CALLBACK_HOST && path === AUTH_RECOVERY_PATH);
+    // Fallback: if parse() doesn’t give us a path, parse from URL manually
+    let fallbackPath = '';
+    try {
+      const u = new URL(url);
+      // For tomoflow://auth-recovery -> hostname is auth-recovery
+      fallbackPath = normalizePath(u.hostname || u.pathname);
+    } catch {}
 
-    const isAuthCallback =
-      path === AUTH_CALLBACK_PATH ||
-      host === AUTH_CALLBACK_PATH ||
-      (AUTH_CALLBACK_HOSTS.has(host) && path === AUTH_CALLBACK_PATH);
+    const effectivePath = path || fallbackPath;
+
+    const isAuthRecovery = effectivePath === AUTH_RECOVERY_PATH;
+    const isAuthCallback = effectivePath === AUTH_CALLBACK_PATH;
+
+    const p = getParamsFromUrl(url);
+    console.log('[AuthCallbackHandler] extracted params:', {
+      isAuthRecovery,
+      isAuthCallback,
+      hasAccessToken: !!p.accessToken,
+      hasRefreshToken: !!p.refreshToken,
+      type: p.type,
+      errorCode: p.errorCode,
+    });
 
     if (!isAuthCallback && !isAuthRecovery) {
       return;
     }
 
-    lastHandledUrl.current = url;
-
     try {
-      const { accessToken, refreshToken, expiresIn, errorCode } = getParamsFromUrl(url);
+      const { accessToken, refreshToken, expiresIn, errorCode } = p;
 
-      if (isAuthRecovery) {
+      if (effectivePath === AUTH_RECOVERY_PATH) {
+        lastHandledUrl.current = url;
+        useAppStore.getState().setPasswordRecovery(true);
+
+        // navigate first to ensure UI is correct even if setSession is slow
+        resetTo('ResetPassword', errorCode ? ({ errorCode } as any) : undefined);
+
         if (accessToken && refreshToken) {
           await supabase.auth.setSession({
             access_token: accessToken,
@@ -71,9 +95,10 @@ export const AuthCallbackHandler: React.FC = () => {
           });
         }
 
-        resetTo('ResetPassword', errorCode ? { errorCode } : undefined);
         return;
       }
+
+      lastHandledUrl.current = url;
 
       if (!accessToken || !refreshToken) {
         return;

@@ -18,6 +18,7 @@ import { useThemeColors } from '../theme/useThemeColors';
 import { supabase } from '../services/supabaseClient';
 import { t } from '../i18n/translations';
 import { useToast } from '../components/ToastProvider';
+import useAppStore from '../store/appStore';
 
 export const ResetPasswordScreen: React.FC = () => {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
@@ -66,6 +67,10 @@ export const ResetPasswordScreen: React.FC = () => {
     }
   }, [route.params?.errorCode]);
 
+  useEffect(() => {
+    return () => useAppStore.getState().setPasswordRecovery(false);
+  }, []);
+
   const handleSubmit = async () => {
     setError(undefined);
     const trimmedPassword = password.trim();
@@ -96,6 +101,7 @@ export const ResetPasswordScreen: React.FC = () => {
 
       await supabase.auth.updateUser({ password: trimmedPassword });
       // ✅ end recovery session; user should sign in with the new password
+      useAppStore.getState().setPasswordRecovery(false);
       await supabase.auth.signOut();
       showToast(t('auth.recovery.successToast'), 'success');
       navigation.reset({ index: 0, routes: [{ name: 'Auth' }] });
