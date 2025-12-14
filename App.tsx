@@ -93,8 +93,6 @@ const App: React.FC = () => {
   }, [settings.notificationsEnabled]);
 
   useEffect(() => {
-    const appStore = useAppStore.getState();
-
     const { data: subscription } = supabase.auth.onAuthStateChange(async (_event, session) => {
       const appStore = useAppStore.getState();
 
