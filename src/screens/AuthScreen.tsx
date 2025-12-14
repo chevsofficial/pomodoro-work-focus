@@ -38,7 +38,14 @@ export const AuthScreen: React.FC<Props> = ({ navigation }) => {
     try {
       if (mode === 'signIn') {
         await signInWithEmail(trimmedEmail, password);
-        navigation.goBack();
+        if (navigation.canGoBack()) {
+          navigation.goBack();
+        } else {
+          navigation.reset({
+            index: 0,
+            routes: [{ name: 'RootTabs' }],
+          });
+        }
         return;
       }
 

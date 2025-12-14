@@ -82,12 +82,16 @@ export const AuthCallbackHandler: React.FC = () => {
 
       if (effectivePath === AUTH_RECOVERY_PATH) {
         lastHandledUrl.current = url;
-        useAppStore.getState().setPasswordRecovery(true);
-
-        // navigate first to ensure UI is correct even if setSession is slow
-        resetTo('ResetPassword', errorCode ? ({ errorCode } as any) : undefined);
+        if (errorCode) {
+          useAppStore.getState().setPasswordRecovery(false);
+          resetTo('ForgotPassword');
+          return;
+        }
 
         if (accessToken && refreshToken) {
+          useAppStore.getState().setPasswordRecovery(true);
+          resetTo('ResetPassword');
+
           await supabase.auth.setSession({
             access_token: accessToken,
             refresh_token: refreshToken,
