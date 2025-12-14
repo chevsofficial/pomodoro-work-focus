@@ -1,11 +1,17 @@
 import React, { useCallback, useEffect, useRef } from 'react';
 import * as Linking from 'expo-linking';
 import { supabase } from '../services/supabaseClient';
-import { navigate, resetTo } from '../navigation/navigationRef';
+import { resetTo } from '../navigation/navigationRef';
 
 const AUTH_CALLBACK_PATH = 'auth-callback';
-const AUTH_CALLBACK_HOSTS = new Set(['tomoflow.app', 'www.tomoflow.app']);
+const AUTH_CALLBACK_HOST = 'tomoflow.app';
+const AUTH_CALLBACK_HOSTS = new Set([AUTH_CALLBACK_HOST, 'www.tomoflow.app']);
 const AUTH_RECOVERY_PATH = 'auth-recovery';
+
+const normalizePath = (value?: string | null) => {
+  if (!value) return '';
+  return value.startsWith('/') ? value.slice(1) : value;
+};
 
 function getParamsFromUrl(url: string) {
   const u = new URL(url);
@@ -33,15 +39,19 @@ export const AuthCallbackHandler: React.FC = () => {
     }
 
     const parsed = Linking.parse(url);
-    const hostOk = parsed.hostname ? AUTH_CALLBACK_HOSTS.has(parsed.hostname) : false;
-    const isAuthCallback =
-      parsed.path === AUTH_CALLBACK_PATH ||
-      parsed.hostname === AUTH_CALLBACK_PATH ||
-      (hostOk && parsed.path === AUTH_CALLBACK_PATH);
+
+    const path = normalizePath(parsed.path);
+    const host = normalizePath(parsed.hostname);
+
     const isAuthRecovery =
-      parsed.path === AUTH_RECOVERY_PATH ||
-      parsed.hostname === AUTH_RECOVERY_PATH ||
-      (hostOk && parsed.path === AUTH_RECOVERY_PATH);
+      path === AUTH_RECOVERY_PATH ||
+      host === AUTH_RECOVERY_PATH ||
+      (host === AUTH_CALLBACK_HOST && path === AUTH_RECOVERY_PATH);
+
+    const isAuthCallback =
+      path === AUTH_CALLBACK_PATH ||
+      host === AUTH_CALLBACK_PATH ||
+      (AUTH_CALLBACK_HOSTS.has(host) && path === AUTH_CALLBACK_PATH);
 
     if (!isAuthCallback && !isAuthRecovery) {
       return;

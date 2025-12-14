@@ -95,7 +95,14 @@ const App: React.FC = () => {
   useEffect(() => {
     const appStore = useAppStore.getState();
 
-    const { data: subscription } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    const { data: subscription } = supabase.auth.onAuthStateChange(async (event, session) => {
+      // ✅ During password recovery, we DO have a session, but we should NOT treat it as a real login.
+      if (event === 'PASSWORD_RECOVERY') {
+        // Optional: you can set a flag in your store if you want to show “recovery mode” UI
+        // useAppStore.getState().setPasswordRecovery(true);
+        return;
+      }
+
       const userId = session?.user?.id;
 
       if (!userId) {

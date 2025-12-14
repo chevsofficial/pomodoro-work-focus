@@ -43,7 +43,7 @@ export const ResetPasswordScreen: React.FC = () => {
         setTimeout(async () => {
           const { data: d2 } = await supabase.auth.getSession();
           if (!mounted) return;
-          if (!d2.session) setError(t('auth.recovery.sessionExpired'));
+          if (!d2.session) setError(t('auth.recovery.linkExpired'));
         }, 600);
       }
     };
@@ -90,15 +90,15 @@ export const ResetPasswordScreen: React.FC = () => {
       }
 
       if (!sessionData.session) {
-        setError(t('auth.recovery.sessionExpired'));
+        setError(t('auth.recovery.linkExpired'));
         return;
       }
 
       await supabase.auth.updateUser({ password: trimmedPassword });
+      // ✅ end recovery session; user should sign in with the new password
+      await supabase.auth.signOut();
       showToast(t('auth.recovery.successToast'), 'success');
-      setTimeout(() => {
-        navigation.reset({ index: 0, routes: [{ name: 'Auth' }] });
-      }, 800);
+      navigation.reset({ index: 0, routes: [{ name: 'Auth' }] });
     } catch (err: any) {
       setError(err?.message ?? t('auth.errors.generic'));
     } finally {

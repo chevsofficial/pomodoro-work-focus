@@ -394,7 +394,8 @@ export const translations: Record<Language, Record<string, any>> = {
         passwordTooShort: 'Password must be at least 8 characters.',
         passwordsDoNotMatch: 'Passwords do not match.',
         successToast: 'Password updated. Sign in with your new password.',
-        sessionExpired: 'This reset link is no longer valid. Request a new password email from the app.',
+        linkExpired: 'This reset link is invalid or has expired. Please request a new one.',
+        sessionExpired: 'This reset session expired. Please request a new reset email.',
       },
     },
     tasks: {
@@ -884,7 +885,8 @@ export const translations: Record<Language, Record<string, any>> = {
         passwordTooShort: 'La contraseña debe tener al menos 8 caracteres.',
         passwordsDoNotMatch: 'Las contraseñas no coinciden.',
         successToast: 'Contraseña actualizada. Inicia sesión con tu nueva contraseña.',
-        sessionExpired: 'Este enlace ya no es válido. Solicita un nuevo correo de restablecimiento desde la app.',
+        linkExpired: 'Este enlace de restablecimiento no es válido o ha expirado. Solicita uno nuevo.',
+        sessionExpired: 'Esta sesión de restablecimiento expiró. Solicita un nuevo correo de restablecimiento.',
       },
     },
     tasks: {
