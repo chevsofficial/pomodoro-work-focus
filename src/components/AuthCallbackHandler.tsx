@@ -1,23 +1,19 @@
 import React, { useCallback, useEffect, useRef } from 'react';
 import * as Linking from 'expo-linking';
 import { supabase } from '../services/supabaseClient';
-import { navigate } from '../navigation/navigationRef';
+import { navigate, resetTo } from '../navigation/navigationRef';
 
 const AUTH_CALLBACK_PATH = 'auth-callback';
 const AUTH_CALLBACK_HOSTS = new Set(['tomoflow.app', 'www.tomoflow.app']);
 const AUTH_RECOVERY_PATH = 'auth-recovery';
 
-function getTokens(url: string) {
-  const parsedUrl = new URL(url);
+function getParamsFromUrl(url: string) {
+  const u = new URL(url);
 
-  const hashParams = new URLSearchParams(
-    parsedUrl.hash.startsWith('#') ? parsedUrl.hash.slice(1) : parsedUrl.hash,
-  );
-  const queryParams = new URLSearchParams(
-    parsedUrl.search.startsWith('?') ? parsedUrl.search.slice(1) : parsedUrl.search,
-  );
+  const hashParams = new URLSearchParams(u.hash.startsWith('#') ? u.hash.slice(1) : u.hash);
+  const queryParams = new URLSearchParams(u.search.startsWith('?') ? u.search.slice(1) : u.search);
 
-  const get = (key: string) => hashParams.get(key) ?? queryParams.get(key);
+  const get = (k: string) => hashParams.get(k) ?? queryParams.get(k);
 
   return {
     accessToken: get('access_token'),
@@ -39,9 +35,13 @@ export const AuthCallbackHandler: React.FC = () => {
     const parsed = Linking.parse(url);
     const hostOk = parsed.hostname ? AUTH_CALLBACK_HOSTS.has(parsed.hostname) : false;
     const isAuthCallback =
-      parsed.path === AUTH_CALLBACK_PATH || (hostOk && parsed.path === AUTH_CALLBACK_PATH);
+      parsed.path === AUTH_CALLBACK_PATH ||
+      parsed.hostname === AUTH_CALLBACK_PATH ||
+      (hostOk && parsed.path === AUTH_CALLBACK_PATH);
     const isAuthRecovery =
-      parsed.path === AUTH_RECOVERY_PATH || (hostOk && parsed.path === AUTH_RECOVERY_PATH);
+      parsed.path === AUTH_RECOVERY_PATH ||
+      parsed.hostname === AUTH_RECOVERY_PATH ||
+      (hostOk && parsed.path === AUTH_RECOVERY_PATH);
 
     if (!isAuthCallback && !isAuthRecovery) {
       return;
@@ -50,7 +50,7 @@ export const AuthCallbackHandler: React.FC = () => {
     lastHandledUrl.current = url;
 
     try {
-      const { accessToken, refreshToken, expiresIn, errorCode } = getTokens(url);
+      const { accessToken, refreshToken, expiresIn, errorCode } = getParamsFromUrl(url);
 
       if (isAuthRecovery) {
         if (accessToken && refreshToken) {
@@ -61,7 +61,7 @@ export const AuthCallbackHandler: React.FC = () => {
           });
         }
 
-        navigate('ResetPassword', errorCode ? { errorCode } : undefined);
+        resetTo('ResetPassword', errorCode ? { errorCode } : undefined);
         return;
       }
 

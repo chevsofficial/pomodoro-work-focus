@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   Image,
   KeyboardAvoidingView,
@@ -10,7 +10,7 @@ import {
   View,
 } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { RouteProp, useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
+import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import { ScreenContainer } from '../components/ScreenContainer';
 import { RootStackParamList } from '../navigation/RootNavigator';
 import { spacing } from '../theme/spacing';
@@ -33,27 +33,32 @@ export const ResetPasswordScreen: React.FC = () => {
   const [error, setError] = useState<string | undefined>();
   const [loading, setLoading] = useState(false);
 
-  useFocusEffect(
-    useCallback(() => {
-      let isMounted = true;
+  useEffect(() => {
+    let mounted = true;
 
-      supabase.auth.getSession().then(({ data }) => {
-        if (!isMounted) {
-          return;
-        }
+    const check = async () => {
+      const { data } = await supabase.auth.getSession();
+      if (!mounted) return;
+      if (!data.session) {
+        setTimeout(async () => {
+          const { data: d2 } = await supabase.auth.getSession();
+          if (!mounted) return;
+          if (!d2.session) setError(t('auth.recovery.sessionExpired'));
+        }, 600);
+      }
+    };
 
-        if (!data.session) {
-          setError(t('auth.recovery.sessionExpired'));
-        } else {
-          setError(undefined);
-        }
-      });
+    check();
 
-      return () => {
-        isMounted = false;
-      };
-    }, []),
-  );
+    const { data: sub } = supabase.auth.onAuthStateChange((_evt, session) => {
+      if (session) setError(undefined);
+    });
+
+    return () => {
+      mounted = false;
+      sub.subscription.unsubscribe();
+    };
+  }, []);
 
   useEffect(() => {
     if (route.params?.errorCode === 'otp_expired') {
