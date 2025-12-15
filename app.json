@@ -18,6 +18,15 @@
     "assetBundlePatterns": [
       "**/*"
     ],
+    "plugins": [
+      [
+        "react-native-google-mobile-ads",
+        {
+          "android_app_id": "ca-app-pub-2340741129071114~1326439397",
+          "ios_app_id": "ca-app-pub-2340741129071114~2471058154"
+        }
+      ]
+    ],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.chevslabs.tomoflow",

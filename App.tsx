@@ -7,7 +7,7 @@ import { StatusBar, StatusBarStyle } from 'expo-status-bar';
 import { RootNavigator } from './src/navigation/RootNavigator';
 import { ThemeProvider } from './src/theme/ThemeProvider';
 import { useThemeColors } from './src/theme/useThemeColors';
-import useAppStore, { useSettings } from './src/store/appStore';
+import useAppStore, { selectIsProEffective, useSettings } from './src/store/appStore';
 import { initializeNotifications, requestNotificationPermissions } from './src/utils/notificationService';
 import { supabase } from './src/services/supabaseClient';
 import { cloudSyncApi } from './src/services/cloudSyncApi';
@@ -15,10 +15,13 @@ import { configureRevenueCat } from './src/services/revenuecat';
 import { ToastProvider } from './src/components/ToastProvider';
 import { AuthCallbackHandler } from './src/components/AuthCallbackHandler';
 import { handlePendingNavigation, navigationRef } from './src/navigation/navigationRef';
+import mobileAds from 'react-native-google-mobile-ads';
+import { AdFooterBanner } from './src/components/AdFooterBanner';
 
 const App: React.FC = () => {
   const colors = useThemeColors();
   const settings = useSettings();
+  const isPro = useAppStore(selectIsProEffective);
 
   const statusBarStyle = useMemo<StatusBarStyle>(() => {
     const hex = colors.background.replace('#', '');
@@ -87,6 +90,12 @@ const App: React.FC = () => {
   }, []);
 
   useEffect(() => {
+    mobileAds()
+      .initialize()
+      .catch((e) => console.warn('[Ads] initialize failed', e));
+  }, []);
+
+  useEffect(() => {
     if (settings.notificationsEnabled) {
       requestNotificationPermissions();
     }
@@ -136,6 +145,8 @@ const App: React.FC = () => {
             <AuthCallbackHandler />
             <RootNavigator />
           </NavigationContainer>
+
+          {!isPro && <AdFooterBanner />}
         </ToastProvider>
       </ThemeProvider>
     </SafeAreaProvider>
