@@ -1,7 +1,6 @@
 import { TranslationKey } from '../i18n/translations';
 
 export const PRO_BENEFITS: TranslationKey[] = [
-  'paywall.benefits.removeAds',
   'paywall.benefits.premiumThemes',
   'paywall.benefits.advancedAnalytics',
   'paywall.benefits.unlimitedActivityTypes',

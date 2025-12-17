@@ -138,16 +138,6 @@ export const InfoScreen: React.FC = () => {
       ],
     },
     {
-      title: t('info.sections.pro.title'),
-      items: [
-        {
-          title: t('info.sections.pro.upgrade.title'),
-          description: t('info.sections.pro.upgrade.description'),
-          onPress: () => navigateToProUpsell(navigation),
-        },
-      ],
-    },
-    {
       title: t('info.sections.social.title'),
       items: [
         {
