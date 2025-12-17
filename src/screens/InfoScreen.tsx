@@ -18,7 +18,7 @@ import { AdBanner } from '../components/AdBanner';
 import { APP_LINKS } from '../config/links';
 import { RootStackParamList } from '../navigation/RootNavigator';
 import { navigateToProUpsell } from '../navigation/proNavigation';
-import useAppStore, {
+import {
   STORAGE_KEY,
   useIsPro,
   useLanguage,
