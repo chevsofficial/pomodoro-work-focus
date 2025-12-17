@@ -237,9 +237,7 @@ export const PaywallScreen: React.FC = () => {
       <ScreenContainer withTopPadding={false}>
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
           <View style={styles.header}>
-            <Text style={styles.logo}>TomoFlow</Text>
             <Text style={styles.heroTitle}>{t('paywall.heroTitle')}</Text>
-            <Text style={styles.heroSubtitle}>{t('paywall.heroSubtitle')}</Text>
             <Text style={styles.heroBody}>{t('paywall.heroBody')}</Text>
           </View>
 
@@ -259,9 +257,7 @@ export const PaywallScreen: React.FC = () => {
     <ScreenContainer withTopPadding={false}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
-          <Text style={styles.logo}>TomoFlow</Text>
           <Text style={styles.heroTitle}>{t('paywall.heroTitle')}</Text>
-          <Text style={styles.heroSubtitle}>{t('paywall.heroSubtitle')}</Text>
           <Text style={styles.heroBody}>{t('paywall.heroBody')}</Text>
         </View>
 
