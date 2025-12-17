@@ -10,7 +10,6 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
@@ -74,9 +73,7 @@ export const InfoScreen: React.FC = () => {
   const isPro = useIsPro();
   const language = useLanguage();
   const setLanguage = useSetLanguage();
-  const [isRedeemModalVisible, setRedeemModalVisible] = useState(false);
   const [isLanguageModalVisible, setLanguageModalVisible] = useState(false);
-  const [redeemCode, setRedeemCode] = useState('');
   const styles = useMemo(() => createStyles(colors), [colors]);
 
   const rateUrl =
@@ -91,17 +88,8 @@ export const InfoScreen: React.FC = () => {
     });
   };
 
-  const handleRedeemPress = () => {
-    setRedeemModalVisible(true);
-  };
-
   const handleLanguagePress = () => {
     setLanguageModalVisible(true);
-  };
-
-  const closeRedeemModal = () => {
-    setRedeemModalVisible(false);
-    setRedeemCode('');
   };
 
   const closeLanguageModal = () => {
@@ -113,36 +101,15 @@ export const InfoScreen: React.FC = () => {
     setLanguageModalVisible(false);
   };
 
-  const handleRedeemSubmit = () => {
-    const normalizedCode = redeemCode.trim().toUpperCase();
-    if (!normalizedCode) {
-      Alert.alert(t('info.alerts.redeemTitle'), t('info.alerts.redeemMissingCode'));
-      return;
-    }
-
-    if (normalizedCode === 'FOCUSPRO2023' || normalizedCode === 'TESTPRO' || normalizedCode === 'DEBUGPRO') {
-      const appStore = useAppStore.getState();
-      const timestamp = new Date().toISOString();
-      appStore.setProStatus({
-        isPro: true,
-        source: 'redeem_code',
-        productId: null,
-        expiresAt: null,
-        activatedAt: timestamp,
-        lastVerifiedAt: timestamp,
-      });
-      Alert.alert(t('info.alerts.redeemSuccessTitle'), t('info.alerts.redeemSuccessBody'));
-      closeRedeemModal();
-      return;
-    }
-
-    Alert.alert(t('info.alerts.redeemInvalidTitle'), t('info.alerts.redeemInvalidBody'));
-  };
-
   const sections: InfoSection[] = [
     {
       title: t('info.sections.support.title'),
       items: [
+        {
+          title: t('info.sections.about.helpCenter.title'),
+          description: t('info.sections.about.helpCenter.description'),
+          onPress: () => openLink(APP_LINKS.website),
+        },
         {
           title: t('info.sections.support.contact.title'),
           description: t('info.sections.support.contact.description'),
@@ -153,21 +120,6 @@ export const InfoScreen: React.FC = () => {
           description: t('info.sections.support.rate.description'),
           onPress: () => openLink(rateUrl),
         },
-      ],
-    },
-    {
-      title: t('info.sections.about.title'),
-      items: [
-        {
-          title: t('info.sections.about.helpCenter.title'),
-          description: t('info.sections.about.helpCenter.description'),
-          onPress: () => openLink(APP_LINKS.website),
-        },/* REMOVED FOR TOMOFLOW V1
-        {
-          title: t('info.sections.about.news.title'),
-          description: t('info.sections.about.news.description'),
-          onPress: () => openLink(APP_LINKS.news),
-        },*/
       ],
     },
     {
@@ -188,11 +140,6 @@ export const InfoScreen: React.FC = () => {
     {
       title: t('info.sections.pro.title'),
       items: [
-        {
-          title: t('info.sections.pro.redeem.title'),
-          description: t('info.sections.pro.redeem.description'),
-          onPress: handleRedeemPress,
-        },
         {
           title: t('info.sections.pro.upgrade.title'),
           description: t('info.sections.pro.upgrade.description'),
@@ -306,39 +253,6 @@ export const InfoScreen: React.FC = () => {
 
         <AdBanner />
       </ScrollView>
-
-      <Modal
-        animationType="fade"
-        transparent
-        visible={isRedeemModalVisible}
-        onRequestClose={closeRedeemModal}
-      >
-        <View style={styles.modalBackdrop}>
-          <View style={styles.modalCard}>
-            <Text style={styles.modalTitle}>{t('info.redeemModalTitle')}</Text>
-            <Text style={styles.modalDescription}>{t('info.redeemModalDescription')}</Text>
-            <TextInput
-              style={styles.modalInput}
-              placeholder={t('info.redeemPlaceholder')}
-              placeholderTextColor={colors.textSecondary}
-              value={redeemCode}
-              onChangeText={setRedeemCode}
-              autoCapitalize="characters"
-              autoCorrect={false}
-              returnKeyType="done"
-              onSubmitEditing={handleRedeemSubmit}
-            />
-            <View style={styles.modalActions}>
-              <TouchableOpacity style={styles.modalSecondaryButton} onPress={closeRedeemModal}>
-                <Text style={styles.modalSecondaryButtonText}>{t('common.cancel')}</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.modalPrimaryButton} onPress={handleRedeemSubmit}>
-                <Text style={styles.modalPrimaryButtonText}>{t('info.redeemCta')}</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
 
       <Modal
         animationType="fade"
