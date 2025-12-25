@@ -26,11 +26,6 @@ type Props = {
   applyLabel: string;
 };
 
-/**
- * DateType in react-native-ui-datepicker can be:
- * string | number | Dayjs | Date | null | undefined
- * (per the library's type definitions) :contentReference[oaicite:1]{index=1}
- */
 const toJSDate = (value: DateType): Date | null => {
   if (value == null) return null;
 
@@ -41,14 +36,12 @@ const toJSDate = (value: DateType): Date | null => {
     return Number.isNaN(d.getTime()) ? null : d;
   }
 
-  // Dayjs (or compatible) usually has toDate()
   const maybe: any = value;
   if (typeof maybe?.toDate === 'function') {
     const d = maybe.toDate();
     return d instanceof Date && !Number.isNaN(d.getTime()) ? d : null;
   }
 
-  // last resort
   try {
     const d = new Date(maybe);
     return Number.isNaN(d.getTime()) ? null : d;
@@ -58,7 +51,6 @@ const toJSDate = (value: DateType): Date | null => {
 };
 
 const getContrastingTextColor = (bgHex: string) => {
-  // expects #RRGGBB, fallback to white text
   const hex = (bgHex || '').replace('#', '');
   if (hex.length !== 6) return '#FFFFFF';
 
@@ -66,10 +58,7 @@ const getContrastingTextColor = (bgHex: string) => {
   const g = parseInt(hex.slice(2, 4), 16);
   const b = parseInt(hex.slice(4, 6), 16);
 
-  // simple luminance approximation
   const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-
-  // If background is bright, use dark text; otherwise white text
   return luminance > 0.62 ? '#0F172A' : '#FFFFFF';
 };
 
@@ -80,6 +69,7 @@ const withAlpha = (hex: string, alpha: number) => {
   const a = Math.round(Math.min(1, Math.max(0, alpha)) * 255)
     .toString(16)
     .padStart(2, '0');
+
   return `#${clean}${a}`;
 };
 
@@ -99,14 +89,7 @@ export const DateRangePickerModal: React.FC<Props> = ({
 }) => {
   const defaultStyles = useDefaultStyles();
 
-  useEffect(() => {
-    if (__DEV__ && visible) {
-      // eslint-disable-next-line no-console
-      console.log('[DatePicker styles keys]', Object.keys(defaultStyles || {}));
-    }
-  }, [defaultStyles, visible]);
-
-  // Keep state as DateType so we can accept Dayjs returned by the picker.
+  // Keep state as DateType (picker may return Dayjs)
   const [startDate, setStartDate] = useState<DateType>(initialStartDate);
   const [endDate, setEndDate] = useState<DateType>(initialEndDate);
 
@@ -118,85 +101,88 @@ export const DateRangePickerModal: React.FC<Props> = ({
     setEndDate(initialEndDate);
   }, [initialEndDate, initialStartDate, visible]);
 
-  // Theme-aware contrast for selected date label
   const selectedLabelColor = useMemo(
     () => getContrastingTextColor(colors.primary),
     [colors.primary],
   );
+
+  // Use a subtle tint for the range fill so day numbers stay readable
   const rangeFillBg = useMemo(
     () => withAlpha(colors.primary, 0.18),
     [colors.primary],
   );
 
-  /**
-   * IMPORTANT:
-   * This library expects styling via `styles` prop + useDefaultStyles().
-   * The props like calendarTextStyle/headerTextStyle/etc. are NOT part of DatePickerRangeProps,
-   * which is why TS errors were showing. :contentReference[oaicite:2]{index=2}
-   */
   const pickerStyles = useMemo(() => {
-    // We "as any" here because the library's Styles type is an internal mapped enum;
-    // extra keys are ignored safely, and it keeps TS from blocking builds.
     const base: any = { ...defaultStyles };
 
     const merge = (key: string, value: any) => {
       base[key] = { ...(base[key] ?? {}), ...value };
     };
 
-    // ---- Modal/picker base surfaces ----
-    merge('container', { backgroundColor: colors.surface });
+    // ---- Base surfaces ----
     merge('header', { backgroundColor: colors.surface });
     merge('weekdays', { backgroundColor: colors.surface });
+    merge('days', { backgroundColor: colors.surface });
 
-    // ---- Month header label ----
-    const monthLabelStyle = {
+    // Ensure day cell itself doesn't force a dark bg
+    merge('day_cell', { backgroundColor: 'transparent' });
+    merge('day', { backgroundColor: 'transparent' });
+
+    // ---- Header month/year label (THIS fixes the black month text) ----
+    // Your version uses month_selector_label / year_selector_label keys.
+    const headerLabelStyle = {
       color: colors.textPrimary,
       fontWeight: '700',
-      textTransform: 'capitalize',
+      textTransform: 'capitalize' as const, // makes "diciembre" -> "Diciembre"
     };
-    merge('header_label', monthLabelStyle);
-    merge('month_label', monthLabelStyle);
-    merge('month_year_label', monthLabelStyle);
-    merge('headerLabel', monthLabelStyle);
+    merge('month_selector_label', headerLabelStyle);
+    merge('year_selector_label', headerLabelStyle);
+
+    // (Optional) if you ever show month/year selector grids
+    merge('month_label', { color: colors.textPrimary, fontWeight: '700', textTransform: 'capitalize' });
+    merge('year_label', { color: colors.textPrimary, fontWeight: '700' });
+    merge('selected_month_label', { color: colors.textPrimary, fontWeight: '800', textTransform: 'capitalize' });
+    merge('selected_year_label', { color: colors.textPrimary, fontWeight: '800' });
 
     // ---- Weekday labels ----
-    merge('weekday_label', { color: colors.textSecondary, fontWeight: '600' });
-    merge('weekDaysLabel', { color: colors.textSecondary, fontWeight: '600' });
+    merge('weekday_label', { color: colors.textSecondary, fontWeight: '700' });
 
-    // ---- Day labels (default) ----
-    merge('day', { backgroundColor: 'transparent' });
+    // ---- Day numbers ----
     merge('day_label', { color: colors.textPrimary, fontWeight: '600' });
-    merge('dayLabel', { color: colors.textPrimary, fontWeight: '600' });
-
-    // Outside month days
     merge('outside_label', { color: colors.textMuted });
-    merge('outsideLabel', { color: colors.textMuted });
 
-    // ---- Today styling ----
-    merge('today', {
-      borderColor: colors.primary,
-      borderWidth: 1,
-      backgroundColor: 'transparent',
-    });
-    merge('today_label', { color: colors.primary, fontWeight: '700' });
-    merge('todayLabel', { color: colors.primary, fontWeight: '700' });
+    // ---- Today ----
+    merge('today', { borderColor: colors.primary, borderWidth: 1, backgroundColor: 'transparent' });
+    merge('today_label', { color: colors.primary, fontWeight: '800' });
 
-    // ---- Selected day styling ----
+    // ---- Selected single day ----
     merge('selected', { backgroundColor: colors.primary });
-    merge('selected_label', { color: selectedLabelColor, fontWeight: '800' });
-    merge('selectedLabel', { color: selectedLabelColor, fontWeight: '800' });
+    merge('selected_label', { color: selectedLabelColor, fontWeight: '900' });
 
-    // ---- Range fill styling ----
+    // ---- Range styling (THIS fixes in-range day number visibility) ----
+    // Containers:
+    merge('range_middle', { backgroundColor: rangeFillBg });
     merge('range_fill', { backgroundColor: rangeFillBg });
-    merge('rangeFill', { backgroundColor: rangeFillBg });
 
-    const rangeLabelStyle = { color: colors.textPrimary, fontWeight: '600' };
-    merge('range_fill_label', rangeLabelStyle);
-    merge('rangeFillLabel', rangeLabelStyle);
-    merge('range_middle_label', rangeLabelStyle);
-    merge('rangeMiddleLabel', rangeLabelStyle);
-    merge('in_range_label', rangeLabelStyle);
-    merge('inRangeLabel', rangeLabelStyle);
+    // Week edge fills (important in your version):
+    merge('range_fill_weekstart', { backgroundColor: rangeFillBg });
+    merge('range_fill_weekend', { backgroundColor: rangeFillBg });
+
+    // Start/End pills:
+    merge('range_start', { backgroundColor: colors.primary });
+    merge('range_end', { backgroundColor: colors.primary });
+
+    // Labels:
+    // Middle of range should be normal readable textPrimary (not same as fill)
+    merge('range_middle_label', { color: colors.textPrimary, fontWeight: '700' });
+
+    // Start/end should use contrasting text on primary
+    merge('range_start_label', { color: selectedLabelColor, fontWeight: '900' });
+    merge('range_end_label', { color: selectedLabelColor, fontWeight: '900' });
+
+    // If any disabled/hidden labels appear
+    merge('disabled_label', { color: colors.textMuted });
+    merge('hidden', { opacity: 0 });
 
     return base;
   }, [
@@ -232,7 +218,6 @@ export const DateRangePickerModal: React.FC<Props> = ({
               startDate={startDate}
               endDate={endDate}
               onChange={({ startDate: nextStart, endDate: nextEnd }) => {
-                // nextStart/nextEnd are DateType (can be Dayjs)
                 const parsedStart = nextStart ?? null;
                 const parsedEnd = nextEnd ?? null;
 
@@ -292,7 +277,7 @@ const createStyles = (colors: ReturnType<typeof useThemeColors>) =>
       borderWidth: 1,
       borderColor: colors.border,
       padding: spacing.sm,
-      backgroundColor: colors.surface, // important: prevents “all black” bleed-through
+      backgroundColor: colors.surface,
     },
     actions: {
       flexDirection: 'row',
@@ -317,7 +302,6 @@ const createStyles = (colors: ReturnType<typeof useThemeColors>) =>
       backgroundColor: colors.primary,
     },
     applyText: {
-      // Keep this readable across themes too:
       color: getContrastingTextColor(colors.primary),
       fontWeight: '700',
     },
