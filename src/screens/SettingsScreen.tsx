@@ -13,8 +13,9 @@ import {
   View,
 } from 'react-native';
 import { ScreenContainer } from '../components/ScreenContainer';
+import { LockedMinuteInput } from '../components/LockedMinuteInput';
 import { RootStackParamList } from '../navigation/RootNavigator';
-import { navigateToProUpsell } from '../navigation/proNavigation';
+import { goToPaywall, navigateToProUpsell } from '../navigation/proNavigation';
 import { ActivityType, PomodoroSettings } from '../models';
 import useAppStore, {
   FREE_ACTIVITY_TYPE_LIMIT,
@@ -22,8 +23,8 @@ import useAppStore, {
   useActiveActivityTypes,
   useArchivedActivityTypes,
   useEffectiveSettings,
-  useIsPro,
 } from '../store/appStore';
+import { useSubscriptionGate } from '../utils/subscriptionGate';
 import { signOut } from '../services/authService';
 import { spacing } from '../theme/spacing';
 import { THEMES, ThemeId, useThemeColors } from '../theme/useThemeColors';
@@ -108,15 +109,34 @@ const SettingInputRow: React.FC<{
   onChangeText: (text: string) => void;
   styles: SettingsStyles;
   placeholderColor: string;
-}> = ({ label, value, onChangeText, styles, placeholderColor }) => {
+  locked?: boolean;
+  onPressLocked?: () => void;
+}> = ({ label, value, onChangeText, styles, placeholderColor, locked, onPressLocked }) => {
+  if (locked) {
+    return (
+      <TouchableOpacity style={styles.settingRow} onPress={onPressLocked} activeOpacity={0.7}>
+        <Text style={styles.settingLabel}>{label}</Text>
+        <LockedMinuteInput
+          value={value}
+          locked
+          onPressLocked={onPressLocked ?? (() => {})}
+          inputStyle={styles.input}
+          placeholderTextColor={placeholderColor}
+          pressable={false}
+        />
+      </TouchableOpacity>
+    );
+  }
+
   return (
     <View style={styles.settingRow}>
       <Text style={styles.settingLabel}>{label}</Text>
-      <TextInput
-        style={styles.input}
+      <LockedMinuteInput
         value={value}
+        locked={false}
+        onPressLocked={() => {}}
         onChangeText={onChangeText}
-        keyboardType="numeric"
+        inputStyle={styles.input}
         placeholderTextColor={placeholderColor}
       />
     </View>
@@ -163,32 +183,42 @@ type ActivityTypeModalProps = {
   onSubmit: (payload: Omit<ActivityType, 'id'>) => void;
   onDelete?: () => void;
   onLockedColorPress?: () => void;
+  onLockedIntervalPress?: () => void;
   colors: ReturnType<typeof useThemeColors>;
   styles: ActivityTypeModalStyles;
 };
 
 const buildFormState = (
   defaults: ActivityTypeModalProps['defaults'],
-  initialValues?: ActivityType,
+  initialValues: ActivityType | undefined,
+  canCustomizeActivityTypeIntervals: boolean,
 ): ActivityTypeFormValues => {
+  const intervalDefaults = {
+    workDurationMinutes: defaults.workDurationMinutes.toString(),
+    shortBreakMinutes: defaults.shortBreakMinutes.toString(),
+    longBreakMinutes: defaults.longBreakMinutes.toString(),
+    intervalsBeforeLongBreak: defaults.intervalsBeforeLongBreak.toString(),
+  };
+
   if (initialValues) {
     return {
       name: initialValues.name,
       color: initialValues.color ?? DEFAULT_ACTIVITY_COLOR,
-      workDurationMinutes: initialValues.workDurationMinutes.toString(),
-      shortBreakMinutes: initialValues.shortBreakMinutes.toString(),
-      longBreakMinutes: initialValues.longBreakMinutes.toString(),
-      intervalsBeforeLongBreak: initialValues.intervalsBeforeLongBreak.toString(),
+      ...(canCustomizeActivityTypeIntervals
+        ? {
+            workDurationMinutes: initialValues.workDurationMinutes.toString(),
+            shortBreakMinutes: initialValues.shortBreakMinutes.toString(),
+            longBreakMinutes: initialValues.longBreakMinutes.toString(),
+            intervalsBeforeLongBreak: initialValues.intervalsBeforeLongBreak.toString(),
+          }
+        : intervalDefaults),
     };
   }
 
   return {
     name: '',
     color: DEFAULT_ACTIVITY_COLOR,
-    workDurationMinutes: defaults.workDurationMinutes.toString(),
-    shortBreakMinutes: defaults.shortBreakMinutes.toString(),
-    longBreakMinutes: defaults.longBreakMinutes.toString(),
-    intervalsBeforeLongBreak: defaults.intervalsBeforeLongBreak.toString(),
+    ...intervalDefaults,
   };
 };
 
@@ -200,17 +230,20 @@ export const ActivityTypeModal: React.FC<ActivityTypeModalProps> = ({
   onSubmit,
   onDelete,
   onLockedColorPress,
+  onLockedIntervalPress,
   colors,
   styles,
 }) => {
-  const [formValues, setFormValues] = useState<ActivityTypeFormValues>(() => buildFormState(defaults, initialValues));
-  const isPro = useIsPro();
+  const { isPro, canCustomizeActivityTypeIntervals } = useSubscriptionGate();
+  const [formValues, setFormValues] = useState<ActivityTypeFormValues>(() =>
+    buildFormState(defaults, initialValues, canCustomizeActivityTypeIntervals),
+  );
 
   useEffect(() => {
     if (visible) {
-      setFormValues(buildFormState(defaults, initialValues));
+      setFormValues(buildFormState(defaults, initialValues, canCustomizeActivityTypeIntervals));
     }
-  }, [visible, defaults, initialValues]);
+  }, [visible, defaults, initialValues, canCustomizeActivityTypeIntervals]);
 
   const handleChange = (key: keyof ActivityTypeFormValues, value: string) => {
     setFormValues((prev) => ({ ...prev, [key]: value }));
@@ -228,16 +261,36 @@ export const ActivityTypeModal: React.FC<ActivityTypeModalProps> = ({
       return;
     }
 
+    const intervalPayload = canCustomizeActivityTypeIntervals
+      ? {
+          workDurationMinutes: parsePositiveInt(
+            formValues.workDurationMinutes,
+            defaults.workDurationMinutes,
+          ),
+          shortBreakMinutes: parsePositiveInt(
+            formValues.shortBreakMinutes,
+            defaults.shortBreakMinutes,
+          ),
+          longBreakMinutes: parsePositiveInt(
+            formValues.longBreakMinutes,
+            defaults.longBreakMinutes,
+          ),
+          intervalsBeforeLongBreak: parsePositiveInt(
+            formValues.intervalsBeforeLongBreak,
+            defaults.intervalsBeforeLongBreak,
+          ),
+        }
+      : {
+          workDurationMinutes: defaults.workDurationMinutes,
+          shortBreakMinutes: defaults.shortBreakMinutes,
+          longBreakMinutes: defaults.longBreakMinutes,
+          intervalsBeforeLongBreak: defaults.intervalsBeforeLongBreak,
+        };
+
     const payload: Omit<ActivityType, 'id'> = {
       name: trimmedName,
       color: formValues.color.trim() ? formValues.color.trim() : undefined,
-      workDurationMinutes: parsePositiveInt(formValues.workDurationMinutes, defaults.workDurationMinutes),
-      shortBreakMinutes: parsePositiveInt(formValues.shortBreakMinutes, defaults.shortBreakMinutes),
-      longBreakMinutes: parsePositiveInt(formValues.longBreakMinutes, defaults.longBreakMinutes),
-      intervalsBeforeLongBreak: parsePositiveInt(
-        formValues.intervalsBeforeLongBreak,
-        defaults.intervalsBeforeLongBreak,
-      ),
+      ...intervalPayload,
     };
 
     onSubmit(payload);
@@ -353,40 +406,44 @@ export const ActivityTypeModal: React.FC<ActivityTypeModalProps> = ({
           <View style={styles.modalRowGroup}>
             <View style={[styles.modalRowItem, styles.modalRowItemSpacing]}>
               <Text style={styles.modalLabel}>{t('settings.activityModal.workLabel')}</Text>
-              <TextInput
-                style={styles.input}
-                keyboardType="numeric"
+              <LockedMinuteInput
                 value={formValues.workDurationMinutes}
+                locked={!canCustomizeActivityTypeIntervals}
+                onPressLocked={() => onLockedIntervalPress?.()}
                 onChangeText={(text) => handleChange('workDurationMinutes', text)}
+                inputStyle={styles.input}
               />
             </View>
             <View style={styles.modalRowItem}>
               <Text style={styles.modalLabel}>{t('settings.activityModal.shortBreakLabel')}</Text>
-              <TextInput
-                style={styles.input}
-                keyboardType="numeric"
+              <LockedMinuteInput
                 value={formValues.shortBreakMinutes}
+                locked={!canCustomizeActivityTypeIntervals}
+                onPressLocked={() => onLockedIntervalPress?.()}
                 onChangeText={(text) => handleChange('shortBreakMinutes', text)}
+                inputStyle={styles.input}
               />
             </View>
           </View>
           <View style={styles.modalRowGroup}>
             <View style={[styles.modalRowItem, styles.modalRowItemSpacing]}>
               <Text style={styles.modalLabel}>{t('settings.activityModal.longBreakLabel')}</Text>
-              <TextInput
-                style={styles.input}
-                keyboardType="numeric"
+              <LockedMinuteInput
                 value={formValues.longBreakMinutes}
+                locked={!canCustomizeActivityTypeIntervals}
+                onPressLocked={() => onLockedIntervalPress?.()}
                 onChangeText={(text) => handleChange('longBreakMinutes', text)}
+                inputStyle={styles.input}
               />
             </View>
             <View style={styles.modalRowItem}>
               <Text style={styles.modalLabel}>{t('settings.activityModal.intervalsLabel')}</Text>
-              <TextInput
-                style={styles.input}
-                keyboardType="numeric"
+              <LockedMinuteInput
                 value={formValues.intervalsBeforeLongBreak}
+                locked={!canCustomizeActivityTypeIntervals}
+                onPressLocked={() => onLockedIntervalPress?.()}
                 onChangeText={(text) => handleChange('intervalsBeforeLongBreak', text)}
+                inputStyle={styles.input}
               />
             </View>
           </View>
@@ -435,7 +492,7 @@ export const SettingsScreen: React.FC = () => {
     () => activeActivityTypes.filter((type) => type.id !== OTHER_ACTIVITY_TYPE_ID),
     [activeActivityTypes],
   );
-  const isPro = useIsPro();
+  const { isPro, canCustomizeIntervals } = useSubscriptionGate();
   const cloudSync = useAppStore((state) => state.cloudSync);
   useAppStore((state) => state.language);
   const updateSettings = useAppStore((state) => state.updateSettings);
@@ -445,6 +502,7 @@ export const SettingsScreen: React.FC = () => {
   const colors = useThemeColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const goToPro = () => navigateToProUpsell(navigation);
+  const goToIntervalsPaywall = () => goToPaywall(navigation, 'settings_intervals');
   const currentThemeId: ThemeId = storeSettings.themeId ?? 'dark';
   const currentTheme = useMemo(() => {
     const requested = THEMES[currentThemeId] ?? THEMES.dark;
@@ -483,8 +541,8 @@ export const SettingsScreen: React.FC = () => {
   ]);
 
   const handleNumericChange = (key: NumericSettingKey, value: string) => {
-    if (!isPro) {
-      goToPro();
+    if (!canCustomizeIntervals) {
+      goToIntervalsPaywall();
       return;
     }
 
@@ -594,6 +652,8 @@ export const SettingsScreen: React.FC = () => {
             onChangeText={(text) => handleNumericChange('workDurationMinutes', text)}
             styles={styles}
             placeholderColor={colors.textSecondary}
+            locked={!canCustomizeIntervals}
+            onPressLocked={goToIntervalsPaywall}
           />
           <SettingInputRow
             label={t('settings.durations.shortBreak')}
@@ -601,6 +661,8 @@ export const SettingsScreen: React.FC = () => {
             onChangeText={(text) => handleNumericChange('shortBreakMinutes', text)}
             styles={styles}
             placeholderColor={colors.textSecondary}
+            locked={!canCustomizeIntervals}
+            onPressLocked={goToIntervalsPaywall}
           />
           <SettingInputRow
             label={t('settings.durations.longBreak')}
@@ -608,6 +670,8 @@ export const SettingsScreen: React.FC = () => {
             onChangeText={(text) => handleNumericChange('longBreakMinutes', text)}
             styles={styles}
             placeholderColor={colors.textSecondary}
+            locked={!canCustomizeIntervals}
+            onPressLocked={goToIntervalsPaywall}
           />
           <SettingInputRow
             label={t('settings.durations.intervalsBeforeLong')}
