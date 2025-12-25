@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import DateTimePicker from 'react-native-ui-datepicker';
+import DateTimePicker, { DateType, useDefaultStyles } from 'react-native-ui-datepicker';
 import { spacing } from '../theme/spacing';
 import { useThemeColors } from '../theme/useThemeColors';
 
@@ -26,9 +26,51 @@ type Props = {
   applyLabel: string;
 };
 
-const coerceDate = (value?: Date | string | number | null) => {
-  if (!value) return null;
-  return value instanceof Date ? value : new Date(value);
+/**
+ * DateType in react-native-ui-datepicker can be:
+ * string | number | Dayjs | Date | null | undefined
+ * (per the library's type definitions) :contentReference[oaicite:1]{index=1}
+ */
+const toJSDate = (value: DateType): Date | null => {
+  if (value == null) return null;
+
+  if (value instanceof Date) return value;
+
+  if (typeof value === 'string' || typeof value === 'number') {
+    const d = new Date(value);
+    return Number.isNaN(d.getTime()) ? null : d;
+  }
+
+  // Dayjs (or compatible) usually has toDate()
+  const maybe: any = value;
+  if (typeof maybe?.toDate === 'function') {
+    const d = maybe.toDate();
+    return d instanceof Date && !Number.isNaN(d.getTime()) ? d : null;
+  }
+
+  // last resort
+  try {
+    const d = new Date(maybe);
+    return Number.isNaN(d.getTime()) ? null : d;
+  } catch {
+    return null;
+  }
+};
+
+const getContrastingTextColor = (bgHex: string) => {
+  // expects #RRGGBB, fallback to white text
+  const hex = (bgHex || '').replace('#', '');
+  if (hex.length !== 6) return '#FFFFFF';
+
+  const r = parseInt(hex.slice(0, 2), 16);
+  const g = parseInt(hex.slice(2, 4), 16);
+  const b = parseInt(hex.slice(4, 6), 16);
+
+  // simple luminance approximation
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+
+  // If background is bright, use dark text; otherwise white text
+  return luminance > 0.62 ? '#0F172A' : '#FFFFFF';
 };
 
 export const DateRangePickerModal: React.FC<Props> = ({
@@ -45,8 +87,12 @@ export const DateRangePickerModal: React.FC<Props> = ({
   cancelLabel,
   applyLabel,
 }) => {
-  const [startDate, setStartDate] = useState<Date>(initialStartDate);
-  const [endDate, setEndDate] = useState<Date>(initialEndDate);
+  const defaultStyles = useDefaultStyles();
+
+  // Keep state as DateType so we can accept Dayjs returned by the picker.
+  const [startDate, setStartDate] = useState<DateType>(initialStartDate);
+  const [endDate, setEndDate] = useState<DateType>(initialEndDate);
+
   const styles = useMemo(() => createStyles(colors), [colors]);
 
   useEffect(() => {
@@ -55,24 +101,131 @@ export const DateRangePickerModal: React.FC<Props> = ({
     setEndDate(initialEndDate);
   }, [initialEndDate, initialStartDate, visible]);
 
+  // Theme-aware contrast for selected date label
+  const selectedLabelColor = useMemo(
+    () => getContrastingTextColor(colors.primary),
+    [colors.primary],
+  );
+
+  /**
+   * IMPORTANT:
+   * This library expects styling via `styles` prop + useDefaultStyles().
+   * The props like calendarTextStyle/headerTextStyle/etc. are NOT part of DatePickerRangeProps,
+   * which is why TS errors were showing. :contentReference[oaicite:2]{index=2}
+   */
+  const pickerStyles = useMemo(() => {
+    // We "as any" here because the library's Styles type is an internal mapped enum;
+    // extra keys are ignored safely, and it keeps TS from blocking builds.
+    const merged: any = {
+      ...defaultStyles,
+
+      // Container / general backgrounds
+      container: {
+        ...(defaultStyles as any).container,
+        backgroundColor: colors.surface,
+      },
+
+      // Header / month caption
+      header: {
+        ...(defaultStyles as any).header,
+        backgroundColor: colors.surface,
+      },
+      header_label: {
+        ...(defaultStyles as any).header_label,
+        color: colors.textPrimary,
+        fontWeight: '700',
+      },
+
+      // Weekdays row
+      weekdays: {
+        ...(defaultStyles as any).weekdays,
+        backgroundColor: colors.surface,
+      },
+      weekday_label: {
+        ...(defaultStyles as any).weekday_label,
+        color: colors.textSecondary,
+        fontWeight: '600',
+      },
+
+      // Day cells
+      day: {
+        ...(defaultStyles as any).day,
+        backgroundColor: 'transparent',
+      },
+      day_label: {
+        ...(defaultStyles as any).day_label,
+        color: colors.textPrimary,
+        fontWeight: '600',
+      },
+
+      // "Outside month" days (if shown by default on your version)
+      outside: {
+        ...(defaultStyles as any).outside,
+        backgroundColor: 'transparent',
+      },
+      outside_label: {
+        ...(defaultStyles as any).outside_label,
+        color: colors.textMuted,
+      },
+
+      // Today highlight
+      today: {
+        ...(defaultStyles as any).today,
+        borderColor: colors.primary,
+        borderWidth: 1,
+        backgroundColor: 'transparent',
+      },
+      today_label: {
+        ...(defaultStyles as any).today_label,
+        color: colors.primary,
+        fontWeight: '700',
+      },
+
+      // Selected day highlight
+      selected: {
+        ...(defaultStyles as any).selected,
+        backgroundColor: colors.primary,
+      },
+      selected_label: {
+        ...(defaultStyles as any).selected_label,
+        color: selectedLabelColor,
+        fontWeight: '800',
+      },
+
+      // Range styling (some versions use these keys; harmless if ignored)
+      range_fill: {
+        ...(defaultStyles as any).range_fill,
+        backgroundColor: colors.surfaceAlt,
+      },
+      range_fill_label: {
+        ...(defaultStyles as any).range_fill_label,
+        color: colors.textPrimary,
+      },
+    };
+
+    return merged;
+  }, [
+    colors.primary,
+    colors.surface,
+    colors.surfaceAlt,
+    colors.textMuted,
+    colors.textPrimary,
+    colors.textSecondary,
+    defaultStyles,
+    selectedLabelColor,
+  ]);
+
   const handleApply = () => {
-    const normalizedStart = startDate ?? initialStartDate;
-    let normalizedEnd = endDate ?? initialEndDate ?? normalizedStart;
+    const start = toJSDate(startDate) ?? initialStartDate;
+    let end = toJSDate(endDate) ?? initialEndDate ?? start;
 
-    if (normalizedEnd < normalizedStart) {
-      normalizedEnd = normalizedStart;
-    }
+    if (end < start) end = start;
 
-    onConfirm({ startDate: normalizedStart, endDate: normalizedEnd });
+    onConfirm({ startDate: start, endDate: end });
   };
 
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="fade"
-      onRequestClose={onClose}
-    >
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <Pressable style={styles.backdrop} onPress={onClose} />
       <View style={styles.modalWrapper}>
         <View style={styles.card}>
@@ -84,27 +237,19 @@ export const DateRangePickerModal: React.FC<Props> = ({
               startDate={startDate}
               endDate={endDate}
               onChange={({ startDate: nextStart, endDate: nextEnd }) => {
-                const parsedStart = coerceDate(nextStart);
-                const parsedEnd = coerceDate(nextEnd);
+                // nextStart/nextEnd are DateType (can be Dayjs)
+                const parsedStart = nextStart ?? null;
+                const parsedEnd = nextEnd ?? null;
 
-                if (parsedStart) {
-                  setStartDate(parsedStart);
-                }
-                if (parsedEnd) {
-                  setEndDate(parsedEnd);
-                } else if (parsedStart && !parsedEnd) {
-                  setEndDate(parsedStart);
-                }
+                if (parsedStart != null) setStartDate(parsedStart);
+                if (parsedEnd != null) setEndDate(parsedEnd);
+                else if (parsedStart != null) setEndDate(parsedStart);
               }}
               minDate={minDate}
               maxDate={maxDate}
               locale={locale}
-              calendarTextStyle={{ color: colors.textPrimary }}
-              headerTextStyle={{ color: colors.textPrimary }}
-              selectedItemColor={colors.primary}
-              selectedTextStyle={{ color: colors.background }}
-              todayTextStyle={{ color: colors.primary }}
-              weekDaysTextStyle={{ color: colors.textSecondary }}
+              styles={pickerStyles}
+              style={{ backgroundColor: colors.surface }}
             />
           </View>
 
@@ -152,6 +297,7 @@ const createStyles = (colors: ReturnType<typeof useThemeColors>) =>
       borderWidth: 1,
       borderColor: colors.border,
       padding: spacing.sm,
+      backgroundColor: colors.surface, // important: prevents “all black” bleed-through
     },
     actions: {
       flexDirection: 'row',
@@ -176,7 +322,8 @@ const createStyles = (colors: ReturnType<typeof useThemeColors>) =>
       backgroundColor: colors.primary,
     },
     applyText: {
-      color: colors.background,
+      // Keep this readable across themes too:
+      color: getContrastingTextColor(colors.primary),
       fontWeight: '700',
     },
   });
