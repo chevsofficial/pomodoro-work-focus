@@ -1,4 +1,5 @@
 import useAppStore from '../store/appStore';
+import { titleCaseSpanishDateLabel } from './textFormatting';
 
 const LOCALES = {
   en: 'en-US',
@@ -18,5 +19,8 @@ export function formatDateHeader(date: Date): string {
 }
 
 export function formatAnalyticsDate(date: Date): string {
-  return formatDateHeader(date);
+  const language = useAppStore.getState().language ?? 'en';
+  const formatted = formatDateHeader(date);
+
+  return language === 'es' ? titleCaseSpanishDateLabel(formatted) : formatted;
 }

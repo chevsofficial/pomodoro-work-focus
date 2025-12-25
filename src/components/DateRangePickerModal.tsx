@@ -137,6 +137,10 @@ export const DateRangePickerModal: React.FC<Props> = ({
     };
     merge('month_selector_label', headerLabelStyle);
     merge('year_selector_label', headerLabelStyle);
+    merge('button_prev', { backgroundColor: 'transparent' });
+    merge('button_next', { backgroundColor: 'transparent' });
+    merge('button_prev_image', { tintColor: colors.textPrimary });
+    merge('button_next_image', { tintColor: colors.textPrimary });
 
     // (Optional) if you ever show month/year selector grids
     merge('month_label', { color: colors.textPrimary, fontWeight: '700', textTransform: 'capitalize' });
