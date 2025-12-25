@@ -14,7 +14,6 @@ import {
   View,
 } from 'react-native';
 import { ScreenContainer } from '../components/ScreenContainer';
-import { AdBanner } from '../components/AdBanner';
 import { APP_LINKS } from '../config/links';
 import { RootStackParamList } from '../navigation/RootNavigator';
 import { navigateToProUpsell } from '../navigation/proNavigation';
@@ -241,7 +240,6 @@ export const InfoScreen: React.FC = () => {
           </View>
         )}
 
-        <AdBanner />
       </ScrollView>
 
       <Modal

@@ -10,7 +10,6 @@ import {
   View,
 } from 'react-native';
 import { ScreenContainer } from '../components/ScreenContainer';
-import { AdBanner } from '../components/AdBanner';
 import { RootTabParamList } from '../navigation/RootNavigator';
 import { IntervalType, Task } from '../models';
 import useAppStore, { useTasks } from '../store/appStore';
@@ -281,7 +280,6 @@ export const PomodoroScreen: React.FC = () => {
         )}
       </View>
 
-      <AdBanner />
 
       <TaskPickerModal
         visible={isTaskPickerVisible}
