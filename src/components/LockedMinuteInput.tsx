@@ -81,6 +81,7 @@ export const LockedMinuteInput: React.FC<LockedMinuteInputProps> = ({
 const styles = StyleSheet.create({
   lockedContainer: {
     position: 'relative',
+    height: 44,
     justifyContent: 'center',
     paddingRight: 32,
   },
@@ -92,7 +93,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     right: 12,
     top: '50%',
-    marginTop: -7,
+    transform: [{ translateY: -7 }],
     opacity: 0.45,
   },
 });
