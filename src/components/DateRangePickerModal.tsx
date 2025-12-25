@@ -73,6 +73,16 @@ const getContrastingTextColor = (bgHex: string) => {
   return luminance > 0.62 ? '#0F172A' : '#FFFFFF';
 };
 
+const withAlpha = (hex: string, alpha: number) => {
+  const clean = hex.replace('#', '');
+  if (clean.length !== 6) return hex;
+
+  const a = Math.round(Math.min(1, Math.max(0, alpha)) * 255)
+    .toString(16)
+    .padStart(2, '0');
+  return `#${clean}${a}`;
+};
+
 export const DateRangePickerModal: React.FC<Props> = ({
   visible,
   onClose,
@@ -88,6 +98,13 @@ export const DateRangePickerModal: React.FC<Props> = ({
   applyLabel,
 }) => {
   const defaultStyles = useDefaultStyles();
+
+  useEffect(() => {
+    if (__DEV__ && visible) {
+      // eslint-disable-next-line no-console
+      console.log('[DatePicker styles keys]', Object.keys(defaultStyles || {}));
+    }
+  }, [defaultStyles, visible]);
 
   // Keep state as DateType so we can accept Dayjs returned by the picker.
   const [startDate, setStartDate] = useState<DateType>(initialStartDate);
@@ -106,6 +123,10 @@ export const DateRangePickerModal: React.FC<Props> = ({
     () => getContrastingTextColor(colors.primary),
     [colors.primary],
   );
+  const rangeFillBg = useMemo(
+    () => withAlpha(colors.primary, 0.18),
+    [colors.primary],
+  );
 
   /**
    * IMPORTANT:
@@ -116,102 +137,76 @@ export const DateRangePickerModal: React.FC<Props> = ({
   const pickerStyles = useMemo(() => {
     // We "as any" here because the library's Styles type is an internal mapped enum;
     // extra keys are ignored safely, and it keeps TS from blocking builds.
-    const merged: any = {
-      ...defaultStyles,
+    const base: any = { ...defaultStyles };
 
-      // Container / general backgrounds
-      container: {
-        ...(defaultStyles as any).container,
-        backgroundColor: colors.surface,
-      },
-
-      // Header / month caption
-      header: {
-        ...(defaultStyles as any).header,
-        backgroundColor: colors.surface,
-      },
-      header_label: {
-        ...(defaultStyles as any).header_label,
-        color: colors.textPrimary,
-        fontWeight: '700',
-      },
-
-      // Weekdays row
-      weekdays: {
-        ...(defaultStyles as any).weekdays,
-        backgroundColor: colors.surface,
-      },
-      weekday_label: {
-        ...(defaultStyles as any).weekday_label,
-        color: colors.textSecondary,
-        fontWeight: '600',
-      },
-
-      // Day cells
-      day: {
-        ...(defaultStyles as any).day,
-        backgroundColor: 'transparent',
-      },
-      day_label: {
-        ...(defaultStyles as any).day_label,
-        color: colors.textPrimary,
-        fontWeight: '600',
-      },
-
-      // "Outside month" days (if shown by default on your version)
-      outside: {
-        ...(defaultStyles as any).outside,
-        backgroundColor: 'transparent',
-      },
-      outside_label: {
-        ...(defaultStyles as any).outside_label,
-        color: colors.textMuted,
-      },
-
-      // Today highlight
-      today: {
-        ...(defaultStyles as any).today,
-        borderColor: colors.primary,
-        borderWidth: 1,
-        backgroundColor: 'transparent',
-      },
-      today_label: {
-        ...(defaultStyles as any).today_label,
-        color: colors.primary,
-        fontWeight: '700',
-      },
-
-      // Selected day highlight
-      selected: {
-        ...(defaultStyles as any).selected,
-        backgroundColor: colors.primary,
-      },
-      selected_label: {
-        ...(defaultStyles as any).selected_label,
-        color: selectedLabelColor,
-        fontWeight: '800',
-      },
-
-      // Range styling (some versions use these keys; harmless if ignored)
-      range_fill: {
-        ...(defaultStyles as any).range_fill,
-        backgroundColor: colors.surfaceAlt,
-      },
-      range_fill_label: {
-        ...(defaultStyles as any).range_fill_label,
-        color: colors.textPrimary,
-      },
+    const merge = (key: string, value: any) => {
+      base[key] = { ...(base[key] ?? {}), ...value };
     };
 
-    return merged;
+    // ---- Modal/picker base surfaces ----
+    merge('container', { backgroundColor: colors.surface });
+    merge('header', { backgroundColor: colors.surface });
+    merge('weekdays', { backgroundColor: colors.surface });
+
+    // ---- Month header label ----
+    const monthLabelStyle = {
+      color: colors.textPrimary,
+      fontWeight: '700',
+      textTransform: 'capitalize',
+    };
+    merge('header_label', monthLabelStyle);
+    merge('month_label', monthLabelStyle);
+    merge('month_year_label', monthLabelStyle);
+    merge('headerLabel', monthLabelStyle);
+
+    // ---- Weekday labels ----
+    merge('weekday_label', { color: colors.textSecondary, fontWeight: '600' });
+    merge('weekDaysLabel', { color: colors.textSecondary, fontWeight: '600' });
+
+    // ---- Day labels (default) ----
+    merge('day', { backgroundColor: 'transparent' });
+    merge('day_label', { color: colors.textPrimary, fontWeight: '600' });
+    merge('dayLabel', { color: colors.textPrimary, fontWeight: '600' });
+
+    // Outside month days
+    merge('outside_label', { color: colors.textMuted });
+    merge('outsideLabel', { color: colors.textMuted });
+
+    // ---- Today styling ----
+    merge('today', {
+      borderColor: colors.primary,
+      borderWidth: 1,
+      backgroundColor: 'transparent',
+    });
+    merge('today_label', { color: colors.primary, fontWeight: '700' });
+    merge('todayLabel', { color: colors.primary, fontWeight: '700' });
+
+    // ---- Selected day styling ----
+    merge('selected', { backgroundColor: colors.primary });
+    merge('selected_label', { color: selectedLabelColor, fontWeight: '800' });
+    merge('selectedLabel', { color: selectedLabelColor, fontWeight: '800' });
+
+    // ---- Range fill styling ----
+    merge('range_fill', { backgroundColor: rangeFillBg });
+    merge('rangeFill', { backgroundColor: rangeFillBg });
+
+    const rangeLabelStyle = { color: colors.textPrimary, fontWeight: '600' };
+    merge('range_fill_label', rangeLabelStyle);
+    merge('rangeFillLabel', rangeLabelStyle);
+    merge('range_middle_label', rangeLabelStyle);
+    merge('rangeMiddleLabel', rangeLabelStyle);
+    merge('in_range_label', rangeLabelStyle);
+    merge('inRangeLabel', rangeLabelStyle);
+
+    return base;
   }, [
     colors.primary,
     colors.surface,
-    colors.surfaceAlt,
     colors.textMuted,
     colors.textPrimary,
     colors.textSecondary,
     defaultStyles,
+    rangeFillBg,
     selectedLabelColor,
   ]);
 
