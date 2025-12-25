@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { ScreenContainer } from '../components/ScreenContainer';
 import { RootStackParamList } from '../navigation/RootNavigator';
-import { navigateToProUpsell } from '../navigation/proNavigation';
+import { goToPaywall, navigateToProUpsell } from '../navigation/proNavigation';
 import { ActivityType } from '../models';
 import useAppStore, {
   FREE_ACTIVITY_TYPE_LIMIT,
@@ -65,6 +65,15 @@ export const ActivityTypesManagerScreen: React.FC = () => {
 
     closeModal();
     setTimeout(() => navigateToProUpsell(navigation), 0);
+  };
+
+  const handleLockedIntervalPress = () => {
+    if (isPro) {
+      return;
+    }
+
+    closeModal();
+    setTimeout(() => goToPaywall(navigation, 'activity_type_intervals'), 0);
   };
 
   const handleSubmitActivityType = (payload: Omit<ActivityType, 'id'>) => {
@@ -225,6 +234,7 @@ export const ActivityTypesManagerScreen: React.FC = () => {
             : undefined
         }
         onLockedColorPress={handleLockedColorPress}
+        onLockedIntervalPress={handleLockedIntervalPress}
         colors={{
           ...colors,
           background: colors.background,
