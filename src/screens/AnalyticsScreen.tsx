@@ -5,7 +5,6 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { ScreenContainer } from '../components/ScreenContainer';
-import { AdBanner } from '../components/AdBanner';
 import { RootStackParamList } from '../navigation/RootNavigator';
 import { navigateToProUpsell } from '../navigation/proNavigation';
 import { ACTIVITY_TYPE_COLORS, OTHER_ACTIVITY_TYPE_ID, OTHER_ACTIVITY_TYPE_LABEL } from '../config/activityTypeConstants';
@@ -662,7 +661,6 @@ export const AnalyticsScreen: React.FC = () => {
             ))}
           </View>
 
-          <AdBanner />
         </View>
       </ScrollView>
 

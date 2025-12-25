@@ -12,7 +12,6 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { ScreenContainer } from '../components/ScreenContainer';
-import { AdBanner } from '../components/AdBanner';
 import { RootStackParamList } from '../navigation/RootNavigator';
 import { navigateToProUpsell } from '../navigation/proNavigation';
 import { ActivityType, Task } from '../models';
@@ -387,7 +386,6 @@ export const TasksScreen: React.FC = () => {
         </ScrollView>
       )}
 
-      <AdBanner />
 
       {!isPro && (
         <Text style={styles.planNote}>
