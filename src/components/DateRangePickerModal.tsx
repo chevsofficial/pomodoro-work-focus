@@ -9,7 +9,9 @@ import {
 } from 'react-native';
 import DateTimePicker from 'react-native-ui-datepicker';
 import { spacing } from '../theme/spacing';
+import { AppColors } from '../theme/themes';
 import { useThemeColors } from '../theme/useThemeColors';
+import { getContrastingTextColor, withAlpha } from '../utils/color';
 
 type Props = {
   visible: boolean;
@@ -31,6 +33,27 @@ const coerceDate = (value?: Date | string | number | null) => {
   return value instanceof Date ? value : new Date(value);
 };
 
+const getDatePickerTheme = (colors: AppColors) => {
+  const selectedBg = colors.primary;
+  const selectedText = getContrastingTextColor(selectedBg);
+  const modalBg = colors.surface;
+  const todayColor = colors.accent;
+
+  return {
+    modalBg,
+    headerText: colors.textPrimary,
+    weekDaysText: colors.textSecondary,
+    dayText: colors.textPrimary,
+    mutedText: colors.textMuted,
+    selectedBg,
+    selectedText,
+    todayText: todayColor,
+    todayOutline: todayColor,
+    border: colors.border,
+    rangeFill: withAlpha(colors.primary, 0.18),
+  };
+};
+
 export const DateRangePickerModal: React.FC<Props> = ({
   visible,
   onClose,
@@ -47,7 +70,11 @@ export const DateRangePickerModal: React.FC<Props> = ({
 }) => {
   const [startDate, setStartDate] = useState<Date>(initialStartDate);
   const [endDate, setEndDate] = useState<Date>(initialEndDate);
-  const styles = useMemo(() => createStyles(colors), [colors]);
+  const pickerTheme = useMemo(() => getDatePickerTheme(colors), [colors]);
+  const styles = useMemo(
+    () => createStyles(colors, pickerTheme),
+    [colors, pickerTheme],
+  );
 
   useEffect(() => {
     if (!visible) return;
@@ -99,12 +126,22 @@ export const DateRangePickerModal: React.FC<Props> = ({
               minDate={minDate}
               maxDate={maxDate}
               locale={locale}
-              calendarTextStyle={{ color: colors.textPrimary }}
-              headerTextStyle={{ color: colors.textPrimary }}
-              selectedItemColor={colors.primary}
-              selectedTextStyle={{ color: colors.background }}
-              todayTextStyle={{ color: colors.primary }}
-              weekDaysTextStyle={{ color: colors.textSecondary }}
+              calendarTextStyle={{ color: pickerTheme.dayText }}
+              headerTextStyle={{
+                color: pickerTheme.headerText,
+                fontWeight: '700',
+              }}
+              weekDaysTextStyle={{
+                color: pickerTheme.weekDaysText,
+                fontWeight: '600',
+              }}
+              selectedItemColor={pickerTheme.selectedBg}
+              selectedTextStyle={{
+                color: pickerTheme.selectedText,
+                fontWeight: '700',
+              }}
+              todayTextStyle={{ color: pickerTheme.todayText, fontWeight: '700' }}
+              dayContainerStyle={{ backgroundColor: 'transparent' }}
             />
           </View>
 
@@ -122,7 +159,10 @@ export const DateRangePickerModal: React.FC<Props> = ({
   );
 };
 
-const createStyles = (colors: ReturnType<typeof useThemeColors>) =>
+const createStyles = (
+  colors: ReturnType<typeof useThemeColors>,
+  pickerTheme: ReturnType<typeof getDatePickerTheme>,
+) =>
   StyleSheet.create({
     backdrop: {
       ...StyleSheet.absoluteFillObject,
@@ -134,24 +174,25 @@ const createStyles = (colors: ReturnType<typeof useThemeColors>) =>
       padding: spacing.lg,
     },
     card: {
-      backgroundColor: colors.surface,
+      backgroundColor: pickerTheme.modalBg,
       borderRadius: 20,
       padding: spacing.lg,
       borderWidth: 1,
-      borderColor: colors.border,
+      borderColor: pickerTheme.border,
     },
     title: {
       fontSize: 16,
       fontWeight: '700',
-      color: colors.textPrimary,
+      color: pickerTheme.headerText,
       marginBottom: spacing.md,
     },
     pickerWrapper: {
       marginBottom: spacing.lg,
       borderRadius: 16,
       borderWidth: 1,
-      borderColor: colors.border,
+      borderColor: pickerTheme.border,
       padding: spacing.sm,
+      backgroundColor: pickerTheme.modalBg,
     },
     actions: {
       flexDirection: 'row',
