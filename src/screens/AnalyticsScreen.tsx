@@ -1,9 +1,9 @@
 import React, { useMemo, useState } from 'react';
 import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import DateTimePicker from '@react-native-community/datetimepicker';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { DateRangePickerModal } from '../components/DateRangePickerModal';
 import { ScreenContainer } from '../components/ScreenContainer';
 import { RootStackParamList } from '../navigation/RootNavigator';
 import { navigateToProUpsell } from '../navigation/proNavigation';
@@ -157,9 +157,11 @@ export const AnalyticsScreen: React.FC = () => {
   const [selectedRangeKey, setSelectedRangeKey] = useState<AnalyticsRangeKey>('this_week');
   const [customStartDate, setCustomStartDate] = useState<Date | null>(null);
   const [customEndDate, setCustomEndDate] = useState<Date | null>(null);
-  const [activeCustomField, setActiveCustomField] = useState<'start' | 'end' | null>(null);
-  const [showDatePicker, setShowDatePicker] = useState(false);
-  const [pickerDate, setPickerDate] = useState<Date>(new Date());
+  const [showRangeModal, setShowRangeModal] = useState(false);
+  const [draftStart, setDraftStart] = useState<Date>(customStartDate ?? new Date());
+  const [draftEnd, setDraftEnd] = useState<Date>(
+    customEndDate ?? customStartDate ?? new Date(),
+  );
 
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const isPro = useIsPro();
@@ -196,13 +198,13 @@ export const AnalyticsScreen: React.FC = () => {
     }
 
     if (key === 'custom') {
-      if (!customStartDate || !customEndDate) {
-        const today = new Date();
-        setCustomStartDate(today);
-        setCustomEndDate(today);
-      }
-
+      const today = new Date();
+      const start = customStartDate ?? today;
+      const end = customEndDate ?? start;
+      setDraftStart(start);
+      setDraftEnd(end);
       setSelectedRangeKey('custom');
+      setShowRangeModal(true);
       return;
     }
 
@@ -234,7 +236,6 @@ export const AnalyticsScreen: React.FC = () => {
 
   const labelStart = useMemo(() => formatAnalyticsDate(rangeStart), [rangeStart]);
   const labelEnd = useMemo(() => formatAnalyticsDate(rangeEnd), [rangeEnd]);
-  const datePickerLocale = language === 'es' ? 'es' : 'en-US';
 
   const analyticsIntervals = useMemo(
     () =>
@@ -486,56 +487,60 @@ export const AnalyticsScreen: React.FC = () => {
         </View>
 
         <View style={styles.dateRow}>
-            <View style={styles.dateColumn}>
-              <Text style={styles.dateLabel}>{t('analytics.dateStart')}</Text>
-              <TouchableOpacity
-                style={styles.dateValueButton}
-                onPress={() => {
-                  if (!isPro && selectedRangeKey !== 'custom') {
-                    navigateToProUpsell(navigation);
-                    return;
-                  }
-                  const base = customStartDate ?? new Date();
-                  setPickerDate(base);
-                setActiveCustomField('start');
-                setShowDatePicker(true);
+          <View style={styles.dateColumn}>
+            <Text style={styles.dateLabel}>{t('analytics.dateStart')}</Text>
+            <TouchableOpacity
+              style={styles.dateValueButton}
+              onPress={() => {
+                if (!isPro && selectedRangeKey !== 'custom') {
+                  navigateToProUpsell(navigation);
+                  return;
+                }
+                const today = new Date();
+                const start = customStartDate ?? today;
+                const end = customEndDate ?? start;
+                setDraftStart(start);
+                setDraftEnd(end);
+                setShowRangeModal(true);
               }}
-                >
-                  <Text style={styles.dateValueText}>
-                    {selectedRangeKey === 'custom'
-                      ? customStartDate
-                        ? formatAnalyticsDate(customStartDate)
-                        : '-- / -- / --'
-                      : labelStart}
-                  </Text>
-                </TouchableOpacity>
-              </View>
+            >
+              <Text style={styles.dateValueText}>
+                {selectedRangeKey === 'custom'
+                  ? customStartDate
+                    ? formatAnalyticsDate(customStartDate)
+                    : '-- / -- / --'
+                  : labelStart}
+              </Text>
+            </TouchableOpacity>
+          </View>
 
-              <View style={styles.dateColumn}>
+          <View style={styles.dateColumn}>
             <Text style={styles.dateLabel}>{t('analytics.dateEnd')}</Text>
-              <TouchableOpacity
-                style={styles.dateValueButton}
-                onPress={() => {
-                  if (!isPro && selectedRangeKey !== 'custom') {
-                    navigateToProUpsell(navigation);
-                    return;
-                  }
-                  const base = customEndDate ?? customStartDate ?? new Date();
-                  setPickerDate(base);
-                setActiveCustomField('end');
-                setShowDatePicker(true);
+            <TouchableOpacity
+              style={styles.dateValueButton}
+              onPress={() => {
+                if (!isPro && selectedRangeKey !== 'custom') {
+                  navigateToProUpsell(navigation);
+                  return;
+                }
+                const today = new Date();
+                const start = customStartDate ?? today;
+                const end = customEndDate ?? start;
+                setDraftStart(start);
+                setDraftEnd(end);
+                setShowRangeModal(true);
               }}
-                >
-                  <Text style={styles.dateValueText}>
-                    {selectedRangeKey === 'custom'
-                      ? customEndDate
-                        ? formatAnalyticsDate(customEndDate)
-                        : '-- / -- / --'
-                      : labelEnd}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </View>
+            >
+              <Text style={styles.dateValueText}>
+                {selectedRangeKey === 'custom'
+                  ? customEndDate
+                    ? formatAnalyticsDate(customEndDate)
+                    : '-- / -- / --'
+                  : labelEnd}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
 
         <View style={styles.card}>
           <Text style={styles.cardTitle}>{t('analytics.focusCardTitle')}</Text>
@@ -660,43 +665,32 @@ export const AnalyticsScreen: React.FC = () => {
               />
             ))}
           </View>
-
         </View>
       </ScrollView>
 
-      {showDatePicker && activeCustomField && (
-        <DateTimePicker
-          mode="date"
-          display="default"
-          locale={datePickerLocale}
-          value={pickerDate}
-          onChange={(event, date) => {
-            if (event.type === 'dismissed' || !date) {
-              setShowDatePicker(false);
-              setActiveCustomField(null);
-              return;
-            }
-
-            if (activeCustomField === 'start') {
-              setSelectedRangeKey('custom');
-              setCustomStartDate(date);
-              if (!customEndDate || customEndDate < date) {
-                setCustomEndDate(date);
-              }
-            } else if (activeCustomField === 'end') {
-              setSelectedRangeKey('custom');
-              if (customStartDate && date < customStartDate) {
-                setCustomEndDate(customStartDate);
-              } else {
-                setCustomEndDate(date);
-              }
-            }
-
-            setShowDatePicker(false);
-            setActiveCustomField(null);
-          }}
-        />
-      )}
+      <DateRangePickerModal
+        visible={showRangeModal}
+        onClose={() => setShowRangeModal(false)}
+        onConfirm={({ startDate, endDate }) => {
+          let normalizedEnd = endDate;
+          if (normalizedEnd < startDate) {
+            normalizedEnd = startDate;
+          }
+          setSelectedRangeKey('custom');
+          setCustomStartDate(startDate);
+          setCustomEndDate(normalizedEnd);
+          setShowRangeModal(false);
+        }}
+        initialStartDate={draftStart}
+        initialEndDate={draftEnd}
+        minDate={analyticsMinDate ?? undefined}
+        maxDate={new Date()}
+        locale={language === 'es' ? 'es' : 'en'}
+        colors={colors}
+        title={t('analytics.rangeCustom')}
+        cancelLabel={t('common.cancel')}
+        applyLabel={t('common.apply')}
+      />
     </ScreenContainer>
   );
 };
