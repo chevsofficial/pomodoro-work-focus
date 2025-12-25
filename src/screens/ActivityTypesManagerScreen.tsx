@@ -73,7 +73,7 @@ export const ActivityTypesManagerScreen: React.FC = () => {
     }
 
     closeModal();
-    setTimeout(() => goToPaywall(navigation, 'activity_type_intervals'), 0);
+    setTimeout(() => goToPaywall(navigation, 'activity_type_duration_lock'), 0);
   };
 
   const handleSubmitActivityType = (payload: Omit<ActivityType, 'id'>) => {

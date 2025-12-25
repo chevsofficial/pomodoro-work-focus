@@ -6,11 +6,13 @@ import {
   Modal,
   ScrollView,
   StyleSheet,
+  StyleProp,
   Switch,
   Text,
   TextInput,
   TouchableOpacity,
   View,
+  ViewStyle,
 } from 'react-native';
 import { ScreenContainer } from '../components/ScreenContainer';
 import { LockedMinuteInput } from '../components/LockedMinuteInput';
@@ -238,6 +240,7 @@ export const ActivityTypeModal: React.FC<ActivityTypeModalProps> = ({
   const [formValues, setFormValues] = useState<ActivityTypeFormValues>(() =>
     buildFormState(defaults, initialValues, canCustomizeActivityTypeIntervals),
   );
+  const intervalsLocked = !canCustomizeActivityTypeIntervals;
 
   useEffect(() => {
     if (visible) {
@@ -250,6 +253,45 @@ export const ActivityTypeModal: React.FC<ActivityTypeModalProps> = ({
   };
 
   const setColor = (value: string) => handleChange('color', value);
+
+  const renderIntervalInput = (
+    label: string,
+    value: string,
+    onChangeText: (text: string) => void,
+    rowStyle?: StyleProp<ViewStyle>,
+  ) => {
+    const content = (
+      <>
+        <Text style={styles.modalLabel}>{label}</Text>
+        <LockedMinuteInput
+          value={value}
+          locked={intervalsLocked}
+          onPressLocked={onLockedIntervalPress ?? (() => {})}
+          onChangeText={onChangeText}
+          inputStyle={styles.input}
+          pressable={!intervalsLocked}
+        />
+      </>
+    );
+
+    if (intervalsLocked) {
+      return (
+        <TouchableOpacity
+          style={[styles.modalRowItem, rowStyle]}
+          onPress={onLockedIntervalPress}
+          activeOpacity={0.7}
+        >
+          {content}
+        </TouchableOpacity>
+      );
+    }
+
+    return (
+      <View style={[styles.modalRowItem, rowStyle]}>
+        {content}
+      </View>
+    );
+  };
 
   const handleSubmit = () => {
     const trimmedName = formValues.name.trim();
@@ -404,48 +446,30 @@ export const ActivityTypeModal: React.FC<ActivityTypeModalProps> = ({
             </View>
           )}
           <View style={styles.modalRowGroup}>
-            <View style={[styles.modalRowItem, styles.modalRowItemSpacing]}>
-              <Text style={styles.modalLabel}>{t('settings.activityModal.workLabel')}</Text>
-              <LockedMinuteInput
-                value={formValues.workDurationMinutes}
-                locked={!canCustomizeActivityTypeIntervals}
-                onPressLocked={() => onLockedIntervalPress?.()}
-                onChangeText={(text) => handleChange('workDurationMinutes', text)}
-                inputStyle={styles.input}
-              />
-            </View>
-            <View style={styles.modalRowItem}>
-              <Text style={styles.modalLabel}>{t('settings.activityModal.shortBreakLabel')}</Text>
-              <LockedMinuteInput
-                value={formValues.shortBreakMinutes}
-                locked={!canCustomizeActivityTypeIntervals}
-                onPressLocked={() => onLockedIntervalPress?.()}
-                onChangeText={(text) => handleChange('shortBreakMinutes', text)}
-                inputStyle={styles.input}
-              />
-            </View>
+            {renderIntervalInput(
+              t('settings.activityModal.workLabel'),
+              formValues.workDurationMinutes,
+              (text) => handleChange('workDurationMinutes', text),
+              styles.modalRowItemSpacing,
+            )}
+            {renderIntervalInput(
+              t('settings.activityModal.shortBreakLabel'),
+              formValues.shortBreakMinutes,
+              (text) => handleChange('shortBreakMinutes', text),
+            )}
           </View>
           <View style={styles.modalRowGroup}>
-            <View style={[styles.modalRowItem, styles.modalRowItemSpacing]}>
-              <Text style={styles.modalLabel}>{t('settings.activityModal.longBreakLabel')}</Text>
-              <LockedMinuteInput
-                value={formValues.longBreakMinutes}
-                locked={!canCustomizeActivityTypeIntervals}
-                onPressLocked={() => onLockedIntervalPress?.()}
-                onChangeText={(text) => handleChange('longBreakMinutes', text)}
-                inputStyle={styles.input}
-              />
-            </View>
-            <View style={styles.modalRowItem}>
-              <Text style={styles.modalLabel}>{t('settings.activityModal.intervalsLabel')}</Text>
-              <LockedMinuteInput
-                value={formValues.intervalsBeforeLongBreak}
-                locked={!canCustomizeActivityTypeIntervals}
-                onPressLocked={() => onLockedIntervalPress?.()}
-                onChangeText={(text) => handleChange('intervalsBeforeLongBreak', text)}
-                inputStyle={styles.input}
-              />
-            </View>
+            {renderIntervalInput(
+              t('settings.activityModal.longBreakLabel'),
+              formValues.longBreakMinutes,
+              (text) => handleChange('longBreakMinutes', text),
+              styles.modalRowItemSpacing,
+            )}
+            {renderIntervalInput(
+              t('settings.activityModal.intervalsLabel'),
+              formValues.intervalsBeforeLongBreak,
+              (text) => handleChange('intervalsBeforeLongBreak', text),
+            )}
           </View>
           <View style={styles.modalActions}>
             {initialValues && (
@@ -503,6 +527,8 @@ export const SettingsScreen: React.FC = () => {
   const styles = useMemo(() => createStyles(colors), [colors]);
   const goToPro = () => navigateToProUpsell(navigation);
   const goToIntervalsPaywall = () => goToPaywall(navigation, 'settings_intervals');
+  const goToIntervalsBeforeLongBreakPaywall = () =>
+    goToPaywall(navigation, 'settings_intervals_before_long_break');
   const currentThemeId: ThemeId = storeSettings.themeId ?? 'dark';
   const currentTheme = useMemo(() => {
     const requested = THEMES[currentThemeId] ?? THEMES.dark;
@@ -679,6 +705,8 @@ export const SettingsScreen: React.FC = () => {
             onChangeText={(text) => handleNumericChange('intervalsBeforeLongBreak', text)}
             styles={styles}
             placeholderColor={colors.textSecondary}
+            locked={!canCustomizeIntervals}
+            onPressLocked={goToIntervalsBeforeLongBreakPaywall}
           />
         </View>
 
