@@ -48,8 +48,6 @@
       "favicon": "./assets/favicon.png"
     },
     "extra": {
-      "supabaseUrl": "https://zkstcywertzzooxefwuh.supabase.co",
-      "supabaseAnonKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inprc3RjeXdlcnR6em9veGVmd3VoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxOTcwMjYsImV4cCI6MjA3OTc3MzAyNn0.ippeFJsR93VTUxgEA4wSrYxAlhKS4NzUPoDHd4VSbCk",
       "revenuecatIosKey": "test_yJqPBZmtgMXRGbhwFXfCvEBEoIm",
       "revenuecatAndroidKey": "test_yJqPBZmtgMXRGbhwFXfCvEBEoIm",
       "admob": {
