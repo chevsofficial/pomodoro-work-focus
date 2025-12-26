@@ -197,7 +197,7 @@ export const PaywallScreen: React.FC = () => {
       return;
     }
 
-    if (normalizedCode === 'FOCUSPRO2023' || normalizedCode === 'TESTPRO' || normalizedCode === 'DEBUGPRO') {
+    if (normalizedCode === 'TOMOFLOW3') {
       const timestamp = new Date().toISOString();
       setProStatus({
         isPro: true,
