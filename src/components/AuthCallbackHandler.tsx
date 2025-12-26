@@ -33,12 +33,17 @@ export const AuthCallbackHandler: React.FC = () => {
   const lastHandledUrl = useRef<string | null>(null);
 
   const handleAuthCallback = useCallback(async (url: string) => {
-    console.log('[AuthCallbackHandler] raw url:', url);
     let parsed: Linking.ParsedURL;
 
     try {
       parsed = Linking.parse(url);
-      console.log('[AuthCallbackHandler] Linking.parse:', parsed);
+      if (__DEV__) {
+        console.log('[AuthCallbackHandler] Linking.parse:', {
+          hostname: parsed.hostname,
+          path: parsed.path,
+          scheme: parsed.scheme,
+        });
+      }
     } catch (e) {
       console.log('[AuthCallbackHandler] Linking.parse failed', e);
       parsed = { hostname: null, path: null, queryParams: null, scheme: null };
@@ -64,14 +69,16 @@ export const AuthCallbackHandler: React.FC = () => {
     const isAuthCallback = effectivePath === AUTH_CALLBACK_PATH;
 
     const p = getParamsFromUrl(url);
-    console.log('[AuthCallbackHandler] extracted params:', {
-      isAuthRecovery,
-      isAuthCallback,
-      hasAccessToken: !!p.accessToken,
-      hasRefreshToken: !!p.refreshToken,
-      type: p.type,
-      errorCode: p.errorCode,
-    });
+    if (__DEV__) {
+      console.log('[AuthCallbackHandler] extracted params:', {
+        isAuthRecovery,
+        isAuthCallback,
+        hasAccessToken: !!p.accessToken,
+        hasRefreshToken: !!p.refreshToken,
+        type: p.type,
+        errorCode: p.errorCode,
+      });
+    }
 
     if (!isAuthCallback && !isAuthRecovery) {
       return;

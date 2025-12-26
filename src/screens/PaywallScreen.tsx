@@ -63,7 +63,9 @@ export const PaywallScreen: React.FC = () => {
         const result = await Purchases.getOfferings();
 
         if (!result || !result.current || Object.keys(result.all).length === 0) {
-          console.warn('[RevenueCat] Offerings are empty (Test Store?)');
+          if (__DEV__) {
+            console.warn('[RevenueCat] Offerings are empty (Test Store?)');
+          }
           setAnnualPackage(null);
           setMonthlyPackage(null);
           setOfferings(null);
@@ -73,7 +75,9 @@ export const PaywallScreen: React.FC = () => {
         }
 
         const current = result.current;
-        console.log('[RevenueCat] Offerings loaded', Object.keys(result.all));
+        if (__DEV__) {
+          console.log('[RevenueCat] Offerings loaded', Object.keys(result.all));
+        }
 
         let monthly: PurchasesPackage | null = current.monthly ?? null;
         let annual: PurchasesPackage | null = current.annual ?? null;
@@ -97,9 +101,11 @@ export const PaywallScreen: React.FC = () => {
         setOfferings(result);
         setStoreError(null);
       } catch (e: any) {
-        console.error('[RevenueCat] Error fetching offerings', e);
-        if (e?.userInfo?.underlyingErrorMessage) {
-          console.error('[RevenueCat underlying]', e.userInfo.underlyingErrorMessage);
+        if (__DEV__) {
+          console.error('[RevenueCat] Error fetching offerings', e);
+          if (e?.userInfo?.underlyingErrorMessage) {
+            console.error('[RevenueCat underlying]', e.userInfo.underlyingErrorMessage);
+          }
         }
         setAnnualPackage(null);
         setMonthlyPackage(null);
