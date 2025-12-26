@@ -199,11 +199,12 @@ export const PaywallScreen: React.FC = () => {
 
     if (normalizedCode === 'TOMOFLOW3') {
       const timestamp = new Date().toISOString();
+      const expiresAt = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString();
       setProStatus({
         isPro: true,
         source: 'redeem_code',
         productId: null,
-        expiresAt: null,
+        expiresAt,
         activatedAt: timestamp,
         lastVerifiedAt: timestamp,
       });
