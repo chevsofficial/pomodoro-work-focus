@@ -81,7 +81,15 @@ export type ExportableUserData = {
 
 export const selectIsProEffective = (state: AppStore): boolean => {
   if (FORCE_ALL_PRO_FEATURES) return true;
-  return state.isPro;
+  if (!state.proStatus?.isPro) return false;
+  const expiresAt = state.proStatus.expiresAt;
+  if (expiresAt) {
+    const expiresMs = new Date(expiresAt).getTime();
+    if (Number.isFinite(expiresMs) && expiresMs <= Date.now()) {
+      return false;
+    }
+  }
+  return true;
 };
 
 export const selectActiveTaskCount = (state: AppStore): number =>
