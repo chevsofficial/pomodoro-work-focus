@@ -15,6 +15,7 @@ import {
 } from '../models';
 import { CloudSnapshot, cloudSyncApi } from '../services/cloudSyncApi';
 import { supabase } from '../services/supabaseClient';
+import { PRO_DEV_UNLOCK_ENABLED } from '../config/proFeatures';
 import {
   closeCurrentSegment,
   getActiveDurationSeconds,
@@ -23,9 +24,6 @@ import {
   normalizeSegments,
   startNewSegment,
 } from '../utils/intervalUtils';
-
-// IMPORTANT: must be false for production builds
-const FORCE_ALL_PRO_FEATURES = false;
 
 export const FREE_TASK_LIMIT = 10;
 export const FREE_ACTIVITY_TYPE_LIMIT = 3;
@@ -80,7 +78,7 @@ export type ExportableUserData = {
 };
 
 export const selectIsProEffective = (state: AppStore): boolean => {
-  if (FORCE_ALL_PRO_FEATURES) return true;
+  if (PRO_DEV_UNLOCK_ENABLED) return true;
   if (!state.proStatus?.isPro) return false;
   const expiresAt = state.proStatus.expiresAt;
   if (expiresAt) {
