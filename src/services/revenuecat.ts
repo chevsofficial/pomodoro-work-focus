@@ -33,13 +33,10 @@ export async function configureRevenueCat() {
   }
 
   try {
-    Purchases.setLogLevel(LOG_LEVEL.DEBUG);
-
-    console.log('[RevenueCat] Using API key:', apiKey);
+    Purchases.setLogLevel(__DEV__ ? LOG_LEVEL.INFO : LOG_LEVEL.WARN);
 
     await Purchases.configure({ apiKey });
     console.log('[RevenueCat] Purchases configured successfully', {
-      apiKey,
       platform: Platform.OS,
     });
   } catch (error) {
