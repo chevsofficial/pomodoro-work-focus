@@ -15,51 +15,34 @@
     "updates": {
       "fallbackToCacheTimeout": 0
     },
-    "assetBundlePatterns": [
-      "**/*"
-    ],
+    "assetBundlePatterns": ["**/*"],
+
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.chevslabs.tomoflow",
-      "jsEngine": "hermes",
-      "infoPlist": {
-        "RevenueCatAPIKey": "${EXPO_PUBLIC_REVENUECAT_IOS_KEY}"
-      },
-      "config": {
-        "googleMobileAdsAppId": "ca-app-pub-2340741129071114~2471058154"
-      }
+      "jsEngine": "hermes"
     },
+
     "android": {
       "package": "com.chevslabs.tomoflow",
       "jsEngine": "hermes",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#1B1D23"
-      },
-      "manifestPlaceholders": {
-        "REVENUECAT_API_KEY": "${EXPO_PUBLIC_REVENUECAT_ANDROID_KEY}"
-      },
-      "config": {
-        "googleMobileAdsAppId": "ca-app-pub-2340741129071114~1326439397"
       }
     },
+
     "web": {
       "bundler": "metro",
       "favicon": "./assets/favicon.png"
     },
+
     "extra": {
-      "supabaseUrl": "https://zkstcywertzzooxefwuh.supabase.co",
-      "supabaseAnonKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inprc3RjeXdlcnR6em9veGVmd3VoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxOTcwMjYsImV4cCI6MjA3OTc3MzAyNn0.ippeFJsR93VTUxgEA4wSrYxAlhKS4NzUPoDHd4VSbCk",
-      "revenuecatIosKey": "${EXPO_PUBLIC_REVENUECAT_IOS_KEY}",
-      "revenuecatAndroidKey": "${EXPO_PUBLIC_REVENUECAT_ANDROID_KEY}",
-      "admob": {
-        "androidBannerUnitId": "ca-app-pub-2340741129071114/9867274393",
-        "iosBannerUnitId": "ca-app-pub-2340741129071114/5746413597"
-      },
       "eas": {
         "projectId": "86322cf7-ee6f-429c-b703-49f35e4fc868"
       }
     },
+
     "owner": "chevsofficial"
   }
 }
