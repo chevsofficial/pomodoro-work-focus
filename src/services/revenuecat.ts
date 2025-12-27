@@ -2,7 +2,7 @@
 
 import Purchases, { LOG_LEVEL, PurchasesOfferings, PurchasesPackage } from 'react-native-purchases';
 import Constants from 'expo-constants';
-import { Platform } from 'react-native';
+import { Alert, Platform } from 'react-native';
 import useAppStore from '../store/appStore';
 import { getRevenueCatApiKey } from '../config/revenuecat';
 
@@ -26,10 +26,15 @@ export async function configureRevenueCat() {
   const apiKey = getRevenueCatApiKey();
 
   if (!apiKey) {
-    console.warn(
-      '[RevenueCat] Missing RevenueCat API key for this platform, skipping configure'
-    );
-    return;
+    const message = '[RevenueCat] Missing RevenueCat API key for this platform';
+    if (__DEV__) {
+      console.warn(`${message}, skipping configure`);
+      return;
+    }
+
+    console.error(message);
+    Alert.alert('RevenueCat Error', 'Missing RevenueCat API key for this platform.');
+    throw new Error(message);
   }
 
   try {

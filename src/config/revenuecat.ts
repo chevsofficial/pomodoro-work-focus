@@ -1,15 +1,17 @@
 import { Platform } from 'react-native';
+import Constants from 'expo-constants';
 
-const TEST_STORE_API_KEY = 'test_yJqPBZmtgMXRGbhwFXfCvEBEoIm'; // from Apps & providers
+const extra = Constants.expoConfig?.extra ?? {};
 
-// Placeholder for future production keys
-const ANDROID_API_KEY = process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_KEY ?? '';
-const IOS_API_KEY = process.env.EXPO_PUBLIC_REVENUECAT_IOS_KEY ?? '';
+const ANDROID_API_KEY =
+  process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_KEY ?? extra.revenuecatAndroidKey ?? '';
+const IOS_API_KEY = process.env.EXPO_PUBLIC_REVENUECAT_IOS_KEY ?? extra.revenuecatIosKey ?? '';
+const DEV_API_KEY =
+  process.env.EXPO_PUBLIC_REVENUECAT_TEST_STORE_KEY ?? extra.revenuecatTestKey ?? '';
 
 export function getRevenueCatApiKey() {
   if (__DEV__) {
-    // Dev builds: use Test Store
-    return TEST_STORE_API_KEY;
+    return DEV_API_KEY;
   }
 
   // Prod builds later: switch to platform-specific keys
