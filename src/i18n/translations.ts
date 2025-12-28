@@ -130,6 +130,27 @@ export const translations: Record<Language, Record<string, any>> = {
       spring: 'Spring',
       neon: 'Neon',
     },
+    notifications: {
+      channels: {
+        soundName: 'Pomodoro timers (sound)',
+        silentName: 'Pomodoro timers (silent)',
+      },
+      workCompletedTitle: 'Work interval completed',
+      workCompletedLongBreakBody: 'Great job! Time for a long break.',
+      workCompletedShortBreakBody: 'Nice work! Time for a short break.',
+      shortBreakFinishedTitle: 'Short break finished',
+      longBreakFinishedTitle: 'Long break finished',
+      breakFinishedBody: "Let's get back to focusing.",
+      intervalCompletedTitle: 'Interval completed',
+      intervalCompletedBody: 'Ready for the next one?',
+    },
+    export: {
+      shareDialogTitle: 'Export Pomodoro data',
+      savedTitle: 'Export saved',
+      savedBody: 'CSV saved locally at:\n\n{fileUri}\n\nYou can manually copy this file.',
+      failedTitle: 'Export failed',
+      failedBody: 'Something went wrong while exporting your data.',
+    },
     nav: {
       tabTimer: 'Timer',
       tabTasks: 'Tasks',
@@ -619,6 +640,28 @@ export const translations: Record<Language, Record<string, any>> = {
       sunset: 'Atardecer',
       spring: 'Primavera',
       neon: 'Neón',
+    },
+    notifications: {
+      channels: {
+        soundName: 'Temporizadores Pomodoro (con sonido)',
+        silentName: 'Temporizadores Pomodoro (silencioso)',
+      },
+      workCompletedTitle: 'Intervalo de trabajo completado',
+      workCompletedLongBreakBody: '¡Buen trabajo! Es hora de un descanso largo.',
+      workCompletedShortBreakBody: '¡Buen trabajo! Es hora de un descanso corto.',
+      shortBreakFinishedTitle: 'Descanso corto terminado',
+      longBreakFinishedTitle: 'Descanso largo terminado',
+      breakFinishedBody: 'Volvamos a concentrarnos.',
+      intervalCompletedTitle: 'Intervalo completado',
+      intervalCompletedBody: '¿Listo para el siguiente?',
+    },
+    export: {
+      shareDialogTitle: 'Exportar datos de Pomodoro',
+      savedTitle: 'Exportación guardada',
+      savedBody:
+        'CSV guardado localmente en:\n\n{fileUri}\n\nPuedes copiar este archivo manualmente.',
+      failedTitle: 'Error al exportar',
+      failedBody: 'Algo salió mal al exportar tus datos.',
     },
     nav: {
       tabTimer: 'Temporizador',

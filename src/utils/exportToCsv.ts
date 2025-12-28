@@ -1,6 +1,7 @@
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import { Alert } from 'react-native';
+import { t } from '../i18n/translations';
 import useAppStore, {
   ExportableActivityType,
   ExportableSession,
@@ -153,17 +154,17 @@ export const exportAllUserDataToCsv = async () => {
     if (canShare) {
       await Sharing.shareAsync(fileUri, {
         mimeType: 'text/csv',
-        dialogTitle: 'Export Pomodoro data',
+        dialogTitle: t('export.shareDialogTitle'),
       });
     } else {
       Alert.alert(
-        'Export saved',
-        `CSV saved locally at:\n\n${fileUri}\n\nYou can manually copy this file.`,
+        t('export.savedTitle'),
+        t('export.savedBody').replace('{fileUri}', fileUri),
       );
     }
   } catch (error) {
     console.error('Export failed', error);
-    Alert.alert('Export failed', 'Something went wrong while exporting your data.');
+    Alert.alert(t('export.failedTitle'), t('export.failedBody'));
   }
 };
 

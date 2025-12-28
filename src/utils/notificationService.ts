@@ -1,6 +1,7 @@
 import { Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import { IntervalType } from '../models';
+import { t } from '../i18n/translations';
 
 const SOUND_CHANNEL_ID = 'pomodoro-sound';
 const SILENT_CHANNEL_ID = 'pomodoro-silent';
@@ -16,14 +17,14 @@ export const initializeNotifications = async () => {
 
   if (Platform.OS === 'android') {
     await Notifications.setNotificationChannelAsync(SOUND_CHANNEL_ID, {
-      name: 'Pomodoro timers (sound)',
+      name: t('notifications.channels.soundName'),
       importance: Notifications.AndroidImportance.HIGH,
       sound: 'default',
       enableVibrate: true,
     });
 
     await Notifications.setNotificationChannelAsync(SILENT_CHANNEL_ID, {
-      name: 'Pomodoro timers (silent)',
+      name: t('notifications.channels.silentName'),
       importance: Notifications.AndroidImportance.DEFAULT,
       sound: null,
       enableVibrate: false,
@@ -73,21 +74,21 @@ export const scheduleIntervalCompletionNotification = async ({
 
     if (intervalType === 'work') {
       if (nextIntervalType === 'long_break') {
-        title = 'Work interval completed';
-        body = 'Great job! Time for a long break.';
+        title = t('notifications.workCompletedTitle');
+        body = t('notifications.workCompletedLongBreakBody');
       } else {
-        title = 'Work interval completed';
-        body = 'Nice work! Time for a short break.';
+        title = t('notifications.workCompletedTitle');
+        body = t('notifications.workCompletedShortBreakBody');
       }
     } else if (intervalType === 'short_break' || intervalType === 'long_break') {
       title =
         intervalType === 'short_break'
-          ? 'Short break finished'
-          : 'Long break finished';
-      body = "Let's get back to focusing.";
+          ? t('notifications.shortBreakFinishedTitle')
+          : t('notifications.longBreakFinishedTitle');
+      body = t('notifications.breakFinishedBody');
     } else {
-      title = 'Interval completed';
-      body = 'Ready for the next one?';
+      title = t('notifications.intervalCompletedTitle');
+      body = t('notifications.intervalCompletedBody');
     }
 
     const content: Notifications.NotificationContentInput = {
