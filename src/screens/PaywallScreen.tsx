@@ -2,11 +2,9 @@ import React, { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
-  Modal,
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
@@ -48,8 +46,6 @@ export const PaywallScreen: React.FC = () => {
   const [offeringsUnavailable, setOfferingsUnavailable] = useState(false);
   const [offerings, setOfferings] = useState<PurchasesOfferings | null>(null);
   const [storeError, setStoreError] = useState<string | null>(null);
-  const [isRedeemModalVisible, setRedeemModalVisible] = useState(false);
-  const [redeemCode, setRedeemCode] = useState('');
 
   useEffect(() => {
     if (expoGo) return;
@@ -191,37 +187,6 @@ export const PaywallScreen: React.FC = () => {
     }
   };
 
-  const closeRedeemModal = () => {
-    setRedeemModalVisible(false);
-    setRedeemCode('');
-  };
-
-  const handleRedeemSubmit = () => {
-    const normalizedCode = redeemCode.trim().toUpperCase();
-    if (!normalizedCode) {
-      Alert.alert(t('info.alerts.redeemTitle'), t('info.alerts.redeemMissingCode'));
-      return;
-    }
-
-    if (normalizedCode === 'TOMOFLOW3') {
-      const timestamp = new Date().toISOString();
-      const expiresAt = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString();
-      setProStatus({
-        isPro: true,
-        source: 'redeem_code',
-        productId: null,
-        expiresAt,
-        activatedAt: timestamp,
-        lastVerifiedAt: timestamp,
-      });
-      Alert.alert(t('info.alerts.redeemSuccessTitle'), t('info.alerts.redeemSuccessBody'));
-      closeRedeemModal();
-      return;
-    }
-
-    Alert.alert(t('info.alerts.redeemInvalidTitle'), t('info.alerts.redeemInvalidBody'));
-  };
-
   const annualPriceText = formatPriceText(annualPackage, PRO_PRICING.annual.priceText);
   const monthlyPriceText = formatPriceText(monthlyPackage, PRO_PRICING.monthly.priceText);
   // Always use translation-based labels; price is displayed above the button
@@ -341,17 +306,6 @@ export const PaywallScreen: React.FC = () => {
           </Text>
         )}
 
-        <View style={styles.redeemWrap}>
-          <Text style={styles.redeemTitle}>Redeem code</Text>
-
-          <TouchableOpacity
-            style={styles.redeemButton}
-            onPress={() => setRedeemModalVisible(true)}
-          >
-            <Text style={styles.redeemButtonText}>Redeem Code</Text>
-          </TouchableOpacity>
-        </View>
-
         <TouchableOpacity
           style={[styles.restoreButton, isRestoring && styles.restoreButtonDisabled]}
           onPress={handleRestore}
@@ -372,39 +326,6 @@ export const PaywallScreen: React.FC = () => {
           </TouchableOpacity>
         )}
       </ScrollView>
-
-      <Modal
-        animationType="fade"
-        transparent
-        visible={isRedeemModalVisible}
-        onRequestClose={closeRedeemModal}
-      >
-        <View style={styles.modalBackdrop}>
-          <View style={styles.modalCard}>
-            <Text style={styles.modalTitle}>{t('info.redeemModalTitle')}</Text>
-            <Text style={styles.modalDescription}>{t('info.redeemModalDescription')}</Text>
-            <TextInput
-              style={styles.modalInput}
-              placeholder={t('info.redeemPlaceholder')}
-              placeholderTextColor={colors.textSecondary}
-              value={redeemCode}
-              onChangeText={setRedeemCode}
-              autoCapitalize="characters"
-              autoCorrect={false}
-              returnKeyType="done"
-              onSubmitEditing={handleRedeemSubmit}
-            />
-            <View style={styles.modalActions}>
-              <TouchableOpacity style={styles.modalSecondaryButton} onPress={closeRedeemModal}>
-                <Text style={styles.modalSecondaryButtonText}>{t('common.cancel')}</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.modalPrimaryButton} onPress={handleRedeemSubmit}>
-                <Text style={styles.modalPrimaryButtonText}>{t('info.redeemCta')}</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
     </ScreenContainer>
   );
 };
@@ -570,29 +491,6 @@ function createStyles(colors: ReturnType<typeof useThemeColors>) {
       textAlign: 'center',
       color: colors.textSecondary,
     },
-    redeemWrap: {
-      gap: spacing.sm,
-      padding: spacing.lg,
-      backgroundColor: colors.surface,
-      borderRadius: 16,
-      borderWidth: 1,
-      borderColor: colors.border,
-    },
-    redeemTitle: {
-      fontSize: 16,
-      fontWeight: '700',
-      color: colors.textPrimary,
-    },
-    redeemButton: {
-      paddingVertical: spacing.sm,
-      borderRadius: 12,
-      backgroundColor: colors.primary,
-      alignItems: 'center',
-    },
-    redeemButtonText: {
-      color: colors.background,
-      fontWeight: '700',
-    },
     restoreButton: {
       alignItems: 'center',
       paddingVertical: spacing.md,
@@ -603,62 +501,6 @@ function createStyles(colors: ReturnType<typeof useThemeColors>) {
     restoreText: {
       color: colors.textSecondary,
       fontSize: 15,
-    },
-    modalBackdrop: {
-      flex: 1,
-      backgroundColor: 'rgba(0,0,0,0.4)',
-      justifyContent: 'center',
-      padding: spacing.lg,
-    },
-    modalCard: {
-      backgroundColor: colors.surface,
-      borderRadius: 16,
-      padding: spacing.lg,
-      borderWidth: 1,
-      borderColor: colors.border,
-      gap: spacing.md,
-    },
-    modalTitle: {
-      fontSize: 18,
-      fontWeight: '700',
-      color: colors.textPrimary,
-    },
-    modalDescription: {
-      fontSize: 14,
-      color: colors.textSecondary,
-    },
-    modalInput: {
-      borderWidth: 1,
-      borderColor: colors.border,
-      borderRadius: 12,
-      padding: spacing.md,
-      color: colors.textPrimary,
-    },
-    modalActions: {
-      flexDirection: 'row',
-      justifyContent: 'flex-end',
-      gap: spacing.sm,
-    },
-    modalSecondaryButton: {
-      paddingHorizontal: spacing.lg,
-      paddingVertical: spacing.sm,
-      borderRadius: 12,
-      borderWidth: 1,
-      borderColor: colors.border,
-    },
-    modalSecondaryButtonText: {
-      color: colors.textPrimary,
-      fontWeight: '600',
-    },
-    modalPrimaryButton: {
-      paddingHorizontal: spacing.lg,
-      paddingVertical: spacing.sm,
-      borderRadius: 12,
-      backgroundColor: colors.primary,
-    },
-    modalPrimaryButtonText: {
-      color: colors.background,
-      fontWeight: '700',
     },
     legalText: {
       color: colors.textSecondary,

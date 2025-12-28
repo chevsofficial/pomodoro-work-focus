@@ -261,21 +261,11 @@ export const translations: Record<Language, Record<string, any>> = {
       optionSpanish: 'Español',
       title: 'Info & Support',
       subtitle: 'Discover help resources, learn more about TomoFlow, and connect with our team.',
-      redeemPlaceholder: 'e.g. FOCUSPRO2023',
-      redeemModalTitle: 'Redeem Code',
-      redeemModalDescription: 'Enter your promo or beta code below.',
-      redeemCta: 'Redeem',
       upgradeDescription:
         'Unlock unlimited activity types, richer insights, and more customization to keep your focus streak going.',
       alerts: {
         openLinkTitle: 'Open Link',
         openLinkBody: 'Something went wrong while opening this link.',
-        redeemTitle: 'Redeem Code',
-        redeemMissingCode: 'Please enter a code to continue.',
-        redeemSuccessTitle: 'Success',
-        redeemSuccessBody: 'Code applied! TomoFlow Pro is now unlocked.',
-        redeemInvalidTitle: 'Invalid Code',
-        redeemInvalidBody: 'That code was not recognized. Double-check and try again.',
         clearedTitle: 'Cleared',
         clearedBody: 'Local state cleared. Restart the app.',
         clearFailedTitle: 'Clear Data',
@@ -317,10 +307,6 @@ export const translations: Record<Language, Record<string, any>> = {
         },
         pro: {
           title: 'Pro & Codes',
-          redeem: {
-            title: 'Redeem Code',
-            description: 'Unlock special promos or betas',
-          },
           upgrade: {
             title: 'Upgrade to Pro',
             description: 'See all premium focus perks',
@@ -774,21 +760,11 @@ export const translations: Record<Language, Record<string, any>> = {
       optionSpanish: 'Español',
       title: 'Información y soporte',
       subtitle: 'Descubre recursos de ayuda, conoce más de TomoFlow y conéctate con nuestro equipo.',
-      redeemPlaceholder: 'ej. FOCUSPRO2023',
-      redeemModalTitle: 'Canjear código',
-      redeemModalDescription: 'Ingresa tu código promocional o de beta a continuación.',
-      redeemCta: 'Canjear',
       upgradeDescription:
         'Desbloquea tipos de actividad ilimitados, mejores estadísticas y más personalización para mantener tu racha de enfoque.',
       alerts: {
         openLinkTitle: 'Abrir enlace',
         openLinkBody: 'Ocurrió un problema al abrir este enlace.',
-        redeemTitle: 'Canjear código',
-        redeemMissingCode: 'Ingresa un código para continuar.',
-        redeemSuccessTitle: 'Éxito',
-        redeemSuccessBody: '¡Código aplicado! TomoFlow Pro está desbloqueado.',
-        redeemInvalidTitle: 'Código no válido',
-        redeemInvalidBody: 'Ese código no fue reconocido. Vuelve a revisarlo e inténtalo otra vez.',
         clearedTitle: 'Borrado',
         clearedBody: 'Datos locales borrados. Reinicia la app.',
         clearFailedTitle: 'Borrar datos',
@@ -830,10 +806,6 @@ export const translations: Record<Language, Record<string, any>> = {
         },
         pro: {
           title: 'Pro y códigos',
-          redeem: {
-            title: 'Canjear código',
-            description: 'Desbloquea promos o betas especiales',
-          },
           upgrade: {
             title: 'Mejorar a Pro',
             description: 'Conoce todos los beneficios premium',

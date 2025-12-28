@@ -62,7 +62,7 @@ export interface PomodoroSettings {
   showEarlySkipInfoModal: boolean;
 }
 
-export type ProSource = 'none' | 'redeem_code' | 'iap' | 'admin' | 'promo';
+export type ProSource = 'none' | 'iap' | 'admin' | 'promo';
 
 export interface ProStatus {
   isPro: boolean;
