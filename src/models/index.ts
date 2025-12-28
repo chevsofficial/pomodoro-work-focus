@@ -42,6 +42,8 @@ export interface ActivityType {
   shortBreakMinutes: number;
   longBreakMinutes: number;
   intervalsBeforeLongBreak: number;
+  createdAt: string;
+  updatedAt: string;
   archivedAt?: string;
 }
 

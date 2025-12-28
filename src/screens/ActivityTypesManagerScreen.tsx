@@ -76,7 +76,9 @@ export const ActivityTypesManagerScreen: React.FC = () => {
     setTimeout(() => goToPaywall(navigation, 'activity_type_duration_lock'), 0);
   };
 
-  const handleSubmitActivityType = (payload: Omit<ActivityType, 'id'>) => {
+  const handleSubmitActivityType = (
+    payload: Omit<ActivityType, 'id' | 'createdAt' | 'updatedAt' | 'archivedAt'>,
+  ) => {
     if (editingType) {
       updateActivityType(editingType.id, payload);
     } else {

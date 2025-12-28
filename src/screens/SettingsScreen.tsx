@@ -182,7 +182,7 @@ type ActivityTypeModalProps = {
     'workDurationMinutes' | 'shortBreakMinutes' | 'longBreakMinutes' | 'intervalsBeforeLongBreak'
   >;
   initialValues?: ActivityType;
-  onSubmit: (payload: Omit<ActivityType, 'id'>) => void;
+  onSubmit: (payload: Omit<ActivityType, 'id' | 'createdAt' | 'updatedAt' | 'archivedAt'>) => void;
   onDelete?: () => void;
   onLockedColorPress?: () => void;
   onLockedIntervalPress?: () => void;
@@ -329,7 +329,7 @@ export const ActivityTypeModal: React.FC<ActivityTypeModalProps> = ({
           intervalsBeforeLongBreak: defaults.intervalsBeforeLongBreak,
         };
 
-    const payload: Omit<ActivityType, 'id'> = {
+    const payload: Omit<ActivityType, 'id' | 'createdAt' | 'updatedAt' | 'archivedAt'> = {
       name: trimmedName,
       color: formValues.color.trim() ? formValues.color.trim() : undefined,
       ...intervalPayload,
