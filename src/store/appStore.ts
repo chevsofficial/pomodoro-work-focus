@@ -177,9 +177,11 @@ type UpdateTaskPayload = Partial<
   Pick<Task, 'title' | 'description' | 'activityTypeId' | 'isCompleted' | 'completedAt' | 'deletedAt'>
 >;
 
-type AddActivityTypePayload = Omit<ActivityType, 'id'>;
+type AddActivityTypePayload = Omit<ActivityType, 'id' | 'createdAt' | 'updatedAt' | 'archivedAt'>;
 
-type UpdateActivityTypePayload = Partial<Omit<ActivityType, 'id'>>;
+type UpdateActivityTypePayload = Partial<
+  Omit<ActivityType, 'id' | 'createdAt' | 'updatedAt' | 'archivedAt'>
+>;
 
 type StartIntervalPayload = {
   taskId?: string;
@@ -239,6 +241,15 @@ const CLOUD_SYNC_DEBOUNCE_MS = 3000;
 const nowIso = () => new Date().toISOString();
 
 const createId = () => `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+const normalizeActivityType = (type: ActivityType): ActivityType => {
+  const createdAt = type.createdAt ?? nowIso();
+  const updatedAt = type.updatedAt ?? type.archivedAt ?? createdAt;
+  return {
+    ...type,
+    createdAt,
+    updatedAt,
+  };
+};
 
 const defaultSettings: PomodoroSettings = {
   workDurationMinutes: 25,
@@ -514,8 +525,8 @@ const mapActivityTypeToExportable = (type: ActivityType): ExportableActivityType
   name: type.name,
   isArchived: Boolean(type.archivedAt),
   color: type.color ?? null,
-  createdAt: '',
-  updatedAt: type.archivedAt ?? null,
+  createdAt: type.createdAt,
+  updatedAt: type.updatedAt ?? null,
   workDurationMinutes: type.workDurationMinutes,
   shortBreakMinutes: type.shortBreakMinutes,
   longBreakMinutes: type.longBreakMinutes,
@@ -627,12 +638,15 @@ const useAppStore = create<AppStore>((set, get) => {
             ? { ...defaultCloudSyncState, ...parsed.cloudSync }
             : { ...defaultCloudSyncState };
           const nextLanguage = parsed.language ?? state.language ?? 'en';
+          const nextActivityTypes = (parsed.activityTypes ?? state.activityTypes).map(
+            normalizeActivityType,
+          );
 
           return {
             ...state,
             tasks: parsed.tasks ?? state.tasks,
             intervals: cleanedIntervals,
-            activityTypes: parsed.activityTypes ?? state.activityTypes,
+            activityTypes: nextActivityTypes,
             settings: nextSettings,
             proStatus: nextProStatus,
             isPro: nextProStatus.isPro,
@@ -910,8 +924,11 @@ const useAppStore = create<AppStore>((set, get) => {
     },
 
     addActivityType: (payload) => {
+      const timestamp = nowIso();
       const newType: ActivityType = {
         id: createId(),
+        createdAt: timestamp,
+        updatedAt: timestamp,
         archivedAt: undefined,
         ...payload,
       };
@@ -920,12 +937,14 @@ const useAppStore = create<AppStore>((set, get) => {
     },
 
     updateActivityType: (activityTypeId, updates) => {
+      const timestamp = nowIso();
       setStateAndPersist((state) => ({
         activityTypes: state.activityTypes.map((type) =>
           type.id === activityTypeId
             ? {
                 ...type,
                 ...updates,
+                updatedAt: timestamp,
               }
             : type,
         ),
@@ -933,21 +952,22 @@ const useAppStore = create<AppStore>((set, get) => {
     },
 
     archiveActivityType: (activityTypeId) => {
-      const timestamp = new Date().toISOString();
+      const timestamp = nowIso();
       setStateAndPersist((state) => ({
         activityTypes: state.activityTypes.map((type) =>
           type.id === activityTypeId
-            ? { ...type, archivedAt: type.archivedAt ?? timestamp }
+            ? { ...type, archivedAt: type.archivedAt ?? timestamp, updatedAt: timestamp }
             : type,
         ),
       }));
     },
 
     unarchiveActivityType: (activityTypeId) => {
+      const timestamp = nowIso();
       setStateAndPersist((state) => ({
         activityTypes: state.activityTypes.map((type) =>
           type.id === activityTypeId
-            ? { ...type, archivedAt: undefined }
+            ? { ...type, archivedAt: undefined, updatedAt: timestamp }
             : type,
         ),
       }));
@@ -1019,12 +1039,15 @@ const useAppStore = create<AppStore>((set, get) => {
         const nextSettings = { ...state.settings, ...(snapshot.settings ?? {}) };
         const nextIntervals = cleanupIntervals(snapshot.intervals ?? state.intervals);
         const nextLanguage = snapshot.language ?? state.language;
+        const nextActivityTypes = (snapshot.activityTypes ?? state.activityTypes).map(
+          normalizeActivityType,
+        );
 
         return {
           ...state,
           tasks: snapshot.tasks ?? state.tasks,
           intervals: nextIntervals,
-          activityTypes: snapshot.activityTypes ?? state.activityTypes,
+          activityTypes: nextActivityTypes,
           settings: nextSettings,
           proStatus: nextProStatus,
           isPro: nextProStatus.isPro,
