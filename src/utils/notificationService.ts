@@ -16,20 +16,40 @@ export const initializeNotifications = async () => {
     }),
   });
 
-  if (Platform.OS === 'android') {
-    await Notifications.setNotificationChannelAsync(SOUND_CHANNEL_ID, {
-      name: t('notifications.channels.soundName'),
+  await syncNotificationChannels();
+};
+
+const ensureNotificationChannel = async (channelId: string, name: string, options: Notifications.NotificationChannelInput) => {
+  const existingChannel = await Notifications.getNotificationChannelAsync(channelId);
+  if (!existingChannel || existingChannel.name !== name) {
+    await Notifications.setNotificationChannelAsync(channelId, options);
+  }
+};
+
+export const syncNotificationChannels = async () => {
+  if (Platform.OS !== 'android') {
+    return;
+  }
+
+  try {
+    const soundName = t('notifications.channels.soundName');
+    const silentName = t('notifications.channels.silentName');
+
+    await ensureNotificationChannel(SOUND_CHANNEL_ID, soundName, {
+      name: soundName,
       importance: Notifications.AndroidImportance.HIGH,
       sound: 'default',
       enableVibrate: true,
     });
 
-    await Notifications.setNotificationChannelAsync(SILENT_CHANNEL_ID, {
-      name: t('notifications.channels.silentName'),
+    await ensureNotificationChannel(SILENT_CHANNEL_ID, silentName, {
+      name: silentName,
       importance: Notifications.AndroidImportance.DEFAULT,
       sound: null,
       enableVibrate: false,
     });
+  } catch (error) {
+    logger.error('[Notifications] Channel sync failed', error);
   }
 };
 

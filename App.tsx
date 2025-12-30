@@ -8,8 +8,12 @@ import { CopilotProvider } from 'react-native-copilot';
 import { RootNavigator } from './src/navigation/RootNavigator';
 import { ThemeProvider } from './src/theme/ThemeProvider';
 import { useThemeColors } from './src/theme/useThemeColors';
-import useAppStore, { useSettings } from './src/store/appStore';
-import { initializeNotifications, requestNotificationPermissions } from './src/utils/notificationService';
+import useAppStore, { useLanguage, useSettings } from './src/store/appStore';
+import {
+  initializeNotifications,
+  requestNotificationPermissions,
+  syncNotificationChannels,
+} from './src/utils/notificationService';
 import { reportMissingSupabaseConfig, supabase } from './src/services/supabaseClient';
 import { cloudSyncApi } from './src/services/cloudSyncApi';
 import { configureRevenueCat } from './src/services/revenuecat';
@@ -22,6 +26,7 @@ import { TourOrchestrator } from './src/onboarding/TourOrchestrator';
 const App: React.FC = () => {
   const colors = useThemeColors();
   const settings = useSettings();
+  const language = useLanguage();
 
   const statusBarStyle = useMemo<StatusBarStyle>(() => {
     const hex = colors.background.replace('#', '');
@@ -92,6 +97,10 @@ const App: React.FC = () => {
   useEffect(() => {
     initializeNotifications();
   }, []);
+
+  useEffect(() => {
+    syncNotificationChannels();
+  }, [language]);
 
   useEffect(() => {
     if (settings.notificationsEnabled) {
