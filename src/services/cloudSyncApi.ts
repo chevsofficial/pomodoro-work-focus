@@ -1,5 +1,6 @@
 import { supabase } from './supabaseClient';
 import { AppStateSnapshot } from '../models';
+import { logger } from '../utils/logger';
 
 export type CloudSnapshot = AppStateSnapshot & {
   userId: string;
@@ -21,7 +22,7 @@ export const cloudSyncApi = {
       if (error.code === 'PGRST116' || error.code === 'PGRST204') {
         return null;
       }
-      console.error('Cloud sync: fetchSnapshot failed', error);
+      logger.error('Cloud sync: fetchSnapshot failed', error);
       return null;
     }
 
@@ -52,7 +53,7 @@ export const cloudSyncApi = {
       .single();
 
     if (error) {
-      console.error('Cloud sync: uploadSnapshot failed', error);
+      logger.error('Cloud sync: uploadSnapshot failed', error);
       throw error;
     }
 

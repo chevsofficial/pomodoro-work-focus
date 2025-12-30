@@ -5,6 +5,7 @@ import Constants from 'expo-constants';
 import { Alert, Platform } from 'react-native';
 import useAppStore from '../store/appStore';
 import { getRevenueCatApiKey } from '../config/revenuecat';
+import { logger } from '../utils/logger';
 
 // Helper: detect if we're running inside Expo Go
 export function isExpoGo() {
@@ -19,7 +20,7 @@ export function isExpoGo() {
  */
 export async function configureRevenueCat() {
   if (isExpoGo()) {
-    console.log('[RevenueCat] Expo Go detected, skipping Purchases.configure');
+    logger.info('[RevenueCat] Expo Go detected, skipping Purchases.configure');
     return;
   }
 
@@ -27,12 +28,7 @@ export async function configureRevenueCat() {
 
   if (!apiKey) {
     const message = '[RevenueCat] Missing RevenueCat API key for this platform';
-    if (__DEV__) {
-      console.warn(`${message}, skipping configure`);
-      return;
-    }
-
-    console.error(message);
+    logger.warn(`${message}, skipping configure`);
     Alert.alert('RevenueCat Error', 'Missing RevenueCat API key for this platform.');
     throw new Error(message);
   }
@@ -41,11 +37,11 @@ export async function configureRevenueCat() {
     Purchases.setLogLevel(__DEV__ ? LOG_LEVEL.INFO : LOG_LEVEL.WARN);
 
     await Purchases.configure({ apiKey });
-    console.log('[RevenueCat] Purchases configured successfully', {
+    logger.info('[RevenueCat] Purchases configured successfully', {
       platform: Platform.OS,
     });
   } catch (error) {
-    console.warn('[RevenueCat] Purchases.configure failed', error);
+    logger.warn('[RevenueCat] Purchases.configure failed', error);
   }
 }
 
@@ -57,17 +53,17 @@ export async function fetchOfferings(): Promise<PurchasesOfferings | null> {
     const offerings = await Purchases.getOfferings();
 
     if (!offerings || !offerings.current || Object.keys(offerings.all).length === 0) {
-      console.warn('[RevenueCat] Offerings are empty (Test Store?)');
+      logger.warn('[RevenueCat] Offerings are empty (Test Store?)');
       return null;
     }
 
-    console.log('[RevenueCat] Offerings fetched', Object.keys(offerings.all));
+    logger.info('[RevenueCat] Offerings fetched', Object.keys(offerings.all));
 
     return offerings;
   } catch (error: any) {
-    console.error('[RevenueCat] Error fetching offerings', error);
+    logger.error('[RevenueCat] Error fetching offerings', error);
     if (error?.userInfo?.underlyingErrorMessage) {
-      console.error('[RevenueCat underlying]', error.userInfo.underlyingErrorMessage);
+      logger.error('[RevenueCat underlying]', error.userInfo.underlyingErrorMessage);
     }
     return null;
   }
@@ -91,11 +87,11 @@ export async function purchasePackage(pkg: PurchasesPackage) {
     return customerInfo;
   } catch (error: any) {
     if (error?.userCancelled) {
-      console.log('[RevenueCat] Purchase cancelled by user');
+      logger.info('[RevenueCat] Purchase cancelled by user');
     } else {
-      console.error('[RevenueCat] Purchase failed', error);
+      logger.error('[RevenueCat] Purchase failed', error);
       if (error?.userInfo?.underlyingErrorMessage) {
-        console.error('[RevenueCat underlying]', error.userInfo.underlyingErrorMessage);
+        logger.error('[RevenueCat underlying]', error.userInfo.underlyingErrorMessage);
       }
     }
     throw error;
@@ -116,7 +112,7 @@ export async function restorePurchases() {
 
     return customerInfo;
   } catch (error) {
-    console.warn('[RevenueCat] restorePurchases failed', error);
+    logger.warn('[RevenueCat] restorePurchases failed', error);
     throw error;
   }
 }

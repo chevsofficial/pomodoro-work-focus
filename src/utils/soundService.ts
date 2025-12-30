@@ -1,6 +1,7 @@
 import { Audio, AVPlaybackSource } from 'expo-av';
 import { Vibration } from 'react-native';
 import useAppStore from '../store/appStore';
+import { logger } from './logger';
 
 const SOUND_SOURCES: Record<string, AVPlaybackSource> = {
   chime1: require('../../assets/sounds/chime1.mp3'),
@@ -32,7 +33,7 @@ export const playIntervalEndSound = async () => {
 
     currentSound = sound;
   } catch (error) {
-    console.error('[SoundService] Playing interval end sound failed', error);
+    logger.error('[SoundService] Playing interval end sound failed', error);
   }
 };
 

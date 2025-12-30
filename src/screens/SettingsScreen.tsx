@@ -39,6 +39,7 @@ import { OTHER_ACTIVITY_TYPE_ID } from '../config/activityTypeConstants';
 import { requestNotificationPermissions } from '../utils/notificationService';
 import { playIntervalEndSound } from '../utils/soundService';
 import { exportAllUserDataToCsv } from '../utils/exportToCsv';
+import { logger } from '../utils/logger';
 import { t, TranslationKey } from '../i18n/translations';
 import { navigateToStage, resetTour } from '../onboarding/tourController';
 
@@ -617,7 +618,7 @@ export const SettingsScreen: React.FC = () => {
     try {
       await signOut();
     } catch (error) {
-      console.error('Auth: sign out failed', error);
+      logger.error('Auth: sign out failed', error);
       Alert.alert(t('settings.alerts.signOutFailedTitle'), t('settings.alerts.signOutFailedBody'));
     }
   };
@@ -658,7 +659,7 @@ export const SettingsScreen: React.FC = () => {
         t('settings.alerts.deleteAllBody'),
       );
     } catch (error) {
-      console.error('Delete all data failed', error);
+      logger.error('Delete all data failed', error);
       Alert.alert(t('settings.alerts.deleteFailedTitle'), t('settings.alerts.deleteFailedBody'));
     }
   };

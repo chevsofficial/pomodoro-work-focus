@@ -28,6 +28,7 @@ import { spacing } from '../theme/spacing';
 import { useThemeColors } from '../theme/useThemeColors';
 import { Language } from '../models';
 import { t } from '../i18n/translations';
+import { logger } from '../utils/logger';
 
 type InfoItem = {
   title: string;
@@ -170,7 +171,7 @@ export const InfoScreen: React.FC = () => {
       await AsyncStorage.removeItem(STORAGE_KEY);
       Alert.alert(t('info.alerts.clearedTitle'), t('info.alerts.clearedBody'));
     } catch (error) {
-      console.error('Failed to clear local data', error);
+      logger.error('Failed to clear local data', error);
       Alert.alert(t('info.alerts.clearFailedTitle'), t('info.alerts.clearFailedBody'));
     }
   };

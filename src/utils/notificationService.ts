@@ -2,6 +2,7 @@ import { Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import { IntervalType } from '../models';
 import { t } from '../i18n/translations';
+import { logger } from './logger';
 
 const SOUND_CHANNEL_ID = 'pomodoro-sound';
 const SILENT_CHANNEL_ID = 'pomodoro-silent';
@@ -45,7 +46,7 @@ export const requestNotificationPermissions = async (): Promise<boolean> => {
 
     return finalStatus === 'granted';
   } catch (error) {
-    console.error('[Notifications] Permission request failed', error);
+    logger.error('[Notifications] Permission request failed', error);
     return false;
   }
 };
@@ -117,7 +118,7 @@ export const scheduleIntervalCompletionNotification = async ({
 
     return id;
   } catch (error) {
-    console.error('[Notifications] Scheduling notification failed', error);
+    logger.error('[Notifications] Scheduling notification failed', error);
     return undefined;
   }
 };
@@ -126,6 +127,6 @@ export const cancelScheduledNotification = async (identifier: string) => {
   try {
     await Notifications.cancelScheduledNotificationAsync(identifier);
   } catch (error) {
-    console.error('[Notifications] Canceling notification failed', error);
+    logger.error('[Notifications] Canceling notification failed', error);
   }
 };
