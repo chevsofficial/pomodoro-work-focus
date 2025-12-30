@@ -658,6 +658,8 @@ const useAppStore = create<AppStore>((set, get) => {
       }
     } catch (error) {
       console.error('Failed to hydrate app state', error);
+      await AsyncStorage.removeItem(STORAGE_KEY);
+      console.warn('Cleared corrupted app state and reset store to defaults.');
     }
   };
 
