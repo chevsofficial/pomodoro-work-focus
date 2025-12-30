@@ -1,5 +1,5 @@
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Alert,
   Modal,
@@ -10,7 +10,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { ScreenContainer } from '../components/ScreenContainer';
 import { RootStackParamList } from '../navigation/RootNavigator';
 import { navigateToProUpsell } from '../navigation/proNavigation';
@@ -27,6 +27,8 @@ import { useThemeColors } from '../theme/useThemeColors';
 import { spacing } from '../theme/spacing';
 import { t } from '../i18n/translations';
 import { formatDateHeader } from '../utils/dateFormatting';
+import { CopilotStep, walkthroughable, useCopilot } from 'react-native-copilot';
+import { advanceTourFromStage, useTourState } from '../onboarding/tourController';
 
 type TasksNavigation = NativeStackNavigationProp<RootStackParamList>;
 
@@ -187,6 +189,9 @@ export const TasksScreen: React.FC = () => {
   const remainingTasks = useAppStore(selectRemainingFreeTasks);
   const isPro = useIsPro();
   const styles = useMemo(() => createStyles(colors), [colors]);
+  const { start, copilotEvents } = useCopilot();
+  const { stage, completed } = useTourState();
+  const tourStartRef = useRef(false);
 
   const activityTypeMap = useMemo(() => {
     const entries = activityTypes.map((type) => [type.id, type] as const);
@@ -272,6 +277,39 @@ export const TasksScreen: React.FC = () => {
     navigation.navigate('TaskDetail', { taskId });
   };
 
+  useFocusEffect(
+    useCallback(() => {
+      let timeout: ReturnType<typeof setTimeout> | null = null;
+
+      if (!completed && stage === 'tasks' && !tourStartRef.current) {
+        tourStartRef.current = true;
+        timeout = setTimeout(() => start(), 300);
+      }
+
+      return () => {
+        if (timeout) {
+          clearTimeout(timeout);
+        }
+        tourStartRef.current = false;
+      };
+    }, [completed, stage, start]),
+  );
+
+  useEffect(() => {
+    const onStop = () => {
+      if (completed || stage !== 'tasks') return;
+      advanceTourFromStage('tasks');
+    };
+
+    copilotEvents.on('stop', onStop);
+    return () => {
+      copilotEvents.off('stop', onStop);
+    };
+  }, [completed, copilotEvents, stage]);
+
+  const CopilotView = walkthroughable(View);
+  const CopilotTouchable = walkthroughable(TouchableOpacity);
+
   const renderTaskItem = (task: Task) => {
     const activityType = task.activityTypeId ? activityTypeMap[task.activityTypeId] : undefined;
 
@@ -315,29 +353,31 @@ export const TasksScreen: React.FC = () => {
   return (
     <ScreenContainer>
       <Text style={styles.headerTitle}>{t('tasks.header')}</Text>
-      <View style={styles.tabRow}>
-        <TouchableOpacity
-          style={[styles.tabButton, activeTab === 'todo' && styles.tabButtonActive]}
-          onPress={() => setActiveTab('todo')}
-        >
-          <Text
-            style={[styles.tabButtonLabel, activeTab === 'todo' && styles.tabButtonLabelActive]}
+      <CopilotStep name="tasks-tabs" order={1} text={t('onboarding.tasks.tabs')}>
+        <CopilotView style={styles.tabRow}>
+          <TouchableOpacity
+            style={[styles.tabButton, activeTab === 'todo' && styles.tabButtonActive]}
+            onPress={() => setActiveTab('todo')}
           >
-            {t('tasks.tabs.todo')}
-          </Text>
-        </TouchableOpacity>
+            <Text
+              style={[styles.tabButtonLabel, activeTab === 'todo' && styles.tabButtonLabelActive]}
+            >
+              {t('tasks.tabs.todo')}
+            </Text>
+          </TouchableOpacity>
 
-        <TouchableOpacity
-          style={[styles.tabButton, activeTab === 'done' && styles.tabButtonActive]}
-          onPress={() => setActiveTab('done')}
-        >
-          <Text
-            style={[styles.tabButtonLabel, activeTab === 'done' && styles.tabButtonLabelActive]}
+          <TouchableOpacity
+            style={[styles.tabButton, activeTab === 'done' && styles.tabButtonActive]}
+            onPress={() => setActiveTab('done')}
           >
-            {t('tasks.tabs.done')}
-          </Text>
-        </TouchableOpacity>
-      </View>
+            <Text
+              style={[styles.tabButtonLabel, activeTab === 'done' && styles.tabButtonLabelActive]}
+            >
+              {t('tasks.tabs.done')}
+            </Text>
+          </TouchableOpacity>
+        </CopilotView>
+      </CopilotStep>
 
       {!isPro && remainingTasks === 0 && (
         <View style={styles.proUpsellCard}>
@@ -352,39 +392,43 @@ export const TasksScreen: React.FC = () => {
         </View>
       )}
 
-      {activeTab === 'todo' ? (
-        todoTasks.length === 0 ? (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyStateTitle}>{t('tasks.empty.todoTitle')}</Text>
-            <Text style={styles.emptyStateSubtitle}>{t('tasks.empty.todoSubtitle')}</Text>
-          </View>
-        ) : (
-          <ScrollView style={styles.todoList} contentContainerStyle={styles.listContent}>
-            {todoTasks.map((task, index) => (
-              <React.Fragment key={task.id}>
-                {renderTaskItem(task)}
-                {index < todoTasks.length - 1 && <View style={styles.separator} />}
-              </React.Fragment>
-            ))}
-          </ScrollView>
-        )
-      ) : doneTasks.length === 0 ? (
-        <Text style={styles.emptyText}>{t('tasks.empty.done')}</Text>
-      ) : (
-        <ScrollView style={styles.doneList} contentContainerStyle={styles.listContent}>
-          {groupedDoneTasks.map(([dateLabel, tasksForDay]) => (
-            <View key={dateLabel} style={styles.doneGroup}>
-              <Text style={styles.doneGroupHeader}>{dateLabel}</Text>
-              {tasksForDay.map((task, index) => (
-                <React.Fragment key={task.id}>
-                  {renderTaskItem(task)}
-                  {index < tasksForDay.length - 1 && <View style={styles.separator} />}
-                </React.Fragment>
+      <CopilotStep name="tasks-list" order={2} text={t('onboarding.tasks.taskList')}>
+        <CopilotView>
+          {activeTab === 'todo' ? (
+            todoTasks.length === 0 ? (
+              <View style={styles.emptyState}>
+                <Text style={styles.emptyStateTitle}>{t('tasks.empty.todoTitle')}</Text>
+                <Text style={styles.emptyStateSubtitle}>{t('tasks.empty.todoSubtitle')}</Text>
+              </View>
+            ) : (
+              <ScrollView style={styles.todoList} contentContainerStyle={styles.listContent}>
+                {todoTasks.map((task, index) => (
+                  <React.Fragment key={task.id}>
+                    {renderTaskItem(task)}
+                    {index < todoTasks.length - 1 && <View style={styles.separator} />}
+                  </React.Fragment>
+                ))}
+              </ScrollView>
+            )
+          ) : doneTasks.length === 0 ? (
+            <Text style={styles.emptyText}>{t('tasks.empty.done')}</Text>
+          ) : (
+            <ScrollView style={styles.doneList} contentContainerStyle={styles.listContent}>
+              {groupedDoneTasks.map(([dateLabel, tasksForDay]) => (
+                <View key={dateLabel} style={styles.doneGroup}>
+                  <Text style={styles.doneGroupHeader}>{dateLabel}</Text>
+                  {tasksForDay.map((task, index) => (
+                    <React.Fragment key={task.id}>
+                      {renderTaskItem(task)}
+                      {index < tasksForDay.length - 1 && <View style={styles.separator} />}
+                    </React.Fragment>
+                  ))}
+                </View>
               ))}
-            </View>
-          ))}
-        </ScrollView>
-      )}
+            </ScrollView>
+          )}
+        </CopilotView>
+      </CopilotStep>
 
 
       {!isPro && (
@@ -393,12 +437,14 @@ export const TasksScreen: React.FC = () => {
         </Text>
       )}
 
-      <TouchableOpacity
-        style={[styles.fab, !canCreateTask && !isPro && styles.fabLimitReached]}
-        onPress={handleAddTaskPress}
-      >
-        <Text style={styles.fabIcon}>＋</Text>
-      </TouchableOpacity>
+      <CopilotStep name="tasks-add" order={3} text={t('onboarding.tasks.addTask')}>
+        <CopilotTouchable
+          style={[styles.fab, !canCreateTask && !isPro && styles.fabLimitReached]}
+          onPress={handleAddTaskPress}
+        >
+          <Text style={styles.fabIcon}>＋</Text>
+        </CopilotTouchable>
+      </CopilotStep>
 
       <AddTaskModal
         visible={isModalVisible}

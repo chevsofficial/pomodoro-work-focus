@@ -21,6 +21,40 @@ export const translations: Record<Language, Record<string, any>> = {
       english: 'English',
       spanish: 'Español',
     },
+    onboarding: {
+      skip: 'Skip tour',
+      next: 'Next',
+      previous: 'Back',
+      finish: 'Done',
+      pomodoro: {
+        intervalSelector: 'Choose between focus, short break, and long break timers.',
+        primaryButton: 'Tap start to begin, or pause/resume your current session.',
+        taskSelector: 'Link a task to this focus session to track progress.',
+        endAndSave: 'End early and save the session when you are finished.',
+        skipInterval: 'Skip to the next interval if you need to move on quickly.',
+      },
+      activityTypes: {
+        addType: 'Create activity types to customize your focus presets.',
+        activeList: 'Your active activity types show here with quick edit actions.',
+        archivedList: 'Archived activity types stay here until you restore them.',
+      },
+      tasks: {
+        tabs: 'Switch between to-do and completed tasks.',
+        addTask: 'Add a task to keep your focus list organized.',
+        taskList: 'Tap a task to view details or mark it complete.',
+      },
+      analytics: {
+        totals: 'Track your lifetime focus totals here.',
+        dateRange: 'Change the date range to explore trends.',
+        focusCard: 'Review focus time and activity distribution.',
+      },
+      paywall: {
+        upgrade: 'Upgrade to Pro to unlock every premium feature.',
+        cloudSync: 'Sync your data across devices with Cloud Sync.',
+        customAnalytics: 'Unlock full date range analytics.',
+        premiumThemes: 'Customize the app with premium themes.',
+      },
+    },
     pomodoro: {
       title: 'Pomodoro',
       subtitle: 'Stay on track with focused intervals.',
@@ -213,6 +247,11 @@ export const translations: Record<Language, Record<string, any>> = {
           'Unlock TomoFlow Pro to enable cloud sync across devices and export your data as a CSV backup.',
         lastSyncedPrefix: 'Last synced',
         notSynced: 'Not synced yet.',
+      },
+      onboarding: {
+        title: 'Onboarding',
+        replayTitle: 'Replay introduction',
+        replayHint: 'Start the guided tour again from the Pomodoro screen.',
       },
       danger: {
         title: 'Danger zone',
@@ -517,6 +556,40 @@ export const translations: Record<Language, Record<string, any>> = {
       english: 'English',
       spanish: 'Español',
     },
+    onboarding: {
+      skip: 'Omitir tour',
+      next: 'Siguiente',
+      previous: 'Atrás',
+      finish: 'Listo',
+      pomodoro: {
+        intervalSelector: 'Elige entre foco, descanso corto y descanso largo.',
+        primaryButton: 'Pulsa iniciar para empezar o pausar/reanudar la sesión.',
+        taskSelector: 'Vincula una tarea a esta sesión de enfoque.',
+        endAndSave: 'Termina antes y guarda la sesión cuando hayas terminado.',
+        skipInterval: 'Salta al siguiente intervalo si necesitas avanzar.',
+      },
+      activityTypes: {
+        addType: 'Crea tipos de actividad para personalizar tus ajustes.',
+        activeList: 'Tus tipos activos aparecen aquí con acciones rápidas.',
+        archivedList: 'Los tipos archivados se quedan aquí hasta restaurarlos.',
+      },
+      tasks: {
+        tabs: 'Cambia entre tareas pendientes y completadas.',
+        addTask: 'Añade una tarea para organizar tu lista de enfoque.',
+        taskList: 'Toca una tarea para ver detalles o marcarla completa.',
+      },
+      analytics: {
+        totals: 'Consulta aquí tus totales de enfoque.',
+        dateRange: 'Cambia el rango de fechas para ver tendencias.',
+        focusCard: 'Revisa el tiempo de enfoque y la distribución.',
+      },
+      paywall: {
+        upgrade: 'Mejora a Pro para desbloquear todas las funciones.',
+        cloudSync: 'Sincroniza tus datos entre dispositivos con Cloud Sync.',
+        customAnalytics: 'Desbloquea el análisis por rango de fechas completo.',
+        premiumThemes: 'Personaliza la app con temas premium.',
+      },
+    },
     pomodoro: {
       title: 'Pomodoro',
       subtitle: 'Mantente en camino con intervalos enfocados.',
@@ -712,6 +785,11 @@ export const translations: Record<Language, Record<string, any>> = {
           'Desbloquea TomoFlow Pro para activar la sincronización en la nube entre dispositivos y exportar tus datos como copia de seguridad CSV.',
         lastSyncedPrefix: 'Última sincronización',
         notSynced: 'Aún no sincronizado.',
+      },
+      onboarding: {
+        title: 'Onboarding',
+        replayTitle: 'Repetir introducción',
+        replayHint: 'Inicia el tour guiado de nuevo desde Pomodoro.',
       },
       danger: {
         title: 'Zona de peligro',

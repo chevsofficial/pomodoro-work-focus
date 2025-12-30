@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -12,7 +12,7 @@ import Purchases, {
   PurchasesOfferings,
   PurchasesPackage,
 } from 'react-native-purchases';
-import { useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { ScreenContainer } from '../components/ScreenContainer';
 import { PRO_BENEFITS, PRO_PRICING } from '../config/proFeatures';
 import {
@@ -24,6 +24,8 @@ import useAppStore, { useIsPro, useProStatus } from '../store/appStore';
 import { spacing } from '../theme/spacing';
 import { useThemeColors } from '../theme/useThemeColors';
 import { t } from '../i18n/translations';
+import { CopilotStep, walkthroughable, useCopilot } from 'react-native-copilot';
+import { advanceTourFromStage, useTourState } from '../onboarding/tourController';
 
 const formatPriceText = (pkg: PurchasesPackage | null, fallback: string) =>
   pkg?.product?.priceString ?? fallback;
@@ -37,6 +39,9 @@ export const PaywallScreen: React.FC = () => {
   const navigation = useNavigation();
   const language = useAppStore((state) => state.language);
   const expoGo = isExpoGo();
+  const { start, copilotEvents } = useCopilot();
+  const { stage, completed } = useTourState();
+  const tourStartRef = useRef(false);
 
   const [annualPackage, setAnnualPackage] = useState<PurchasesPackage | null>(null);
   const [monthlyPackage, setMonthlyPackage] = useState<PurchasesPackage | null>(null);
@@ -192,12 +197,44 @@ export const PaywallScreen: React.FC = () => {
   // Always use translation-based labels; price is displayed above the button
   const annualButtonLabel = t('paywall.startTrial');
   const monthlyButtonLabel = t('paywall.chooseMonthly');
+  const CopilotView = walkthroughable(View);
+  const CopilotTouchable = walkthroughable(TouchableOpacity);
 
   useEffect(() => {
     navigation.setOptions({
       title: t('nav.upgrade'),
     });
   }, [language, navigation]);
+
+  useFocusEffect(
+    useCallback(() => {
+      let timeout: ReturnType<typeof setTimeout> | null = null;
+
+      if (!completed && stage === 'paywall' && !tourStartRef.current) {
+        tourStartRef.current = true;
+        timeout = setTimeout(() => start(), 300);
+      }
+
+      return () => {
+        if (timeout) {
+          clearTimeout(timeout);
+        }
+        tourStartRef.current = false;
+      };
+    }, [completed, stage, start]),
+  );
+
+  useEffect(() => {
+    const onStop = () => {
+      if (completed || stage !== 'paywall') return;
+      advanceTourFromStage('paywall');
+    };
+
+    copilotEvents.on('stop', onStop);
+    return () => {
+      copilotEvents.off('stop', onStop);
+    };
+  }, [completed, copilotEvents, stage]);
 
   const isAnnualDisabled = isPro || isPurchasing || !!storeError || !offerings?.current;
 
@@ -235,12 +272,64 @@ export const PaywallScreen: React.FC = () => {
 
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>{t('paywall.featuresTitle')}</Text>
-          {PRO_BENEFITS.map((benefit) => (
-            <View key={benefit} style={styles.benefitRow}>
-              <Text style={styles.benefitIcon}>✅</Text>
-              <Text style={styles.benefitText}>{t(benefit)}</Text>
-            </View>
-          ))}
+          {PRO_BENEFITS.map((benefit) => {
+            const benefitRow = (
+              <View key={benefit} style={styles.benefitRow}>
+                <Text style={styles.benefitIcon}>✅</Text>
+                <Text style={styles.benefitText}>{t(benefit)}</Text>
+              </View>
+            );
+
+            if (benefit === 'paywall.benefits.cloudSync') {
+              return (
+                <CopilotStep
+                  key={benefit}
+                  name="paywall-cloud-sync"
+                  order={2}
+                  text={t('onboarding.paywall.cloudSync')}
+                >
+                  <CopilotView style={styles.benefitRow}>
+                    <Text style={styles.benefitIcon}>✅</Text>
+                    <Text style={styles.benefitText}>{t(benefit)}</Text>
+                  </CopilotView>
+                </CopilotStep>
+              );
+            }
+
+            if (benefit === 'paywall.benefits.customDateRange') {
+              return (
+                <CopilotStep
+                  key={benefit}
+                  name="paywall-custom-analytics"
+                  order={3}
+                  text={t('onboarding.paywall.customAnalytics')}
+                >
+                  <CopilotView style={styles.benefitRow}>
+                    <Text style={styles.benefitIcon}>✅</Text>
+                    <Text style={styles.benefitText}>{t(benefit)}</Text>
+                  </CopilotView>
+                </CopilotStep>
+              );
+            }
+
+            if (benefit === 'paywall.benefits.premiumThemes') {
+              return (
+                <CopilotStep
+                  key={benefit}
+                  name="paywall-premium-themes"
+                  order={4}
+                  text={t('onboarding.paywall.premiumThemes')}
+                >
+                  <CopilotView style={styles.benefitRow}>
+                    <Text style={styles.benefitIcon}>✅</Text>
+                    <Text style={styles.benefitText}>{t(benefit)}</Text>
+                  </CopilotView>
+                </CopilotStep>
+              );
+            }
+
+            return benefitRow;
+          })}
         </View>
 
         <View style={styles.pricingWrapper}>
@@ -252,22 +341,28 @@ export const PaywallScreen: React.FC = () => {
             <Text style={styles.planPrice}>{annualPriceText}</Text>
             <Text style={styles.planDescription}>{t('paywall.plans.annualDescription')}</Text>
             <Text style={styles.planSavings}>{t('paywall.plans.annualSavings')}</Text>
-            <TouchableOpacity
-              style={[
-                styles.planButton,
-                isAnnualDisabled ? styles.planButtonDisabled : undefined,
-              ]}
-              onPress={() => handlePurchase(annualPackage)}
-              disabled={isAnnualDisabled}
+            <CopilotStep
+              name="paywall-upgrade-cta"
+              order={1}
+              text={t('onboarding.paywall.upgrade')}
             >
-              {isPurchasing ? (
-                <ActivityIndicator color={colors.background} />
-              ) : (
-                <Text style={styles.planButtonText} numberOfLines={2} ellipsizeMode="tail">
-                  {annualButtonLabel}
-                </Text>
-              )}
-            </TouchableOpacity>
+              <CopilotTouchable
+                style={[
+                  styles.planButton,
+                  isAnnualDisabled ? styles.planButtonDisabled : undefined,
+                ]}
+                onPress={() => handlePurchase(annualPackage)}
+                disabled={isAnnualDisabled}
+              >
+                {isPurchasing ? (
+                  <ActivityIndicator color={colors.background} />
+                ) : (
+                  <Text style={styles.planButtonText} numberOfLines={2} ellipsizeMode="tail">
+                    {annualButtonLabel}
+                  </Text>
+                )}
+              </CopilotTouchable>
+            </CopilotStep>
           </View>
 
           <View style={styles.pricingCard}>
