@@ -5,6 +5,7 @@ import { t } from '../i18n/translations';
 import { logger } from './logger';
 
 const SOUND_CHANNEL_ID = 'pomodoro-sound';
+const SOUND_NO_VIBRATION_CHANNEL_ID = 'pomodoro-sound-no-vibration';
 const SILENT_CHANNEL_ID = 'pomodoro-silent';
 
 export const initializeNotifications = async () => {
@@ -19,9 +20,32 @@ export const initializeNotifications = async () => {
   await syncNotificationChannels();
 };
 
-const ensureNotificationChannel = async (channelId: string, name: string, options: Notifications.NotificationChannelInput) => {
-  const existingChannel = await Notifications.getNotificationChannelAsync(channelId);
+const shouldUpdateChannel = (
+  existingChannel: Notifications.NotificationChannel | null,
+  name: string,
+  options: Notifications.NotificationChannelInput,
+) => {
   if (!existingChannel || existingChannel.name !== name) {
+    return true;
+  }
+
+  const existingSound = existingChannel.sound ?? null;
+  const desiredSound = options.sound ?? null;
+
+  return (
+    existingChannel.importance !== options.importance ||
+    existingChannel.enableVibrate !== options.enableVibrate ||
+    existingSound !== desiredSound
+  );
+};
+
+const ensureNotificationChannel = async (
+  channelId: string,
+  name: string,
+  options: Notifications.NotificationChannelInput,
+) => {
+  const existingChannel = await Notifications.getNotificationChannelAsync(channelId);
+  if (shouldUpdateChannel(existingChannel, name, options)) {
     await Notifications.setNotificationChannelAsync(channelId, options);
   }
 };
@@ -34,12 +58,20 @@ export const syncNotificationChannels = async () => {
   try {
     const soundName = t('notifications.channels.soundName');
     const silentName = t('notifications.channels.silentName');
+    const soundNoVibrationName = t('notifications.channels.soundNoVibrationName');
 
     await ensureNotificationChannel(SOUND_CHANNEL_ID, soundName, {
       name: soundName,
       importance: Notifications.AndroidImportance.HIGH,
       sound: 'default',
       enableVibrate: true,
+    });
+
+    await ensureNotificationChannel(SOUND_NO_VIBRATION_CHANNEL_ID, soundNoVibrationName, {
+      name: soundNoVibrationName,
+      importance: Notifications.AndroidImportance.HIGH,
+      sound: 'default',
+      enableVibrate: false,
     });
 
     await ensureNotificationChannel(SILENT_CHANNEL_ID, silentName, {
@@ -84,6 +116,7 @@ export const scheduleIntervalCompletionNotification = async ({
   intervalType,
   nextIntervalType,
   soundEnabled,
+  vibrationEnabled = true,
 }: ScheduleArgs): Promise<string | undefined> => {
   if (secondsFromNow <= 0) {
     return undefined;
@@ -121,7 +154,9 @@ export const scheduleIntervalCompletionNotification = async ({
     const channelId =
       Platform.OS === 'android'
         ? soundEnabled
-          ? SOUND_CHANNEL_ID
+          ? vibrationEnabled
+            ? SOUND_CHANNEL_ID
+            : SOUND_NO_VIBRATION_CHANNEL_ID
           : SILENT_CHANNEL_ID
         : undefined;
 

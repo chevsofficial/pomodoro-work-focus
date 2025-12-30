@@ -167,6 +167,7 @@ export const translations: Record<Language, Record<string, any>> = {
     notifications: {
       channels: {
         soundName: 'Pomodoro timers (sound)',
+        soundNoVibrationName: 'Pomodoro timers (sound, no vibration)',
         silentName: 'Pomodoro timers (silent)',
       },
       workCompletedTitle: 'Work interval completed',
@@ -708,6 +709,7 @@ export const translations: Record<Language, Record<string, any>> = {
     notifications: {
       channels: {
         soundName: 'Temporizadores Pomodoro (con sonido)',
+        soundNoVibrationName: 'Temporizadores Pomodoro (con sonido, sin vibración)',
         silentName: 'Temporizadores Pomodoro (silencioso)',
       },
       workCompletedTitle: 'Intervalo de trabajo completado',
