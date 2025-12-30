@@ -32,7 +32,7 @@ const reportError = (message: string, error?: unknown) => {
     timestamp: new Date().toISOString(),
   };
 
-  void fetch(ERROR_REPORT_URL, {
+  fetch(ERROR_REPORT_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
