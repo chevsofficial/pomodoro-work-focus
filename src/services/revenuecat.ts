@@ -9,8 +9,7 @@ import { logger } from '../utils/logger';
 
 // Helper: detect if we're running inside Expo Go
 export function isExpoGo() {
-  // In Expo Go this will be "expo"
-  return Constants.appOwnership === 'expo';
+  return Constants.executionEnvironment === 'storeClient';
 }
 
 type RevenueCatAvailabilityStatus =
