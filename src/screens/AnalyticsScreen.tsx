@@ -1,7 +1,7 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { DateRangePickerModal } from '../components/DateRangePickerModal';
 import { ScreenContainer } from '../components/ScreenContainer';
@@ -22,6 +22,8 @@ import { formatAnalyticsDate } from '../utils/dateFormatting';
 import { spacing } from '../theme/spacing';
 import { useThemeColors } from '../theme/useThemeColors';
 import { t } from '../i18n/translations';
+import { CopilotStep, walkthroughable, useCopilot } from 'react-native-copilot';
+import { advanceTourFromStage, useTourState } from '../onboarding/tourController';
 
 type AnalyticsRangeKey =
   | 'today'
@@ -173,6 +175,10 @@ export const AnalyticsScreen: React.FC = () => {
   const language = useAppStore((state) => state.language);
   const colors = useThemeColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
+  const { start, copilotEvents } = useCopilot();
+  const { stage, completed } = useTourState();
+  const tourStartRef = useRef(false);
+  const scrollRef = useRef<ScrollView>(null);
   const dateRangeOptions: { key: AnalyticsRangeKey; label: string }[] = [
     { key: 'today', label: t('analytics.rangeToday') },
     { key: 'yesterday', label: t('analytics.rangeYesterday') },
@@ -375,36 +381,70 @@ export const AnalyticsScreen: React.FC = () => {
     }));
   }, [activityTypeRatio, totalRangeHours]);
   const maxHours = Math.max(totalRangeHours, 0.1);
+  const CopilotView = walkthroughable(View);
+
+  useFocusEffect(
+    useCallback(() => {
+      let timeout: ReturnType<typeof setTimeout> | null = null;
+
+      if (!completed && stage === 'analytics' && !tourStartRef.current) {
+        tourStartRef.current = true;
+        timeout = setTimeout(() => start(), 300);
+      }
+
+      return () => {
+        if (timeout) {
+          clearTimeout(timeout);
+        }
+        tourStartRef.current = false;
+      };
+    }, [completed, stage, start]),
+  );
+
+  useEffect(() => {
+    const onStop = () => {
+      if (completed || stage !== 'analytics') return;
+      advanceTourFromStage('analytics');
+    };
+
+    copilotEvents.on('stop', onStop);
+    return () => {
+      copilotEvents.off('stop', onStop);
+    };
+  }, [completed, copilotEvents, stage]);
 
   return (
     <ScreenContainer>
       <ScrollView
+        ref={scrollRef}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
         <Text style={styles.title}>{t('analytics.title')}</Text>
         <Text style={styles.subtitle}>{t('analytics.subtitle')}</Text>
 
-        <View style={styles.card}>
-          <View style={styles.totalRow}>
-            <View style={styles.totalColumn}>
-              <Text style={styles.totalLabel}>{t('analytics.totalPomodoros')}</Text>
-              <View style={styles.totalValueRow}>
-                <Image
-                  source={require('../../assets/tomato-happy.png')}
-                  style={styles.tomatoIconLarge}
-                  resizeMode="contain"
-                />
-                <Text style={styles.totalValue}>{lifetimeCompletedWork}</Text>
+        <CopilotStep name="analytics-totals" order={1} text={t('onboarding.analytics.totals')}>
+          <CopilotView style={styles.card}>
+            <View style={styles.totalRow}>
+              <View style={styles.totalColumn}>
+                <Text style={styles.totalLabel}>{t('analytics.totalPomodoros')}</Text>
+                <View style={styles.totalValueRow}>
+                  <Image
+                    source={require('../../assets/tomato-happy.png')}
+                    style={styles.tomatoIconLarge}
+                    resizeMode="contain"
+                  />
+                  <Text style={styles.totalValue}>{lifetimeCompletedWork}</Text>
+                </View>
+              </View>
+
+              <View style={styles.totalColumn}>
+                <Text style={styles.totalLabel}>{t('analytics.totalFocus')}</Text>
+                <Text style={styles.totalValue}>{lifetimeFocusHours.toFixed(1)}h</Text>
               </View>
             </View>
-
-            <View style={styles.totalColumn}>
-              <Text style={styles.totalLabel}>{t('analytics.totalFocus')}</Text>
-              <Text style={styles.totalValue}>{lifetimeFocusHours.toFixed(1)}h</Text>
-            </View>
-          </View>
-        </View>
+          </CopilotView>
+        </CopilotStep>
 
         <View style={styles.section}>
           <View style={styles.streakCard}>
@@ -442,49 +482,51 @@ export const AnalyticsScreen: React.FC = () => {
           </View>
         </View>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{t('analytics.dateRangeTitle')}</Text>
-          <View style={styles.rangeRow}>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.rangeScrollContent}
-            >
-              {dateRangeOptions.map((opt) => {
-                const isActive = selectedRangeKey === opt.key;
-                const isLocked = !isPro && PRO_ONLY_RANGE_KEYS.includes(opt.key);
-                const iconColor = isActive ? colors.background : colors.textSecondary;
+        <CopilotStep name="analytics-range" order={2} text={t('onboarding.analytics.dateRange')}>
+          <CopilotView style={styles.section}>
+            <Text style={styles.sectionTitle}>{t('analytics.dateRangeTitle')}</Text>
+            <View style={styles.rangeRow}>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.rangeScrollContent}
+              >
+                {dateRangeOptions.map((opt) => {
+                  const isActive = selectedRangeKey === opt.key;
+                  const isLocked = !isPro && PRO_ONLY_RANGE_KEYS.includes(opt.key);
+                  const iconColor = isActive ? colors.background : colors.textSecondary;
 
-                return (
-                  <TouchableOpacity
-                    key={opt.key}
-                    style={[
-                      styles.rangePill,
-                      isActive && styles.rangePillActive,
-                      isLocked && styles.rangePillLocked,
-                    ]}
-                    onPress={() => handleSelectRange(opt.key)}
-                  >
-                    <Text
+                  return (
+                    <TouchableOpacity
+                      key={opt.key}
                       style={[
-                        styles.rangePillLabel,
-                        isActive && styles.rangePillLabelActive,
+                        styles.rangePill,
+                        isActive && styles.rangePillActive,
+                        isLocked && styles.rangePillLocked,
                       ]}
+                      onPress={() => handleSelectRange(opt.key)}
                     >
-                      {opt.label}
-                    </Text>
+                      <Text
+                        style={[
+                          styles.rangePillLabel,
+                          isActive && styles.rangePillLabelActive,
+                        ]}
+                      >
+                        {opt.label}
+                      </Text>
 
-                    {isLocked && (
-                      <View style={styles.lockIconContainer}>
-                        <Ionicons name="lock-closed" size={12} color={iconColor} />
-                      </View>
-                    )}
-                  </TouchableOpacity>
-                );
-              })}
-            </ScrollView>
-          </View>
-        </View>
+                      {isLocked && (
+                        <View style={styles.lockIconContainer}>
+                          <Ionicons name="lock-closed" size={12} color={iconColor} />
+                        </View>
+                      )}
+                    </TouchableOpacity>
+                  );
+                })}
+              </ScrollView>
+            </View>
+          </CopilotView>
+        </CopilotStep>
 
         <View style={styles.dateRow}>
           <View style={styles.dateColumn}>
@@ -542,48 +584,50 @@ export const AnalyticsScreen: React.FC = () => {
           </View>
         </View>
 
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>{t('analytics.focusCardTitle')}</Text>
-          <Text style={styles.cardSubtitle}>{t('analytics.focusCardSubtitle')}</Text>
+        <CopilotStep name="analytics-focus" order={3} text={t('onboarding.analytics.focusCard')}>
+          <CopilotView style={styles.card}>
+            <Text style={styles.cardTitle}>{t('analytics.focusCardTitle')}</Text>
+            <Text style={styles.cardSubtitle}>{t('analytics.focusCardSubtitle')}</Text>
 
-          <View style={styles.focusMetricsRow}>
-            <View>
-              <Text style={styles.focusMetricLabel}>{t('analytics.focusThisRange')}</Text>
-              <Text style={styles.focusMetricValue}>{rangeFocusHours.toFixed(1)}h</Text>
-            </View>
-          </View>
-
-          {totalRangeHours <= 0 ? (
-            <Text style={styles.emptyText}>{t('analytics.emptyRange')}</Text>
-          ) : (
-            <View style={styles.focusChartRow}>
-              <View style={styles.focusYAxis}>
-                {[1, 0.5, 0].map((fraction) => {
-                  const value = maxHours * fraction;
-                  return (
-                    <View key={fraction} style={styles.yAxisLabelRow}>
-                      <Text style={styles.yAxisLabel}>{value.toFixed(1)}h</Text>
-                    </View>
-                  );
-                })}
+            <View style={styles.focusMetricsRow}>
+              <View>
+                <Text style={styles.focusMetricLabel}>{t('analytics.focusThisRange')}</Text>
+                <Text style={styles.focusMetricValue}>{rangeFocusHours.toFixed(1)}h</Text>
               </View>
+            </View>
 
-              <View style={styles.focusBarWrapper}>
-                <View style={styles.focusBarBackground}>
-                  {focusBarSegments.map((segment) => (
-                    <View
-                      key={segment.key}
-                      style={{
-                        flex: segment.fraction,
-                        backgroundColor: segment.color,
-                      }}
-                    />
-                  ))}
+            {totalRangeHours <= 0 ? (
+              <Text style={styles.emptyText}>{t('analytics.emptyRange')}</Text>
+            ) : (
+              <View style={styles.focusChartRow}>
+                <View style={styles.focusYAxis}>
+                  {[1, 0.5, 0].map((fraction) => {
+                    const value = maxHours * fraction;
+                    return (
+                      <View key={fraction} style={styles.yAxisLabelRow}>
+                        <Text style={styles.yAxisLabel}>{value.toFixed(1)}h</Text>
+                      </View>
+                    );
+                  })}
+                </View>
+
+                <View style={styles.focusBarWrapper}>
+                  <View style={styles.focusBarBackground}>
+                    {focusBarSegments.map((segment) => (
+                      <View
+                        key={segment.key}
+                        style={{
+                          flex: segment.fraction,
+                          backgroundColor: segment.color,
+                        }}
+                      />
+                    ))}
+                  </View>
                 </View>
               </View>
-            </View>
-          )}
-        </View>
+            )}
+          </CopilotView>
+        </CopilotStep>
 
         <View style={styles.card}>
           <Text style={styles.cardTitle}>{t('analytics.activityRatioTitle')}</Text>

@@ -4,6 +4,7 @@ import * as Linking from 'expo-linking';
 import { NavigationContainer, DefaultTheme, Theme } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar, StatusBarStyle } from 'expo-status-bar';
+import { CopilotProvider } from 'react-native-copilot';
 import { RootNavigator } from './src/navigation/RootNavigator';
 import { ThemeProvider } from './src/theme/ThemeProvider';
 import { useThemeColors } from './src/theme/useThemeColors';
@@ -15,6 +16,8 @@ import { configureRevenueCat } from './src/services/revenuecat';
 import { ToastProvider } from './src/components/ToastProvider';
 import { AuthCallbackHandler } from './src/components/AuthCallbackHandler';
 import { handlePendingNavigation, navigationRef } from './src/navigation/navigationRef';
+import { TourTooltip } from './src/onboarding/TourTooltip';
+import { TourOrchestrator } from './src/onboarding/TourOrchestrator';
 
 const App: React.FC = () => {
   const colors = useThemeColors();
@@ -126,16 +129,23 @@ const App: React.FC = () => {
     <SafeAreaProvider>
       <ThemeProvider>
         <ToastProvider>
-          <NavigationContainer
-            linking={linking as any}
-            theme={navigationTheme}
-            ref={navigationRef}
-            onReady={handlePendingNavigation}
+          <CopilotProvider
+            overlay="svg"
+            backdropColor="rgba(0,0,0,0.6)"
+            tooltipComponent={TourTooltip}
           >
-            <StatusBar style={statusBarStyle} backgroundColor={colors.background} />
-            <AuthCallbackHandler />
-            <RootNavigator />
-          </NavigationContainer>
+            <NavigationContainer
+              linking={linking as any}
+              theme={navigationTheme}
+              ref={navigationRef}
+              onReady={handlePendingNavigation}
+            >
+              <StatusBar style={statusBarStyle} backgroundColor={colors.background} />
+              <AuthCallbackHandler />
+              <TourOrchestrator />
+              <RootNavigator />
+            </NavigationContainer>
+          </CopilotProvider>
         </ToastProvider>
       </ThemeProvider>
     </SafeAreaProvider>

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { ScreenContainer } from '../components/ScreenContainer';
 import { RootStackParamList } from '../navigation/RootNavigator';
@@ -18,18 +18,53 @@ import { spacing } from '../theme/spacing';
 import { useThemeColors } from '../theme/useThemeColors';
 import { ActivityTypeModal, ActivityTypeModalStyles } from './SettingsScreen';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { t } from '../i18n/translations';
+import { CopilotStep, walkthroughable, useCopilot } from 'react-native-copilot';
+import { advanceTourFromStage, useTourState } from '../onboarding/tourController';
 
 export const ActivityTypesManagerScreen: React.FC = () => {
   const colors = useThemeColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const language = useAppStore((state) => state.language);
+  const { start, copilotEvents } = useCopilot();
+  const { stage, completed } = useTourState();
+  const tourStartRef = useRef(false);
 
   useEffect(() => {
     navigation.setOptions({ title: t('nav.activityTypes') });
   }, [navigation, language]);
+
+  useFocusEffect(
+    useCallback(() => {
+      let timeout: ReturnType<typeof setTimeout> | null = null;
+
+      if (!completed && stage === 'activityTypes' && !tourStartRef.current) {
+        tourStartRef.current = true;
+        timeout = setTimeout(() => start(), 300);
+      }
+
+      return () => {
+        if (timeout) {
+          clearTimeout(timeout);
+        }
+        tourStartRef.current = false;
+      };
+    }, [completed, stage, start]),
+  );
+
+  useEffect(() => {
+    const onStop = () => {
+      if (completed || stage !== 'activityTypes') return;
+      advanceTourFromStage('activityTypes');
+    };
+
+    copilotEvents.on('stop', onStop);
+    return () => {
+      copilotEvents.off('stop', onStop);
+    };
+  }, [completed, copilotEvents, stage]);
 
   const activeTypes = useActiveActivityTypes();
   const archivedTypes = useArchivedActivityTypes();
@@ -109,6 +144,9 @@ export const ActivityTypesManagerScreen: React.FC = () => {
     unarchiveActivityType(id);
   };
 
+  const CopilotView = walkthroughable(View);
+  const CopilotTouchable = walkthroughable(TouchableOpacity);
+
   const renderTypeRow = (type: ActivityType, mode: 'active' | 'archived') => {
     const colorDot = type.color ?? (mode === 'active' ? colors.primary : colors.textSecondary);
 
@@ -180,9 +218,15 @@ export const ActivityTypesManagerScreen: React.FC = () => {
         <View style={styles.section}>
           <View style={styles.sectionHeaderRow}>
             <Text style={styles.sectionTitle}>{t('activityTypes.activeLabel')}</Text>
-            <TouchableOpacity style={styles.addButton} onPress={handleAddActivityTypePress}>
-              <Text style={styles.addButtonText}>{t('activityTypes.addShort')}</Text>
-            </TouchableOpacity>
+            <CopilotStep
+              name="activity-types-add"
+              order={1}
+              text={t('onboarding.activityTypes.addType')}
+            >
+              <CopilotTouchable style={styles.addButton} onPress={handleAddActivityTypePress}>
+                <Text style={styles.addButtonText}>{t('activityTypes.addShort')}</Text>
+              </CopilotTouchable>
+            </CopilotStep>
           </View>
 
           {hasReachedFreeActivityLimit && (
@@ -199,21 +243,35 @@ export const ActivityTypesManagerScreen: React.FC = () => {
             </View>
           )}
 
-          {visibleActiveTypes.length === 0 ? (
-            <Text style={styles.emptyText}>{t('activityTypes.noActive')}</Text>
-          ) : (
-            visibleActiveTypes.map((type) => renderTypeRow(type, 'active'))
-          )}
+          <CopilotStep
+            name="activity-types-active"
+            order={2}
+            text={t('onboarding.activityTypes.activeList')}
+          >
+            <CopilotView>
+              {visibleActiveTypes.length === 0 ? (
+                <Text style={styles.emptyText}>{t('activityTypes.noActive')}</Text>
+              ) : (
+                visibleActiveTypes.map((type) => renderTypeRow(type, 'active'))
+              )}
+            </CopilotView>
+          </CopilotStep>
         </View>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{t('activityTypes.archivedLabel')}</Text>
-          {archivedTypes.length === 0 ? (
-            <Text style={styles.emptyText}>{t('activityTypes.noArchived')}</Text>
-          ) : (
-            archivedTypes.map((type) => renderTypeRow(type, 'archived'))
-          )}
-        </View>
+        <CopilotStep
+          name="activity-types-archived"
+          order={3}
+          text={t('onboarding.activityTypes.archivedList')}
+        >
+          <CopilotView style={styles.section}>
+            <Text style={styles.sectionTitle}>{t('activityTypes.archivedLabel')}</Text>
+            {archivedTypes.length === 0 ? (
+              <Text style={styles.emptyText}>{t('activityTypes.noArchived')}</Text>
+            ) : (
+              archivedTypes.map((type) => renderTypeRow(type, 'archived'))
+            )}
+          </CopilotView>
+        </CopilotStep>
       </ScrollView>
 
       <ActivityTypeModal
