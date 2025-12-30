@@ -2,6 +2,7 @@ import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import { Alert } from 'react-native';
 import { t } from '../i18n/translations';
+import { logger } from './logger';
 import useAppStore, {
   ExportableActivityType,
   ExportableSession,
@@ -163,7 +164,7 @@ export const exportAllUserDataToCsv = async () => {
       );
     }
   } catch (error) {
-    console.error('Export failed', error);
+    logger.error('Export failed', error);
     Alert.alert(t('export.failedTitle'), t('export.failedBody'));
   }
 };

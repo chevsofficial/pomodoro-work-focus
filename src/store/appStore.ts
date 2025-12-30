@@ -16,6 +16,7 @@ import {
 import { CloudSnapshot, cloudSyncApi } from '../services/cloudSyncApi';
 import { supabase } from '../services/supabaseClient';
 import { PRO_DEV_UNLOCK_ENABLED } from '../config/proFeatures';
+import { logger } from '../utils/logger';
 import {
   closeCurrentSegment,
   getActiveDurationSeconds,
@@ -309,7 +310,7 @@ const persistState = async (state: AppStateSnapshot) => {
   try {
     await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   } catch (error) {
-    console.error('Failed to persist app state', error);
+    logger.error('Failed to persist app state', error);
   }
 };
 
@@ -602,7 +603,7 @@ const useAppStore = create<AppStore>((set, get) => {
         syncedAt: stored.updatedAt,
       });
     } catch (error) {
-      console.error('Cloud sync: upload to Supabase failed', error);
+      logger.error('Cloud sync: upload to Supabase failed', error);
     }
   }, CLOUD_SYNC_DEBOUNCE_MS);
 
@@ -657,9 +658,9 @@ const useAppStore = create<AppStore>((set, get) => {
         });
       }
     } catch (error) {
-      console.error('Failed to hydrate app state', error);
+      logger.error('Failed to hydrate app state', error);
       await AsyncStorage.removeItem(STORAGE_KEY);
-      console.warn('Cleared corrupted app state and reset store to defaults.');
+      logger.warn('Cleared corrupted app state and reset store to defaults.');
     }
   };
 
@@ -707,14 +708,14 @@ const useAppStore = create<AppStore>((set, get) => {
         if (state.cloudSync.userId) {
           const { error } = await supabase.rpc('delete_all_user_data');
           if (error) {
-            console.warn('delete_all_user_data RPC failed', error);
+            logger.warn('delete_all_user_data RPC failed', error);
           }
         }
 
         await AsyncStorage.removeItem(STORAGE_KEY);
         state.resetLocalState();
       } catch (error) {
-        console.error('Failed to delete all data', error);
+        logger.error('Failed to delete all data', error);
         throw error;
       }
     },

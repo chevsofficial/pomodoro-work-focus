@@ -3,6 +3,7 @@ import * as Linking from 'expo-linking';
 import { supabase } from '../services/supabaseClient';
 import { resetTo } from '../navigation/navigationRef';
 import useAppStore from '../store/appStore';
+import { logger } from '../utils/logger';
 
 const AUTH_CALLBACK_PATH = 'auth-callback';
 const AUTH_RECOVERY_PATH = 'auth-recovery';
@@ -37,15 +38,13 @@ export const AuthCallbackHandler: React.FC = () => {
 
     try {
       parsed = Linking.parse(url);
-      if (__DEV__) {
-        console.log('[AuthCallbackHandler] Linking.parse:', {
-          hostname: parsed.hostname,
-          path: parsed.path,
-          scheme: parsed.scheme,
-        });
-      }
+      logger.info('[AuthCallbackHandler] Linking.parse:', {
+        hostname: parsed.hostname,
+        path: parsed.path,
+        scheme: parsed.scheme,
+      });
     } catch (e) {
-      console.log('[AuthCallbackHandler] Linking.parse failed', e);
+      logger.error('[AuthCallbackHandler] Linking.parse failed', e);
       parsed = { hostname: null, path: null, queryParams: null, scheme: null };
     }
 
@@ -69,16 +68,14 @@ export const AuthCallbackHandler: React.FC = () => {
     const isAuthCallback = effectivePath === AUTH_CALLBACK_PATH;
 
     const p = getParamsFromUrl(url);
-    if (__DEV__) {
-      console.log('[AuthCallbackHandler] extracted params:', {
-        isAuthRecovery,
-        isAuthCallback,
-        hasAccessToken: !!p.accessToken,
-        hasRefreshToken: !!p.refreshToken,
-        type: p.type,
-        errorCode: p.errorCode,
-      });
-    }
+    logger.info('[AuthCallbackHandler] extracted params:', {
+      isAuthRecovery,
+      isAuthCallback,
+      hasAccessToken: !!p.accessToken,
+      hasRefreshToken: !!p.refreshToken,
+      type: p.type,
+      errorCode: p.errorCode,
+    });
 
     if (!isAuthCallback && !isAuthRecovery) {
       return;
@@ -121,7 +118,7 @@ export const AuthCallbackHandler: React.FC = () => {
         ...(expiresIn ? { expires_in: Number(expiresIn) } : {}),
       });
     } catch (error) {
-      console.warn('Failed to handle auth callback URL', error);
+      logger.warn('Failed to handle auth callback URL', error);
     }
   }, []);
 
