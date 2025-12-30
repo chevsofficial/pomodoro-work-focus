@@ -41,12 +41,13 @@ export const ResetPasswordScreen: React.FC = () => {
     }
 
     let mounted = true;
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
 
     const check = async () => {
       const { data } = await supabase.auth.getSession();
       if (!mounted) return;
       if (!data.session) {
-        setTimeout(async () => {
+        timeoutId = setTimeout(async () => {
           const { data: d2 } = await supabase.auth.getSession();
           if (!mounted) return;
           if (!d2.session) setError(t('auth.recovery.linkExpired'));
@@ -62,6 +63,9 @@ export const ResetPasswordScreen: React.FC = () => {
 
     return () => {
       mounted = false;
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
       sub.subscription.unsubscribe();
     };
   }, []);
