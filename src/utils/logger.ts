@@ -1,82 +1,30 @@
+// TODO(post-v1): Add production error reporting (Sentry or Supabase Edge Function).
 const isDev =
   typeof __DEV__ !== 'undefined'
     ? __DEV__
     : process.env.NODE_ENV !== 'production';
 
-const normalizeError = (error: unknown) => {
-  if (error instanceof Error) {
-    return { name: error.name, message: error.message };
-  }
-
-  if (typeof error === 'string') {
-    return { message: error };
-  }
-
-  return { message: 'Unknown error' };
-};
-
-const ERROR_REPORT_URL = process.env.EXPO_PUBLIC_ERROR_REPORT_URL;
-
-const reportError = (message: string, error?: unknown) => {
-  if (isDev) {
-    return;
-  }
-
-  if (!ERROR_REPORT_URL) {
-    return;
-  }
-
-  const payload = {
-    message,
-    error: error ? normalizeError(error) : undefined,
-    timestamp: new Date().toISOString(),
-  };
-
-  fetch(ERROR_REPORT_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-  }).catch(() => undefined);
-};
-
 type LogDetails = unknown;
 
 export const logger = {
   info(message: string, details?: LogDetails) {
-    if (!isDev) {
-      return;
-    }
+    if (!isDev) return;
 
-    if (details === undefined) {
-      console.log(message);
-      return;
-    }
-
-    console.log(message, details);
+    if (details === undefined) console.log(message);
+    else console.log(message, details);
   },
+
   warn(message: string, details?: LogDetails) {
-    if (!isDev) {
-      return;
-    }
+    if (!isDev) return;
 
-    if (details === undefined) {
-      console.warn(message);
-      return;
-    }
-
-    console.warn(message, details);
+    if (details === undefined) console.warn(message);
+    else console.warn(message, details);
   },
+
   error(message: string, error?: unknown) {
-    if (!isDev) {
-      reportError(message, error);
-      return;
-    }
+    if (!isDev) return;
 
-    if (error === undefined) {
-      console.error(message);
-      return;
-    }
-
-    console.error(message, error);
+    if (error === undefined) console.error(message);
+    else console.error(message, error);
   },
 };
