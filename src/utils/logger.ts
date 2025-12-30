@@ -15,13 +15,28 @@ const normalizeError = (error: unknown) => {
   return { message: 'Unknown error' };
 };
 
+const ERROR_REPORT_URL = process.env.EXPO_PUBLIC_ERROR_REPORT_URL;
+
 const reportError = (message: string, error?: unknown) => {
-  const _sanitized = {
+  if (isDev) {
+    return;
+  }
+
+  if (!ERROR_REPORT_URL) {
+    return;
+  }
+
+  const payload = {
     message,
     error: error ? normalizeError(error) : undefined,
+    timestamp: new Date().toISOString(),
   };
-  // TODO: forward to analytics/observability tool.
-  void _sanitized;
+
+  void fetch(ERROR_REPORT_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  }).catch(() => undefined);
 };
 
 type LogDetails = unknown;
