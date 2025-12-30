@@ -14,7 +14,7 @@ import {
   Language,
 } from '../models';
 import { CloudSnapshot, cloudSyncApi } from '../services/cloudSyncApi';
-import { supabase } from '../services/supabaseClient';
+import { isSupabaseConfigured, supabase } from '../services/supabaseClient';
 import { PRO_DEV_UNLOCK_ENABLED } from '../config/proFeatures';
 import { logger } from '../utils/logger';
 import {
@@ -590,6 +590,7 @@ const useAppStore = create<AppStore>((set, get) => {
 
     const isPro = selectIsProEffective(state);
     if (!isPro) return;
+    if (!isSupabaseConfigured) return;
     if (!state.cloudSync.userId) return;
     if (!state.cloudSync.cloudSyncEnabled) return;
 

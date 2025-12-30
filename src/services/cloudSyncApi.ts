@@ -1,4 +1,4 @@
-import { supabase } from './supabaseClient';
+import { isSupabaseConfigured, supabase } from './supabaseClient';
 import { AppStateSnapshot } from '../models';
 import { logger } from '../utils/logger';
 
@@ -12,6 +12,11 @@ const TABLE_NAME = 'user_snapshots';
 
 export const cloudSyncApi = {
   async fetchSnapshot(userId: string): Promise<CloudSnapshot | null> {
+    if (!isSupabaseConfigured) {
+      logger.warn('Cloud sync: Supabase is not configured. Skipping fetch.');
+      return null;
+    }
+
     const { data, error } = await supabase
       .from(TABLE_NAME)
       .select('*')
@@ -37,6 +42,11 @@ export const cloudSyncApi = {
   },
 
   async uploadSnapshot(snapshot: CloudSnapshot): Promise<CloudSnapshot> {
+    if (!isSupabaseConfigured) {
+      logger.warn('Cloud sync: Supabase is not configured. Skipping upload.');
+      throw new Error('Supabase credentials are not configured.');
+    }
+
     const { userId, revision, updatedAt, ...appState } = snapshot;
 
     const payload = {

@@ -15,7 +15,7 @@ import { ScreenContainer } from '../components/ScreenContainer';
 import { RootStackParamList } from '../navigation/RootNavigator';
 import { spacing } from '../theme/spacing';
 import { useThemeColors } from '../theme/useThemeColors';
-import { supabase } from '../services/supabaseClient';
+import { isSupabaseConfigured, supabase } from '../services/supabaseClient';
 import { t } from '../i18n/translations';
 import { useToast } from '../components/ToastProvider';
 import useAppStore from '../store/appStore';
@@ -35,6 +35,11 @@ export const ResetPasswordScreen: React.FC = () => {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    if (!isSupabaseConfigured) {
+      setError(t('cloud.missingConfigError'));
+      return;
+    }
+
     let mounted = true;
 
     const check = async () => {
@@ -73,6 +78,10 @@ export const ResetPasswordScreen: React.FC = () => {
 
   const handleSubmit = async () => {
     setError(undefined);
+    if (!isSupabaseConfigured) {
+      setError(t('cloud.missingConfigError'));
+      return;
+    }
     const trimmedPassword = password.trim();
     const trimmedConfirm = confirmPassword.trim();
 

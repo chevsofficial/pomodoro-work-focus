@@ -10,7 +10,7 @@ import { ThemeProvider } from './src/theme/ThemeProvider';
 import { useThemeColors } from './src/theme/useThemeColors';
 import useAppStore, { useSettings } from './src/store/appStore';
 import { initializeNotifications, requestNotificationPermissions } from './src/utils/notificationService';
-import { supabase } from './src/services/supabaseClient';
+import { reportMissingSupabaseConfig, supabase } from './src/services/supabaseClient';
 import { cloudSyncApi } from './src/services/cloudSyncApi';
 import { configureRevenueCat } from './src/services/revenuecat';
 import { ToastProvider } from './src/components/ToastProvider';
@@ -83,6 +83,10 @@ const App: React.FC = () => {
 
   useEffect(() => {
     configureRevenueCat();
+  }, []);
+
+  useEffect(() => {
+    reportMissingSupabaseConfig();
   }, []);
 
   useEffect(() => {
