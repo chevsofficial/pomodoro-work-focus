@@ -24,10 +24,5 @@ export const PRO_PRICING = {
   },
 };
 
-export const IAP_PRODUCT_IDS = {
-  ios: 'pomodorofocus.pro.ios',
-  android: 'pomodorofocus.pro.android',
-};
-
 export const PRO_DEV_UNLOCK_ENABLED =
   __DEV__ && process.env.EXPO_PUBLIC_FORCE_ALL_PRO_FEATURES === 'true';
