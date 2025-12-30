@@ -658,11 +658,6 @@ export const SettingsScreen: React.FC = () => {
       return;
     }
 
-    if (!isSupabaseConfigured) {
-      Alert.alert(t('cloud.missingConfigTitle'), t('cloud.missingConfigBody'));
-      return;
-    }
-
     exportAllUserDataToCsv();
   };
 
