@@ -13,7 +13,12 @@ export function isExpoGo() {
   return Constants.appOwnership === 'expo';
 }
 
-type RevenueCatAvailabilityStatus = 'unconfigured' | 'configured' | 'failed' | 'skipped';
+type RevenueCatAvailabilityStatus =
+  | 'unconfigured'
+  | 'configuring'
+  | 'configured'
+  | 'failed'
+  | 'skipped';
 
 type RevenueCatAvailability = {
   status: RevenueCatAvailabilityStatus;
@@ -27,8 +32,14 @@ let revenueCatAvailability: RevenueCatAvailability = {
   error: null,
 };
 
+let revenueCatConfigurePromise: Promise<RevenueCatAvailability> | null = null;
+
 export function getRevenueCatAvailability(): RevenueCatAvailability {
   return { ...revenueCatAvailability };
+}
+
+export function getRevenueCatConfigurePromise(): Promise<RevenueCatAvailability> | null {
+  return revenueCatConfigurePromise;
 }
 
 /**
@@ -37,39 +48,55 @@ export function getRevenueCatAvailability(): RevenueCatAvailability {
  * - In dev/production builds: we call Purchases.configure with your API key.
  */
 export async function configureRevenueCat() {
-  if (isExpoGo()) {
-    logger.info('[RevenueCat] Expo Go detected, skipping Purchases.configure');
-    revenueCatAvailability = { status: 'skipped', error: null };
-    return;
+  if (revenueCatAvailability.status === 'configured') {
+    return revenueCatConfigurePromise ?? Promise.resolve(getRevenueCatAvailability());
   }
 
-  const apiKey = getRevenueCatApiKey();
-
-  if (!apiKey) {
-    const message = '[RevenueCat] Missing RevenueCat API key for this platform';
-    logger.warn(`${message}, skipping configure`);
-    revenueCatAvailability = {
-      status: 'failed',
-      error: REVENUECAT_UNAVAILABLE_MESSAGE,
-    };
-    return;
+  if (revenueCatAvailability.status === 'configuring' && revenueCatConfigurePromise) {
+    return revenueCatConfigurePromise;
   }
 
-  try {
-    Purchases.setLogLevel(__DEV__ ? LOG_LEVEL.INFO : LOG_LEVEL.WARN);
+  revenueCatAvailability = { status: 'configuring', error: null };
 
-    await Purchases.configure({ apiKey });
-    logger.info('[RevenueCat] Purchases configured successfully', {
-      platform: Platform.OS,
-    });
-    revenueCatAvailability = { status: 'configured', error: null };
-  } catch (error) {
-    logger.warn('[RevenueCat] Purchases.configure failed', error);
-    revenueCatAvailability = {
-      status: 'failed',
-      error: REVENUECAT_UNAVAILABLE_MESSAGE,
-    };
-  }
+  revenueCatConfigurePromise = (async () => {
+    if (isExpoGo()) {
+      logger.info('[RevenueCat] Expo Go detected, skipping Purchases.configure');
+      revenueCatAvailability = { status: 'skipped', error: null };
+      return getRevenueCatAvailability();
+    }
+
+    const apiKey = getRevenueCatApiKey();
+
+    if (!apiKey) {
+      const message = '[RevenueCat] Missing RevenueCat API key for this platform';
+      logger.warn(`${message}, skipping configure`);
+      revenueCatAvailability = {
+        status: 'failed',
+        error: REVENUECAT_UNAVAILABLE_MESSAGE,
+      };
+      return getRevenueCatAvailability();
+    }
+
+    try {
+      Purchases.setLogLevel(__DEV__ ? LOG_LEVEL.INFO : LOG_LEVEL.WARN);
+
+      await Purchases.configure({ apiKey });
+      logger.info('[RevenueCat] Purchases configured successfully', {
+        platform: Platform.OS,
+      });
+      revenueCatAvailability = { status: 'configured', error: null };
+    } catch (error) {
+      logger.warn('[RevenueCat] Purchases.configure failed', error);
+      revenueCatAvailability = {
+        status: 'failed',
+        error: REVENUECAT_UNAVAILABLE_MESSAGE,
+      };
+    }
+
+    return getRevenueCatAvailability();
+  })();
+
+  return revenueCatConfigurePromise;
 }
 
 /**

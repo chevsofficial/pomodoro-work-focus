@@ -16,6 +16,7 @@ import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { ScreenContainer } from '../components/ScreenContainer';
 import { PRO_BENEFITS, PRO_PRICING } from '../config/proFeatures';
 import {
+  configureRevenueCat,
   getRevenueCatAvailability,
   isExpoGo,
   purchasePackage,
@@ -65,11 +66,18 @@ export const PaywallScreen: React.FC = () => {
       setRevenueCatUnavailable(false);
 
       const availability = getRevenueCatAvailability();
-      if (availability.status === 'failed') {
+      if (availability.status === 'unconfigured' || availability.status === 'configuring') {
+        await configureRevenueCat();
+      }
+
+      const updatedAvailability = getRevenueCatAvailability();
+      if (updatedAvailability.status === 'failed') {
         setAnnualPackage(null);
         setMonthlyPackage(null);
         setOfferings(null);
-        setStoreError(availability.error ?? 'Subscriptions unavailable. Please try again later.');
+        setStoreError(
+          updatedAvailability.error ?? 'Subscriptions unavailable. Please try again later.',
+        );
         setOfferingsUnavailable(true);
         setRevenueCatUnavailable(true);
         setLoadingOfferings(false);
