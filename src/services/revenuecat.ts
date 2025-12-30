@@ -2,7 +2,7 @@
 
 import Purchases, { LOG_LEVEL, PurchasesOfferings, PurchasesPackage } from 'react-native-purchases';
 import Constants from 'expo-constants';
-import { Alert, Platform } from 'react-native';
+import { Platform } from 'react-native';
 import useAppStore from '../store/appStore';
 import { getRevenueCatApiKey } from '../config/revenuecat';
 import { logger } from '../utils/logger';
@@ -13,6 +13,24 @@ export function isExpoGo() {
   return Constants.appOwnership === 'expo';
 }
 
+type RevenueCatAvailabilityStatus = 'unconfigured' | 'configured' | 'failed' | 'skipped';
+
+type RevenueCatAvailability = {
+  status: RevenueCatAvailabilityStatus;
+  error: string | null;
+};
+
+const REVENUECAT_UNAVAILABLE_MESSAGE = 'Subscriptions unavailable. Please try again later.';
+
+let revenueCatAvailability: RevenueCatAvailability = {
+  status: 'unconfigured',
+  error: null,
+};
+
+export function getRevenueCatAvailability(): RevenueCatAvailability {
+  return { ...revenueCatAvailability };
+}
+
 /**
  * Initialize RevenueCat safely.
  * - In Expo Go: we SKIP configuring, to avoid crashes.
@@ -21,6 +39,7 @@ export function isExpoGo() {
 export async function configureRevenueCat() {
   if (isExpoGo()) {
     logger.info('[RevenueCat] Expo Go detected, skipping Purchases.configure');
+    revenueCatAvailability = { status: 'skipped', error: null };
     return;
   }
 
@@ -29,8 +48,11 @@ export async function configureRevenueCat() {
   if (!apiKey) {
     const message = '[RevenueCat] Missing RevenueCat API key for this platform';
     logger.warn(`${message}, skipping configure`);
-    Alert.alert('RevenueCat Error', 'Missing RevenueCat API key for this platform.');
-    throw new Error(message);
+    revenueCatAvailability = {
+      status: 'failed',
+      error: REVENUECAT_UNAVAILABLE_MESSAGE,
+    };
+    return;
   }
 
   try {
@@ -40,8 +62,13 @@ export async function configureRevenueCat() {
     logger.info('[RevenueCat] Purchases configured successfully', {
       platform: Platform.OS,
     });
+    revenueCatAvailability = { status: 'configured', error: null };
   } catch (error) {
     logger.warn('[RevenueCat] Purchases.configure failed', error);
+    revenueCatAvailability = {
+      status: 'failed',
+      error: REVENUECAT_UNAVAILABLE_MESSAGE,
+    };
   }
 }
 

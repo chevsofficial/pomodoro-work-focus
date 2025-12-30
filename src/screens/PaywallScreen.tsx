@@ -16,6 +16,7 @@ import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { ScreenContainer } from '../components/ScreenContainer';
 import { PRO_BENEFITS, PRO_PRICING } from '../config/proFeatures';
 import {
+  getRevenueCatAvailability,
   isExpoGo,
   purchasePackage,
   restorePurchases,
@@ -52,6 +53,7 @@ export const PaywallScreen: React.FC = () => {
   const [offeringsUnavailable, setOfferingsUnavailable] = useState(false);
   const [offerings, setOfferings] = useState<PurchasesOfferings | null>(null);
   const [storeError, setStoreError] = useState<string | null>(null);
+  const [revenueCatUnavailable, setRevenueCatUnavailable] = useState(false);
 
   useEffect(() => {
     if (expoGo) return;
@@ -60,6 +62,19 @@ export const PaywallScreen: React.FC = () => {
       setLoadingOfferings(true);
       setOfferingsUnavailable(false);
       setStoreError(null);
+      setRevenueCatUnavailable(false);
+
+      const availability = getRevenueCatAvailability();
+      if (availability.status === 'failed') {
+        setAnnualPackage(null);
+        setMonthlyPackage(null);
+        setOfferings(null);
+        setStoreError(availability.error ?? 'Subscriptions unavailable. Please try again later.');
+        setOfferingsUnavailable(true);
+        setRevenueCatUnavailable(true);
+        setLoadingOfferings(false);
+        return;
+      }
 
       try {
         const result = await Purchases.getOfferings();
@@ -125,6 +140,11 @@ export const PaywallScreen: React.FC = () => {
       return;
     }
 
+    if (revenueCatUnavailable) {
+      Alert.alert('Subscriptions unavailable', 'Please try again later.');
+      return;
+    }
+
     if (isPro) {
       Alert.alert('Already Pro', 'Thanks for supporting TomoFlow!');
       return;
@@ -153,6 +173,11 @@ export const PaywallScreen: React.FC = () => {
         'Purchases unavailable in Expo Go',
         'To restore purchases, install a development build created with EAS.'
       );
+      return;
+    }
+
+    if (revenueCatUnavailable) {
+      Alert.alert('Subscriptions unavailable', 'Please try again later.');
       return;
     }
 
@@ -231,10 +256,16 @@ export const PaywallScreen: React.FC = () => {
     };
   }, [completed, copilotEvents, stage]);
 
-  const isAnnualDisabled = isPro || isPurchasing || !!storeError || !offerings?.current;
+  const isAnnualDisabled =
+    isPro || isPurchasing || !!storeError || revenueCatUnavailable || !offerings?.current;
 
   const isMonthlyDisabled =
-    isPro || isPurchasing || !!storeError || !offerings?.current || !monthlyPackage;
+    isPro ||
+    isPurchasing ||
+    !!storeError ||
+    revenueCatUnavailable ||
+    !offerings?.current ||
+    !monthlyPackage;
 
   if (expoGo) {
     return (
@@ -377,7 +408,7 @@ export const PaywallScreen: React.FC = () => {
           </View>
         </View>
 
-        {storeError && <Text style={styles.secondaryText}>Store unavailable. Please try again later.</Text>}
+        {storeError && <Text style={styles.secondaryText}>{storeError}</Text>}
 
         {loadingOfferings && (
           <View style={styles.loadingRow}>
@@ -399,7 +430,7 @@ export const PaywallScreen: React.FC = () => {
         <TouchableOpacity
           style={[styles.restoreButton, isRestoring && styles.restoreButtonDisabled]}
           onPress={handleRestore}
-          disabled={isRestoring}
+          disabled={isRestoring || revenueCatUnavailable}
         >
           {isRestoring ? (
             <ActivityIndicator color={colors.textSecondary} />
