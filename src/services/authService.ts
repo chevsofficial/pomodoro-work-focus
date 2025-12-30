@@ -1,4 +1,5 @@
-import { supabaseClient } from './supabaseClient';
+import { t } from '../i18n/translations';
+import { isSupabaseConfigured, supabaseClient } from './supabaseClient';
 
 export type SignUpStatus = 'signedUp' | 'existingAccount';
 
@@ -8,6 +9,10 @@ export interface SignUpResult {
 }
 
 export const signInWithEmail = async (email: string, password: string) => {
+  if (!isSupabaseConfigured) {
+    throw new Error(t('cloud.missingConfigError'));
+  }
+
   const { data, error } = await supabaseClient.auth.signInWithPassword({
     email,
     password,
@@ -18,6 +23,10 @@ export const signInWithEmail = async (email: string, password: string) => {
 };
 
 export const signUpWithEmail = async (email: string, password: string): Promise<SignUpResult> => {
+  if (!isSupabaseConfigured) {
+    throw new Error(t('cloud.missingConfigError'));
+  }
+
   const emailRedirectTo = 'https://tomoflow.app/auth-callback';
 
   const { data, error } = await supabaseClient.auth.signUp({
@@ -50,11 +59,19 @@ export const signUpWithEmail = async (email: string, password: string): Promise<
 };
 
 export const signOut = async () => {
+  if (!isSupabaseConfigured) {
+    throw new Error(t('cloud.missingConfigError'));
+  }
+
   const { error } = await supabaseClient.auth.signOut();
   if (error) throw error;
 };
 
 export const sendPasswordResetEmail = async (email: string) => {
+  if (!isSupabaseConfigured) {
+    throw new Error(t('cloud.missingConfigError'));
+  }
+
   const redirectTo = 'https://tomoflow.app/auth-recovery';
 
   const { data, error } = await supabaseClient.auth.resetPasswordForEmail(email, {

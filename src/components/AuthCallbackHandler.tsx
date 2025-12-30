@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef } from 'react';
 import * as Linking from 'expo-linking';
-import { supabase } from '../services/supabaseClient';
+import { isSupabaseConfigured, supabase } from '../services/supabaseClient';
 import { resetTo } from '../navigation/navigationRef';
 import useAppStore from '../store/appStore';
 import { logger } from '../utils/logger';
@@ -34,6 +34,11 @@ export const AuthCallbackHandler: React.FC = () => {
   const lastHandledUrl = useRef<string | null>(null);
 
   const handleAuthCallback = useCallback(async (url: string) => {
+    if (!isSupabaseConfigured) {
+      logger.warn('[AuthCallbackHandler] Supabase is not configured. Ignoring auth callback.');
+      return;
+    }
+
     let parsed: Linking.ParsedURL;
 
     try {

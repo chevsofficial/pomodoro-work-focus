@@ -404,6 +404,11 @@ export const translations: Record<Language, Record<string, any>> = {
         annualSavings: 'Save 58% compared to monthly',
       },
     },
+    cloud: {
+      missingConfigTitle: 'Cloud services unavailable',
+      missingConfigBody: 'Cloud features are disabled because Supabase is not configured.',
+      missingConfigError: 'Cloud features are unavailable. Please configure Supabase.',
+    },
     auth: {
       titleSignIn: 'Sign in',
       titleSignUp: 'Create an account',
@@ -941,6 +946,11 @@ export const translations: Record<Language, Record<string, any>> = {
         annualDescription: 'Prueba gratis de 7 días • Cancela en cualquier momento',
         annualSavings: 'Ahorra 58% comparado con el mensual',
       },
+    },
+    cloud: {
+      missingConfigTitle: 'Servicios en la nube no disponibles',
+      missingConfigBody: 'Las funciones en la nube están desactivadas porque Supabase no está configurado.',
+      missingConfigError: 'Las funciones en la nube no están disponibles. Configura Supabase.',
     },
     auth: {
       titleSignIn: 'Iniciar sesión',

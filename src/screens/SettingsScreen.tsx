@@ -28,6 +28,7 @@ import useAppStore, {
 } from '../store/appStore';
 import { useSubscriptionGate } from '../utils/subscriptionGate';
 import { signOut } from '../services/authService';
+import { isSupabaseConfigured } from '../services/supabaseClient';
 import { spacing } from '../theme/spacing';
 import { THEMES, ThemeId, useThemeColors } from '../theme/useThemeColors';
 import {
@@ -611,10 +612,20 @@ export const SettingsScreen: React.FC = () => {
   };
 
   const handleGoToSignIn = () => {
+    if (!isSupabaseConfigured) {
+      Alert.alert(t('cloud.missingConfigTitle'), t('cloud.missingConfigBody'));
+      return;
+    }
+
     navigation.navigate('Auth');
   };
 
   const handleSignOut = async () => {
+    if (!isSupabaseConfigured) {
+      Alert.alert(t('cloud.missingConfigTitle'), t('cloud.missingConfigBody'));
+      return;
+    }
+
     try {
       await signOut();
     } catch (error) {
@@ -624,6 +635,11 @@ export const SettingsScreen: React.FC = () => {
   };
 
   const handleCloudSyncToggle = (value: boolean) => {
+    if (!isSupabaseConfigured) {
+      Alert.alert(t('cloud.missingConfigTitle'), t('cloud.missingConfigBody'));
+      return;
+    }
+
     if (!cloudSync.userId) {
       handleGoToSignIn();
       return;
@@ -639,6 +655,11 @@ export const SettingsScreen: React.FC = () => {
   const handleExportAllData = () => {
     if (!isPro) {
       handleUpgradePress();
+      return;
+    }
+
+    if (!isSupabaseConfigured) {
+      Alert.alert(t('cloud.missingConfigTitle'), t('cloud.missingConfigBody'));
       return;
     }
 
