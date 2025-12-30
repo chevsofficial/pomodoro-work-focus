@@ -151,6 +151,7 @@ export const useTimerStore = create<TimerState>((set, get) => {
       intervalType: type,
       nextIntervalType,
       soundEnabled: settings.soundEnabled ?? true,
+      vibrationEnabled: settings.vibrationEnabled ?? true,
     }).then((identifier) => {
       if (!identifier) {
         return;
