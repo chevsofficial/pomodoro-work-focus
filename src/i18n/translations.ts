@@ -395,6 +395,56 @@ export const translations: Record<Language, Record<string, any>> = {
       loadingPlans: 'Loading plans…',
       unlockedVia: 'Unlocked via {source}.',
       restore: 'Restore Purchases',
+      devUnlockLabel: 'DEV: Unlock Pro',
+      expoGo: {
+        title: 'TomoFlow Pro',
+        body:
+          'Subscription purchases can’t be tested inside Expo Go. Install a development build (EAS) to try the full upgrade flow.',
+      },
+      alerts: {
+        expoGo: {
+          title: 'Purchases unavailable in Expo Go',
+          purchaseBody: 'To test subscriptions, install a development build created with EAS.',
+          restoreBody: 'To restore purchases, install a development build created with EAS.',
+        },
+        subscriptionsUnavailable: {
+          title: 'Subscriptions unavailable',
+          body: 'Please try again later.',
+        },
+        alreadyPro: {
+          title: 'Already Pro',
+          body: 'Thanks for supporting TomoFlow!',
+        },
+        storeUnavailable: {
+          title: 'Store unavailable',
+          body: 'We could not load products. Please try again shortly.',
+        },
+        purchaseFailed: {
+          title: 'Purchase failed',
+          body: 'Something went wrong while starting your subscription.',
+        },
+        restoreSuccess: {
+          title: 'Restored',
+          body: 'Your TomoFlow Pro access has been restored.',
+        },
+        restoreNone: {
+          title: 'No purchases found',
+          body: 'We did not find any previous purchases for this account.',
+        },
+        restoreFailed: {
+          title: 'Restore failed',
+          body: 'We could not restore purchases. Please try again later.',
+        },
+        devUnlock: {
+          title: 'Dev unlock',
+          body: 'Pro has been unlocked for development builds.',
+        },
+      },
+      errors: {
+        subscriptionsUnavailable: 'Subscriptions unavailable. Please try again later.',
+        loadProductsLater: 'We could not load products. Please try again later.',
+        plansUnavailable: 'Plans are not available right now.',
+      },
       legal:
         'Payment will be charged to your Apple/Google account. Subscription auto-renews unless cancelled at least 24 hours before the end of the current period.',
       plans: {
@@ -939,6 +989,56 @@ export const translations: Record<Language, Record<string, any>> = {
       loadingPlans: 'Cargando planes…',
       unlockedVia: 'Desbloqueado vía {source}.',
       restore: 'Restaurar compras',
+      devUnlockLabel: 'DEV: Desbloquear Pro',
+      expoGo: {
+        title: 'TomoFlow Pro',
+        body:
+          'Las compras de suscripción no se pueden probar en Expo Go. Instala una build de desarrollo (EAS) para probar el flujo completo.',
+      },
+      alerts: {
+        expoGo: {
+          title: 'Compras no disponibles en Expo Go',
+          purchaseBody: 'Para probar suscripciones, instala una build de desarrollo creada con EAS.',
+          restoreBody: 'Para restaurar compras, instala una build de desarrollo creada con EAS.',
+        },
+        subscriptionsUnavailable: {
+          title: 'Suscripciones no disponibles',
+          body: 'Inténtalo de nuevo más tarde.',
+        },
+        alreadyPro: {
+          title: 'Ya eres Pro',
+          body: '¡Gracias por apoyar a TomoFlow!',
+        },
+        storeUnavailable: {
+          title: 'Tienda no disponible',
+          body: 'No pudimos cargar los productos. Inténtalo de nuevo en breve.',
+        },
+        purchaseFailed: {
+          title: 'Compra fallida',
+          body: 'Ocurrió un problema al iniciar tu suscripción.',
+        },
+        restoreSuccess: {
+          title: 'Restaurado',
+          body: 'Tu acceso a TomoFlow Pro ha sido restaurado.',
+        },
+        restoreNone: {
+          title: 'No se encontraron compras',
+          body: 'No encontramos compras anteriores para esta cuenta.',
+        },
+        restoreFailed: {
+          title: 'Restauración fallida',
+          body: 'No pudimos restaurar las compras. Inténtalo de nuevo más tarde.',
+        },
+        devUnlock: {
+          title: 'Desbloqueo dev',
+          body: 'Pro se ha desbloqueado para builds de desarrollo.',
+        },
+      },
+      errors: {
+        subscriptionsUnavailable: 'Suscripciones no disponibles. Inténtalo de nuevo más tarde.',
+        loadProductsLater: 'No pudimos cargar los productos. Inténtalo de nuevo más tarde.',
+        plansUnavailable: 'Los planes no están disponibles en este momento.',
+      },
       legal:
         'El pago se cargará a tu cuenta de Apple/Google. La suscripción se renueva automáticamente a menos que se cancele al menos 24 horas antes del fin del período actual.',
       plans: {

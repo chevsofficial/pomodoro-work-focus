@@ -76,7 +76,7 @@ export const PaywallScreen: React.FC = () => {
         setMonthlyPackage(null);
         setOfferings(null);
         setStoreError(
-          updatedAvailability.error ?? 'Subscriptions unavailable. Please try again later.',
+          updatedAvailability.error ?? t('paywall.errors.subscriptionsUnavailable'),
         );
         setOfferingsUnavailable(true);
         setRevenueCatUnavailable(true);
@@ -92,7 +92,7 @@ export const PaywallScreen: React.FC = () => {
           setAnnualPackage(null);
           setMonthlyPackage(null);
           setOfferings(null);
-          setStoreError('We could not load products. Please try again later.');
+          setStoreError(t('paywall.errors.loadProductsLater'));
           setOfferingsUnavailable(true);
           return;
         }
@@ -129,7 +129,7 @@ export const PaywallScreen: React.FC = () => {
         setAnnualPackage(null);
         setMonthlyPackage(null);
         setOfferings(null);
-        setStoreError('We could not load products. Please try again later.');
+        setStoreError(t('paywall.errors.loadProductsLater'));
         setOfferingsUnavailable(true);
       } finally {
         setLoadingOfferings(false);
@@ -142,24 +142,30 @@ export const PaywallScreen: React.FC = () => {
   const handlePurchase = async (pkg: PurchasesPackage | null) => {
     if (expoGo) {
       Alert.alert(
-        'Purchases unavailable in Expo Go',
-        'To test subscriptions, install a development build created with EAS.'
+        t('paywall.alerts.expoGo.title'),
+        t('paywall.alerts.expoGo.purchaseBody')
       );
       return;
     }
 
     if (revenueCatUnavailable) {
-      Alert.alert('Subscriptions unavailable', 'Please try again later.');
+      Alert.alert(
+        t('paywall.alerts.subscriptionsUnavailable.title'),
+        t('paywall.alerts.subscriptionsUnavailable.body'),
+      );
       return;
     }
 
     if (isPro) {
-      Alert.alert('Already Pro', 'Thanks for supporting TomoFlow!');
+      Alert.alert(t('paywall.alerts.alreadyPro.title'), t('paywall.alerts.alreadyPro.body'));
       return;
     }
 
     if (!pkg) {
-      Alert.alert('Store unavailable', 'We could not load products. Please try again shortly.');
+      Alert.alert(
+        t('paywall.alerts.storeUnavailable.title'),
+        t('paywall.alerts.storeUnavailable.body'),
+      );
       return;
     }
 
@@ -168,7 +174,10 @@ export const PaywallScreen: React.FC = () => {
       await purchasePackage(pkg);
     } catch (error: any) {
       if (!error?.userCancelled) {
-        Alert.alert('Purchase failed', 'Something went wrong while starting your subscription.');
+        Alert.alert(
+          t('paywall.alerts.purchaseFailed.title'),
+          t('paywall.alerts.purchaseFailed.body'),
+        );
       }
     } finally {
       setIsPurchasing(false);
@@ -178,14 +187,17 @@ export const PaywallScreen: React.FC = () => {
   const handleRestore = async () => {
     if (expoGo) {
       Alert.alert(
-        'Purchases unavailable in Expo Go',
-        'To restore purchases, install a development build created with EAS.'
+        t('paywall.alerts.expoGo.title'),
+        t('paywall.alerts.expoGo.restoreBody')
       );
       return;
     }
 
     if (revenueCatUnavailable) {
-      Alert.alert('Subscriptions unavailable', 'Please try again later.');
+      Alert.alert(
+        t('paywall.alerts.subscriptionsUnavailable.title'),
+        t('paywall.alerts.subscriptionsUnavailable.body'),
+      );
       return;
     }
 
@@ -195,13 +207,22 @@ export const PaywallScreen: React.FC = () => {
       const hasPro = Object.keys(info.entitlements.active).length > 0;
 
       if (hasPro) {
-        Alert.alert('Restored', 'Your TomoFlow Pro access has been restored.');
+        Alert.alert(
+          t('paywall.alerts.restoreSuccess.title'),
+          t('paywall.alerts.restoreSuccess.body'),
+        );
       } else {
-        Alert.alert('No purchases found', 'We did not find any previous purchases for this account.');
+        Alert.alert(
+          t('paywall.alerts.restoreNone.title'),
+          t('paywall.alerts.restoreNone.body'),
+        );
       }
     } catch (error: any) {
       if (error?.userCancelled) return;
-      Alert.alert('Restore failed', 'We could not restore purchases. Please try again later.');
+      Alert.alert(
+        t('paywall.alerts.restoreFailed.title'),
+        t('paywall.alerts.restoreFailed.body'),
+      );
     } finally {
       setIsRestoring(false);
     }
@@ -216,7 +237,7 @@ export const PaywallScreen: React.FC = () => {
         activatedAt: timestamp,
         lastVerifiedAt: timestamp,
       });
-      Alert.alert('Dev unlock', 'Pro has been unlocked for development builds.');
+      Alert.alert(t('paywall.alerts.devUnlock.title'), t('paywall.alerts.devUnlock.body'));
     }
   };
 
@@ -285,10 +306,9 @@ export const PaywallScreen: React.FC = () => {
           </View>
 
           <View style={styles.card}>
-            <Text style={styles.sectionTitle}>TomoFlow Pro</Text>
+            <Text style={styles.sectionTitle}>{t('paywall.expoGo.title')}</Text>
             <Text style={styles.heroBody}>
-              Subscription purchases can’t be tested inside Expo Go. Install a development build (EAS)
-              to try the full upgrade flow.
+              {t('paywall.expoGo.body')}
             </Text>
           </View>
         </ScrollView>
@@ -426,7 +446,7 @@ export const PaywallScreen: React.FC = () => {
         )}
 
         {!loadingOfferings && offeringsUnavailable && !storeError && (
-          <Text style={styles.secondaryText}>Plans are not available right now.</Text>
+          <Text style={styles.secondaryText}>{t('paywall.errors.plansUnavailable')}</Text>
         )}
 
         {proStatus.isPro && (
@@ -451,7 +471,7 @@ export const PaywallScreen: React.FC = () => {
 
         {__DEV__ && (
           <TouchableOpacity style={styles.devUnlock} onPress={handleDevUnlock}>
-            <Text style={styles.devUnlockText}>DEV: Unlock Pro</Text>
+            <Text style={styles.devUnlockText}>{t('paywall.devUnlockLabel')}</Text>
           </TouchableOpacity>
         )}
       </ScrollView>
