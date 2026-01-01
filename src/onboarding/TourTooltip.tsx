@@ -1,25 +1,18 @@
 import React, { useMemo } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { TooltipProps } from 'react-native-copilot';
+import { TooltipProps, useCopilot } from 'react-native-copilot';
 import { spacing } from '../theme/spacing';
 import { useThemeColors } from '../theme/useThemeColors';
 import { t } from '../i18n/translations';
 import { markTourCompleted } from './tourController';
 
-export const TourTooltip: React.FC<TooltipProps> = ({
-  isFirstStep,
-  isLastStep,
-  handleNext,
-  handlePrev,
-  handleStop,
-  currentStep,
-  labels,
-}) => {
+export const TourTooltip: React.FC<TooltipProps> = ({ labels }) => {
   const colors = useThemeColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
+  const { currentStep, isFirstStep, isLastStep, goToNext, goToPrev, stop } = useCopilot();
   const handleSkip = async () => {
     await markTourCompleted();
-    handleStop();
+    await stop();
   };
 
   return (
@@ -33,7 +26,7 @@ export const TourTooltip: React.FC<TooltipProps> = ({
 
         <View style={styles.navActions}>
           {!isFirstStep && (
-            <TouchableOpacity style={styles.secondaryButton} onPress={handlePrev}>
+            <TouchableOpacity style={styles.secondaryButton} onPress={goToPrev}>
               <Text style={styles.secondaryLabel}>
                 {labels?.previous ?? t('onboarding.previous')}
               </Text>
@@ -42,7 +35,7 @@ export const TourTooltip: React.FC<TooltipProps> = ({
 
           <TouchableOpacity
             style={[styles.primaryButton, isLastStep && styles.primaryButtonLast]}
-            onPress={isLastStep ? handleStop : handleNext}
+            onPress={isLastStep ? stop : goToNext}
           >
             <Text style={styles.primaryLabel}>
               {isLastStep
