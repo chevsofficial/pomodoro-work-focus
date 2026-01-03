@@ -15,14 +15,14 @@
     "updates": {
       "fallbackToCacheTimeout": 0
     },
-    "assetBundlePatterns": ["**/*"],
-
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.chevslabs.tomoflow",
       "jsEngine": "hermes"
     },
-
     "android": {
       "package": "com.chevslabs.tomoflow",
       "jsEngine": "hermes",
@@ -31,18 +31,18 @@
         "backgroundColor": "#1B1D23"
       }
     },
-
     "web": {
       "bundler": "metro",
       "favicon": "./assets/favicon.png"
     },
-
     "extra": {
       "eas": {
         "projectId": "86322cf7-ee6f-429c-b703-49f35e4fc868"
       }
     },
-
-    "owner": "chevsofficial"
+    "owner": "chevsofficial",
+    "plugins": [
+      "expo-localization"
+    ]
   }
 }
