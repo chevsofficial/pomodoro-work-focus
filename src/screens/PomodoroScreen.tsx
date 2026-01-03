@@ -2,6 +2,7 @@ import { RouteProp, useFocusEffect, useRoute } from '@react-navigation/native';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   AppState,
+  InteractionManager,
   Modal,
   ScrollView,
   StyleSheet,
@@ -126,23 +127,26 @@ export const PomodoroScreen: React.FC = () => {
   const { start, copilotEvents } = useCopilot();
   const { stage, completed } = useTourState();
   const tourStartRef = useRef(false);
+  const shouldRunThisTour = !completed && stage === 'pomodoro';
 
   useFocusEffect(
     useCallback(() => {
-      let timeout: ReturnType<typeof setTimeout> | null = null;
-
-      if (!completed && stage === 'pomodoro' && !tourStartRef.current) {
-        tourStartRef.current = true;
-        timeout = setTimeout(() => start(), 300);
+      if (!shouldRunThisTour) {
+        return;
       }
 
+      tourStartRef.current = false;
+      const task = InteractionManager.runAfterInteractions(() => {
+        if (tourStartRef.current) return;
+        tourStartRef.current = true;
+        start();
+      });
+
       return () => {
-        if (timeout) {
-          clearTimeout(timeout);
-        }
+        task.cancel?.();
         tourStartRef.current = false;
       };
-    }, [completed, stage, start]),
+    }, [shouldRunThisTour, start]),
   );
 
   useEffect(() => {

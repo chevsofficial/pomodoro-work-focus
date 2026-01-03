@@ -6,7 +6,7 @@ import { useThemeColors } from '../theme/useThemeColors';
 import { t } from '../i18n/translations';
 import { markTourCompleted } from './tourController';
 
-export const TourTooltip: React.FC<TooltipProps> = ({ labels }) => {
+export const TourTooltip: React.FC<TooltipProps> = ({ labels, tooltipStyle }) => {
   const colors = useThemeColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const { currentStep, isFirstStep, isLastStep, goToNext, goToPrev, stop } = useCopilot();
@@ -16,7 +16,7 @@ export const TourTooltip: React.FC<TooltipProps> = ({ labels }) => {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[tooltipStyle, styles.container]}>
       <Text style={styles.stepText}>{currentStep?.text}</Text>
 
       <View style={styles.actionsRow}>
@@ -57,7 +57,12 @@ const createStyles = (colors: ReturnType<typeof useThemeColors>) =>
       padding: spacing.lg,
       borderWidth: 1,
       borderColor: colors.border,
-      maxWidth: 320,
+      maxWidth: 280,
+      shadowColor: '#000',
+      shadowOpacity: 0.2,
+      shadowRadius: 10,
+      shadowOffset: { width: 0, height: 4 },
+      elevation: 8,
     },
     stepText: {
       color: colors.textPrimary,

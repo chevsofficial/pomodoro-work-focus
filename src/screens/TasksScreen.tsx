@@ -2,6 +2,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Alert,
+  InteractionManager,
   Modal,
   ScrollView,
   StyleSheet,
@@ -192,6 +193,7 @@ export const TasksScreen: React.FC = () => {
   const { start, copilotEvents } = useCopilot();
   const { stage, completed } = useTourState();
   const tourStartRef = useRef(false);
+  const shouldRunThisTour = !completed && stage === 'tasks';
 
   const activityTypeMap = useMemo(() => {
     const entries = activityTypes.map((type) => [type.id, type] as const);
@@ -279,20 +281,22 @@ export const TasksScreen: React.FC = () => {
 
   useFocusEffect(
     useCallback(() => {
-      let timeout: ReturnType<typeof setTimeout> | null = null;
-
-      if (!completed && stage === 'tasks' && !tourStartRef.current) {
-        tourStartRef.current = true;
-        timeout = setTimeout(() => start(), 300);
+      if (!shouldRunThisTour) {
+        return;
       }
 
+      tourStartRef.current = false;
+      const task = InteractionManager.runAfterInteractions(() => {
+        if (tourStartRef.current) return;
+        tourStartRef.current = true;
+        start();
+      });
+
       return () => {
-        if (timeout) {
-          clearTimeout(timeout);
-        }
+        task.cancel?.();
         tourStartRef.current = false;
       };
-    }, [completed, stage, start]),
+    }, [shouldRunThisTour, start]),
   );
 
   useEffect(() => {

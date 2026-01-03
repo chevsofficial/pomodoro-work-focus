@@ -1,5 +1,12 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import {
+  InteractionManager,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { ScreenContainer } from '../components/ScreenContainer';
 import { RootStackParamList } from '../navigation/RootNavigator';
 import { goToPaywall, navigateToProUpsell } from '../navigation/proNavigation';
@@ -31,6 +38,7 @@ export const ActivityTypesManagerScreen: React.FC = () => {
   const { start, copilotEvents } = useCopilot();
   const { stage, completed } = useTourState();
   const tourStartRef = useRef(false);
+  const shouldRunThisTour = !completed && stage === 'activityTypes';
 
   useEffect(() => {
     navigation.setOptions({ title: t('nav.activityTypes') });
@@ -38,20 +46,22 @@ export const ActivityTypesManagerScreen: React.FC = () => {
 
   useFocusEffect(
     useCallback(() => {
-      let timeout: ReturnType<typeof setTimeout> | null = null;
-
-      if (!completed && stage === 'activityTypes' && !tourStartRef.current) {
-        tourStartRef.current = true;
-        timeout = setTimeout(() => start(), 300);
+      if (!shouldRunThisTour) {
+        return;
       }
 
+      tourStartRef.current = false;
+      const task = InteractionManager.runAfterInteractions(() => {
+        if (tourStartRef.current) return;
+        tourStartRef.current = true;
+        start();
+      });
+
       return () => {
-        if (timeout) {
-          clearTimeout(timeout);
-        }
+        task.cancel?.();
         tourStartRef.current = false;
       };
-    }, [completed, stage, start]),
+    }, [shouldRunThisTour, start]),
   );
 
   useEffect(() => {
