@@ -17,16 +17,12 @@ import { ScreenContainer } from '../components/ScreenContainer';
 import { APP_LINKS } from '../config/links';
 import { RootStackParamList } from '../navigation/RootNavigator';
 import { navigateToProUpsell } from '../navigation/proNavigation';
-import {
-  STORAGE_KEY,
-  useIsPro,
-  useLanguage,
-  useProStatus,
-  useSetLanguage,
-} from '../store/appStore';
+import { STORAGE_KEY, useIsPro, useLanguage, useProStatus } from '../store/appStore';
 import { spacing } from '../theme/spacing';
 import { useThemeColors } from '../theme/useThemeColors';
 import { Language } from '../models';
+import { saveLanguage } from '../i18n/language';
+import { setAppLanguage } from '../i18n';
 import { t } from '../i18n/translations';
 import { logger } from '../utils/logger';
 
@@ -72,7 +68,6 @@ export const InfoScreen: React.FC = () => {
   const proStatus = useProStatus();
   const isPro = useIsPro();
   const language = useLanguage();
-  const setLanguage = useSetLanguage();
   const [isLanguageModalVisible, setLanguageModalVisible] = useState(false);
   const styles = useMemo(() => createStyles(colors), [colors]);
 
@@ -96,8 +91,9 @@ export const InfoScreen: React.FC = () => {
     setLanguageModalVisible(false);
   };
 
-  const handleLanguageSelect = (nextLanguage: Language) => {
-    setLanguage(nextLanguage);
+  const handleLanguageSelect = async (nextLanguage: Language) => {
+    await saveLanguage(nextLanguage);
+    await setAppLanguage(nextLanguage);
     setLanguageModalVisible(false);
   };
 
