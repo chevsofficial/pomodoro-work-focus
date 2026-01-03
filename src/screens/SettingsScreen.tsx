@@ -42,7 +42,6 @@ import { playIntervalEndSound } from '../utils/soundService';
 import { exportAllUserDataToCsv } from '../utils/exportToCsv';
 import { logger } from '../utils/logger';
 import { t, TranslationKey } from '../i18n/translations';
-import { navigateToStage, resetTour } from '../onboarding/tourController';
 
 const parsePositiveInt = (value: string, fallback: number) => {
   const parsed = parseInt(value, 10);
@@ -661,11 +660,6 @@ export const SettingsScreen: React.FC = () => {
     exportAllUserDataToCsv();
   };
 
-  const handleReplayTour = async () => {
-    await resetTour();
-    navigateToStage('pomodoro');
-  };
-
   const handleConfirmDelete = async () => {
     try {
       await deleteAllUserData();
@@ -894,15 +888,6 @@ export const SettingsScreen: React.FC = () => {
               </TouchableOpacity>
             </View>
           )}
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{t('settings.onboarding.title')}</Text>
-          <TouchableOpacity style={styles.settingRow} onPress={handleReplayTour}>
-            <Text style={styles.settingLabel}>{t('settings.onboarding.replayTitle')}</Text>
-            <Text style={styles.settingValue}>{t('common.start')}</Text>
-          </TouchableOpacity>
-          <Text style={styles.sectionHint}>{t('settings.onboarding.replayHint')}</Text>
         </View>
 
         <View style={styles.dangerZoneContainer}>
