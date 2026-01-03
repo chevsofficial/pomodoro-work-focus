@@ -4,6 +4,7 @@ import * as Linking from 'expo-linking';
 import { NavigationContainer, DefaultTheme, Theme } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar, StatusBarStyle } from 'expo-status-bar';
+import { StyleSheet } from 'react-native';
 import { CopilotProvider } from 'react-native-copilot';
 import { RootNavigator } from './src/navigation/RootNavigator';
 import { ThemeProvider } from './src/theme/ThemeProvider';
@@ -22,6 +23,14 @@ import { AuthCallbackHandler } from './src/components/AuthCallbackHandler';
 import { handlePendingNavigation, navigationRef } from './src/navigation/navigationRef';
 import { TourTooltip } from './src/onboarding/TourTooltip';
 import { TourOrchestrator } from './src/onboarding/TourOrchestrator';
+
+const copilotStyles = StyleSheet.create({
+  tooltipWrapper: {
+    width: 320,
+    maxWidth: 320,
+    left: 20,
+  },
+});
 
 const App: React.FC = () => {
   const colors = useThemeColors();
@@ -146,11 +155,7 @@ const App: React.FC = () => {
             overlay="svg"
             backdropColor="rgba(0,0,0,0.6)"
             tooltipComponent={TourTooltip}
-            tooltipStyle={{
-              width: 320,
-              maxWidth: 320,
-              left: 20,
-            }}
+            tooltipStyle={copilotStyles.tooltipWrapper}
             margin={12}
           >
             <NavigationContainer

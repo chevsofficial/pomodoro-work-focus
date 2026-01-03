@@ -6,28 +6,21 @@ import { useThemeColors } from '../theme/useThemeColors';
 import { t } from '../i18n/translations';
 import { markTourCompleted } from './tourController';
 
-type Props = TooltipProps & {
-  currentStep?: { text?: string };
-  isFirstStep?: boolean;
-  isLastStep?: boolean;
-  handleNext?: () => void;
-  handlePrev?: () => void;
-  handleStop?: () => void;
-};
-
-export const TourTooltip: React.FC<Props> = ({
-  labels,
-  currentStep,
-  isFirstStep,
-  isLastStep,
-  handleNext,
-  handlePrev,
-  handleStop,
-}) => {
+export const TourTooltip: React.FC<TooltipProps> = (props) => {
   const colors = useThemeColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
 
-  const onSkip = async () => {
+  const {
+    labels,
+    currentStep,
+    isFirstStep,
+    isLastStep,
+    handleNext,
+    handlePrev,
+    handleStop,
+  } = props as any;
+
+  const handleSkip = async () => {
     await markTourCompleted();
     handleStop?.();
   };
@@ -37,7 +30,7 @@ export const TourTooltip: React.FC<Props> = ({
       <Text style={styles.stepText}>{currentStep?.text ?? ''}</Text>
 
       <View style={styles.actionsRow}>
-        <TouchableOpacity style={styles.skipButton} onPress={onSkip}>
+        <TouchableOpacity style={styles.skipButton} onPress={handleSkip}>
           <Text style={styles.skipLabel}>{labels?.skip ?? t('onboarding.skip')}</Text>
         </TouchableOpacity>
 
@@ -52,7 +45,7 @@ export const TourTooltip: React.FC<Props> = ({
 
           <TouchableOpacity
             style={[styles.primaryButton, isLastStep && styles.primaryButtonLast]}
-            onPress={handleStop && isLastStep ? handleStop : handleNext}
+            onPress={isLastStep ? handleStop : handleNext}
           >
             <Text style={styles.primaryLabel}>
               {isLastStep
