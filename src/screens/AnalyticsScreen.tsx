@@ -183,7 +183,7 @@ export const AnalyticsScreen: React.FC = () => {
   const language = useAppStore((state) => state.language);
   const colors = useThemeColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
-  const { start, copilotEvents } = useCopilot();
+  const { start: startCopilot, copilotEvents } = useCopilot();
   const { stage, completed } = useTourState();
   const tourStartRef = useRef(false);
   const shouldRunThisTour = !completed && stage === 'analytics';
@@ -402,14 +402,14 @@ export const AnalyticsScreen: React.FC = () => {
       const task = InteractionManager.runAfterInteractions(() => {
         if (tourStartRef.current) return;
         tourStartRef.current = true;
-        start();
+        startCopilot(undefined, scrollRef.current ?? undefined);
       });
 
       return () => {
         task.cancel?.();
         tourStartRef.current = false;
       };
-    }, [shouldRunThisTour, start]),
+    }, [shouldRunThisTour, startCopilot]),
   );
 
   useEffect(() => {

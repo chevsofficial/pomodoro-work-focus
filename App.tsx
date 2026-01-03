@@ -146,6 +146,12 @@ const App: React.FC = () => {
             overlay="svg"
             backdropColor="rgba(0,0,0,0.6)"
             tooltipComponent={TourTooltip}
+            tooltipStyle={{
+              width: 320,
+              maxWidth: 320,
+              left: 20,
+            }}
+            margin={12}
           >
             <NavigationContainer
               linking={linking as any}
