@@ -4,7 +4,7 @@ import * as Linking from 'expo-linking';
 import { NavigationContainer, DefaultTheme, Theme } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar, StatusBarStyle } from 'expo-status-bar';
-import { View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { RootNavigator } from './src/navigation/RootNavigator';
 import { ThemeProvider } from './src/theme/ThemeProvider';
 import { useThemeColors } from './src/theme/useThemeColors';
@@ -156,9 +156,11 @@ const App: React.FC = () => {
     };
   }, []);
 
-  if (!isReady) {
-    return <View style={{ flex: 1, backgroundColor: colors.background }} />;
-  }
+if (!isReady) {
+  return (
+    <View style={[styles.bootSplash, { backgroundColor: colors.background }]} />
+  );
+}
 
   return (
     <SafeAreaProvider>
@@ -181,3 +183,9 @@ const App: React.FC = () => {
 };
 
 export default App;
+
+const styles = StyleSheet.create({
+  bootSplash: {
+    flex: 1,
+  },
+});
