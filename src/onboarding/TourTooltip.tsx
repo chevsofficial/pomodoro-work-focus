@@ -1,32 +1,49 @@
 import React, { useMemo } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { TooltipProps, useCopilot } from 'react-native-copilot';
+import type { TooltipProps } from 'react-native-copilot';
 import { spacing } from '../theme/spacing';
 import { useThemeColors } from '../theme/useThemeColors';
 import { t } from '../i18n/translations';
 import { markTourCompleted } from './tourController';
 
-export const TourTooltip: React.FC<TooltipProps> = ({ labels, tooltipStyle }) => {
+type Props = TooltipProps & {
+  currentStep?: { text?: string };
+  isFirstStep?: boolean;
+  isLastStep?: boolean;
+  handleNext?: () => void;
+  handlePrev?: () => void;
+  handleStop?: () => void;
+};
+
+export const TourTooltip: React.FC<Props> = ({
+  labels,
+  currentStep,
+  isFirstStep,
+  isLastStep,
+  handleNext,
+  handlePrev,
+  handleStop,
+}) => {
   const colors = useThemeColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
-  const { currentStep, isFirstStep, isLastStep, goToNext, goToPrev, stop } = useCopilot();
-  const handleSkip = async () => {
+
+  const onSkip = async () => {
     await markTourCompleted();
-    await stop();
+    handleStop?.();
   };
 
   return (
-    <View style={[tooltipStyle, styles.container]}>
-      <Text style={styles.stepText}>{currentStep?.text}</Text>
+    <View style={styles.container}>
+      <Text style={styles.stepText}>{currentStep?.text ?? ''}</Text>
 
       <View style={styles.actionsRow}>
-        <TouchableOpacity style={styles.skipButton} onPress={handleSkip}>
+        <TouchableOpacity style={styles.skipButton} onPress={onSkip}>
           <Text style={styles.skipLabel}>{labels?.skip ?? t('onboarding.skip')}</Text>
         </TouchableOpacity>
 
         <View style={styles.navActions}>
           {!isFirstStep && (
-            <TouchableOpacity style={styles.secondaryButton} onPress={goToPrev}>
+            <TouchableOpacity style={styles.secondaryButton} onPress={handlePrev}>
               <Text style={styles.secondaryLabel}>
                 {labels?.previous ?? t('onboarding.previous')}
               </Text>
@@ -35,7 +52,7 @@ export const TourTooltip: React.FC<TooltipProps> = ({ labels, tooltipStyle }) =>
 
           <TouchableOpacity
             style={[styles.primaryButton, isLastStep && styles.primaryButtonLast]}
-            onPress={isLastStep ? stop : goToNext}
+            onPress={handleStop && isLastStep ? handleStop : handleNext}
           >
             <Text style={styles.primaryLabel}>
               {isLastStep
