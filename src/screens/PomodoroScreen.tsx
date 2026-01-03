@@ -1,8 +1,7 @@
-import { RouteProp, useFocusEffect, useRoute } from '@react-navigation/native';
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { RouteProp, useRoute } from '@react-navigation/native';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   AppState,
-  InteractionManager,
   Modal,
   ScrollView,
   StyleSheet,
@@ -10,7 +9,6 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { CopilotStep, walkthroughable, useCopilot } from 'react-native-copilot';
 import { ScreenContainer } from '../components/ScreenContainer';
 import { RootTabParamList } from '../navigation/RootNavigator';
 import { IntervalType, Task } from '../models';
@@ -19,7 +17,6 @@ import { useTimerStore } from '../store/useTimerStore';
 import { useThemeColors } from '../theme/useThemeColors';
 import { spacing } from '../theme/spacing';
 import { t } from '../i18n/translations';
-import { advanceTourFromStage, useTourState } from '../onboarding/tourController';
 
 const formatTime = (seconds: number) => {
   const safeSeconds = Math.max(0, Math.floor(seconds));
@@ -124,43 +121,6 @@ export const PomodoroScreen: React.FC = () => {
   const hideEarlySkipInfo = useAppStore((state) => state.hideEarlySkipInfo);
   const setShowEarlySkipInfoModal = useAppStore((state) => state.setShowEarlySkipInfoModal);
   useAppStore((state) => state.language);
-  const { start, copilotEvents } = useCopilot();
-  const { stage, completed } = useTourState();
-  const tourStartRef = useRef(false);
-  const shouldRunThisTour = !completed && stage === 'pomodoro';
-
-  useFocusEffect(
-    useCallback(() => {
-      if (!shouldRunThisTour) {
-        return;
-      }
-
-      tourStartRef.current = false;
-      const task = InteractionManager.runAfterInteractions(() => {
-        if (tourStartRef.current) return;
-        tourStartRef.current = true;
-        start();
-      });
-
-      return () => {
-        task.cancel?.();
-        tourStartRef.current = false;
-      };
-    }, [shouldRunThisTour, start]),
-  );
-
-  useEffect(() => {
-    const onStop = () => {
-      if (completed || stage !== 'pomodoro') return;
-      advanceTourFromStage('pomodoro');
-    };
-
-    copilotEvents.on('stop', onStop);
-    return () => {
-      copilotEvents.off('stop', onStop);
-    };
-  }, [completed, copilotEvents, stage]);
-
   const intervalLabels: Record<string, string> = {
     work: t('pomodoro.workLabel'),
     short_break: t('pomodoro.shortBreakLabel'),
@@ -225,9 +185,6 @@ export const PomodoroScreen: React.FC = () => {
     currentIntervalType === 'work'
       ? completedWorkIntervals + 1
       : completedWorkIntervals;
-  const CopilotView = walkthroughable(View);
-  const CopilotTouchable = walkthroughable(TouchableOpacity);
-
   return (
     <ScreenContainer>
       <View style={styles.header}>
@@ -235,34 +192,28 @@ export const PomodoroScreen: React.FC = () => {
         <Text style={styles.subtitle}>{t('pomodoro.subtitle')}</Text>
       </View>
 
-      <CopilotStep
-        name="pomodoro-interval-selector"
-        order={1}
-        text={t('onboarding.pomodoro.intervalSelector')}
-      >
-        <CopilotView style={styles.segmentedControl}>
-          {intervalOptions.map((option) => (
-            <React.Fragment key={option.value}>
-              <TouchableOpacity
+      <View style={styles.segmentedControl}>
+        {intervalOptions.map((option) => (
+          <React.Fragment key={option.value}>
+            <TouchableOpacity
+              style={[
+                styles.segment,
+                currentIntervalType === option.value && styles.segmentActive,
+              ]}
+              onPress={() => setIntervalType(option.value)}
+            >
+              <Text
                 style={[
-                  styles.segment,
-                  currentIntervalType === option.value && styles.segmentActive,
+                  styles.segmentLabel,
+                  currentIntervalType === option.value && styles.segmentLabelActive,
                 ]}
-                onPress={() => setIntervalType(option.value)}
               >
-                <Text
-                  style={[
-                    styles.segmentLabel,
-                    currentIntervalType === option.value && styles.segmentLabelActive,
-                  ]}
-                >
-                  {option.label}
-                </Text>
-              </TouchableOpacity>
-            </React.Fragment>
-          ))}
-        </CopilotView>
-      </CopilotStep>
+                {option.label}
+              </Text>
+            </TouchableOpacity>
+          </React.Fragment>
+        ))}
+      </View>
 
       <View style={styles.timerCard}>
         <Text style={styles.intervalName}>{intervalLabel}</Text>
@@ -276,77 +227,53 @@ export const PomodoroScreen: React.FC = () => {
         </Text>
       </View>
 
-      <CopilotStep
-        name="pomodoro-task-selector"
-        order={2}
-        text={t('onboarding.pomodoro.taskSelector')}
-      >
-        <CopilotView style={styles.taskSelector}>
-          <Text style={styles.taskSelectorLabel}>{t('pomodoro.linkedTask')}</Text>
-          <TouchableOpacity
-            style={styles.taskSelectorButton}
-            onPress={() => setTaskPickerVisible(true)}
-          >
-            <View style={styles.taskSelectorContent}>
-              <Text style={styles.taskSelectorValue} numberOfLines={1}>
-                {selectedTask ? selectedTask.title : t('pomodoro.noTaskSelected')}
-              </Text>
-              <Text style={styles.taskSelectorHint}>{t('pomodoro.chooseTaskHint')}</Text>
-            </View>
-            <Text style={styles.taskSelectorAction}>{t('pomodoro.changeTask')}</Text>
-          </TouchableOpacity>
-        </CopilotView>
-      </CopilotStep>
+      <View style={styles.taskSelector}>
+        <Text style={styles.taskSelectorLabel}>{t('pomodoro.linkedTask')}</Text>
+        <TouchableOpacity
+          style={styles.taskSelectorButton}
+          onPress={() => setTaskPickerVisible(true)}
+        >
+          <View style={styles.taskSelectorContent}>
+            <Text style={styles.taskSelectorValue} numberOfLines={1}>
+              {selectedTask ? selectedTask.title : t('pomodoro.noTaskSelected')}
+            </Text>
+            <Text style={styles.taskSelectorHint}>{t('pomodoro.chooseTaskHint')}</Text>
+          </View>
+          <Text style={styles.taskSelectorAction}>{t('pomodoro.changeTask')}</Text>
+        </TouchableOpacity>
+      </View>
 
       <View style={styles.controlsRow}>
-        <CopilotStep
-          name="pomodoro-primary-button"
-          order={3}
-          text={t('onboarding.pomodoro.primaryButton')}
+        <TouchableOpacity
+          style={[
+            styles.primaryButton,
+            isRunning ? styles.pauseButton : styles.startButton,
+          ]}
+          onPress={isRunning ? pauseTimer : startTimer}
         >
-          <CopilotTouchable
-            style={[
-              styles.primaryButton,
-              isRunning ? styles.pauseButton : styles.startButton,
-            ]}
-            onPress={isRunning ? pauseTimer : startTimer}
-          >
-            <Text style={styles.primaryButtonText}>
-              {isRunning ? t('pomodoro.pause') : t('pomodoro.start')}
-            </Text>
-          </CopilotTouchable>
-        </CopilotStep>
+          <Text style={styles.primaryButtonText}>
+            {isRunning ? t('pomodoro.pause') : t('pomodoro.start')}
+          </Text>
+        </TouchableOpacity>
       </View>
 
       <View style={styles.secondaryControls}>
         {activeIntervalId && (
           <>
-            <CopilotStep
-              name="pomodoro-end-save"
-              order={4}
-              text={t('onboarding.pomodoro.endAndSave')}
+            <TouchableOpacity
+              style={[styles.secondaryButton, styles.endNowButton]}
+              onPress={endIntervalNow}
             >
-              <CopilotTouchable
-                style={[styles.secondaryButton, styles.endNowButton]}
-                onPress={endIntervalNow}
-              >
-                <Text style={[styles.secondaryButtonText, styles.endNowButtonText]}>
-                  {t('pomodoro.endAndSave')}
-                </Text>
-              </CopilotTouchable>
-            </CopilotStep>
-            <CopilotStep
-              name="pomodoro-skip"
-              order={5}
-              text={t('onboarding.pomodoro.skipInterval')}
+              <Text style={[styles.secondaryButtonText, styles.endNowButtonText]}>
+                {t('pomodoro.endAndSave')}
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.secondaryButton, styles.skipButton]}
+              onPress={skipCurrentInterval}
             >
-              <CopilotTouchable
-                style={[styles.secondaryButton, styles.skipButton]}
-                onPress={skipCurrentInterval}
-              >
-                <Text style={styles.secondaryButtonText}>{t('pomodoro.skip')}</Text>
-              </CopilotTouchable>
-            </CopilotStep>
+              <Text style={styles.secondaryButtonText}>{t('pomodoro.skip')}</Text>
+            </TouchableOpacity>
           </>
         )}
       </View>

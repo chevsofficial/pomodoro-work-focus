@@ -4,8 +4,6 @@ import * as Linking from 'expo-linking';
 import { NavigationContainer, DefaultTheme, Theme } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar, StatusBarStyle } from 'expo-status-bar';
-import { StyleSheet } from 'react-native';
-import { CopilotProvider } from 'react-native-copilot';
 import { RootNavigator } from './src/navigation/RootNavigator';
 import { ThemeProvider } from './src/theme/ThemeProvider';
 import { useThemeColors } from './src/theme/useThemeColors';
@@ -21,16 +19,6 @@ import { configureRevenueCat } from './src/services/revenuecat';
 import { ToastProvider } from './src/components/ToastProvider';
 import { AuthCallbackHandler } from './src/components/AuthCallbackHandler';
 import { handlePendingNavigation, navigationRef } from './src/navigation/navigationRef';
-import { TourTooltip } from './src/onboarding/TourTooltip';
-import { TourOrchestrator } from './src/onboarding/TourOrchestrator';
-
-const copilotStyles = StyleSheet.create({
-  tooltipWrapper: {
-    width: 320,
-    maxWidth: 320,
-    left: 20,
-  },
-});
 
 const App: React.FC = () => {
   const colors = useThemeColors();
@@ -151,25 +139,16 @@ const App: React.FC = () => {
     <SafeAreaProvider>
       <ThemeProvider>
         <ToastProvider>
-          <CopilotProvider
-            overlay="svg"
-            backdropColor="rgba(0,0,0,0.6)"
-            tooltipComponent={TourTooltip}
-            tooltipStyle={copilotStyles.tooltipWrapper}
-            margin={12}
+          <NavigationContainer
+            linking={linking as any}
+            theme={navigationTheme}
+            ref={navigationRef}
+            onReady={handlePendingNavigation}
           >
-            <NavigationContainer
-              linking={linking as any}
-              theme={navigationTheme}
-              ref={navigationRef}
-              onReady={handlePendingNavigation}
-            >
-              <StatusBar style={statusBarStyle} backgroundColor={colors.background} />
-              <AuthCallbackHandler />
-              <TourOrchestrator />
-              <RootNavigator />
-            </NavigationContainer>
-          </CopilotProvider>
+            <StatusBar style={statusBarStyle} backgroundColor={colors.background} />
+            <AuthCallbackHandler />
+            <RootNavigator />
+          </NavigationContainer>
         </ToastProvider>
       </ThemeProvider>
     </SafeAreaProvider>
