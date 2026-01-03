@@ -1,13 +1,16 @@
 import 'react-native-gesture-handler';
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import * as Linking from 'expo-linking';
 import { NavigationContainer, DefaultTheme, Theme } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar, StatusBarStyle } from 'expo-status-bar';
+import { View } from 'react-native';
 import { RootNavigator } from './src/navigation/RootNavigator';
 import { ThemeProvider } from './src/theme/ThemeProvider';
 import { useThemeColors } from './src/theme/useThemeColors';
 import useAppStore, { useLanguage, useSettings } from './src/store/appStore';
+import { bootstrapLanguage } from './src/i18n/language';
+import { setAppLanguage } from './src/i18n';
 import {
   initializeNotifications,
   requestNotificationPermissions,
@@ -24,6 +27,7 @@ const App: React.FC = () => {
   const colors = useThemeColors();
   const settings = useSettings();
   const language = useLanguage();
+  const [isReady, setIsReady] = useState(false);
 
   const statusBarStyle = useMemo<StatusBarStyle>(() => {
     const hex = colors.background.replace('#', '');
@@ -88,6 +92,23 @@ const App: React.FC = () => {
   }, []);
 
   useEffect(() => {
+    let isMounted = true;
+
+    (async () => {
+      const detectedLanguage = await bootstrapLanguage();
+      await setAppLanguage(detectedLanguage);
+
+      if (isMounted) {
+        setIsReady(true);
+      }
+    })();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
     reportMissingSupabaseConfig();
   }, []);
 
@@ -134,6 +155,10 @@ const App: React.FC = () => {
       subscription?.subscription.unsubscribe();
     };
   }, []);
+
+  if (!isReady) {
+    return <View style={{ flex: 1, backgroundColor: colors.background }} />;
+  }
 
   return (
     <SafeAreaProvider>
