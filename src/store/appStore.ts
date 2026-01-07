@@ -1051,33 +1051,36 @@ const useAppStore = create<AppStore>((set, get) => {
       );
     },
     hydrateFromCloudSnapshot: (snapshot) => {
-      setStateAndPersist((state) => {
-        const nextProStatus = snapshot.proStatus
-          ? { ...defaultProStatus, ...state.proStatus, ...snapshot.proStatus }
-          : state.proStatus;
-        const nextSettings = { ...state.settings, ...(snapshot.settings ?? {}) };
-        const nextIntervals = cleanupIntervals(snapshot.intervals ?? state.intervals);
-        const nextLanguage = snapshot.language ?? state.language;
-        const nextActivityTypes = (snapshot.activityTypes ?? state.activityTypes).map(
-          normalizeActivityType,
-        );
+      setStateAndPersist(
+        (state) => {
+          const nextProStatus = snapshot.proStatus
+            ? { ...defaultProStatus, ...state.proStatus, ...snapshot.proStatus }
+            : state.proStatus;
+          const nextSettings = { ...state.settings, ...(snapshot.settings ?? {}) };
+          const nextIntervals = cleanupIntervals(snapshot.intervals ?? state.intervals);
+          const nextLanguage = snapshot.language ?? state.language;
+          const nextActivityTypes = (snapshot.activityTypes ?? state.activityTypes).map(
+            normalizeActivityType,
+          );
 
-        return {
-          ...state,
-          tasks: snapshot.tasks ?? state.tasks,
-          intervals: nextIntervals,
-          activityTypes: nextActivityTypes,
-          settings: nextSettings,
-          proStatus: nextProStatus,
-          isPro: nextProStatus.isPro,
-          language: nextLanguage,
-          cloudSync: {
-            ...state.cloudSync,
-            lastKnownRevision: snapshot.revision ?? state.cloudSync.lastKnownRevision,
-            lastSyncedAt: nowIso(),
-          },
-        };
-      });
+          return {
+            ...state,
+            tasks: snapshot.tasks ?? state.tasks,
+            intervals: nextIntervals,
+            activityTypes: nextActivityTypes,
+            settings: nextSettings,
+            proStatus: nextProStatus,
+            isPro: nextProStatus.isPro,
+            language: nextLanguage,
+            cloudSync: {
+              ...state.cloudSync,
+              lastKnownRevision: snapshot.revision ?? state.cloudSync.lastKnownRevision,
+              lastSyncedAt: nowIso(),
+            },
+          };
+        },
+        { skipCloudSync: true },
+      );
     },
   };
 });
