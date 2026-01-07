@@ -113,8 +113,8 @@ const App: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    initializeNotifications();
-  }, []);
+    initializeNotifications({ soundEnabled: settings.soundEnabled });
+  }, [settings.soundEnabled]);
 
   useEffect(() => {
     syncNotificationChannels();
