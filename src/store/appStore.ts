@@ -13,7 +13,12 @@ import {
   Task,
   Language,
 } from '../models';
-import { CloudSnapshot, cloudSyncApi } from '../services/cloudSyncApi';
+import {
+  CloudSnapshot,
+  CloudSyncConflictError,
+  cloudSyncApi,
+} from '../services/cloudSyncApi';
+import { showGlobalToast } from '../components/ToastProvider';
 import { isSupabaseConfigured, supabase } from '../services/supabaseClient';
 import { PRO_DEV_UNLOCK_ENABLED } from '../config/proFeatures';
 import { logger } from '../utils/logger';
@@ -591,7 +596,8 @@ const useAppStore = create<AppStore>((set, get) => {
     const isPro = selectIsProEffective(state);
     if (!isPro) return;
     if (!isSupabaseConfigured) return;
-    if (!state.cloudSync.userId) return;
+    const userId = state.cloudSync.userId;
+    if (!userId) return;
     if (!state.cloudSync.cloudSyncEnabled) return;
 
     const snapshot = getCloudSnapshot();
@@ -604,6 +610,15 @@ const useAppStore = create<AppStore>((set, get) => {
         syncedAt: stored.updatedAt,
       });
     } catch (error) {
+      if (error instanceof CloudSyncConflictError) {
+        const serverSnapshot =
+          error.serverSnapshot ?? (await cloudSyncApi.fetchSnapshot(userId));
+        if (serverSnapshot) {
+          get().hydrateFromCloudSnapshot(serverSnapshot);
+        }
+        showGlobalToast('Cloud sync conflict resolved with the latest data.', 'info');
+        return;
+      }
       logger.error('Cloud sync: upload to Supabase failed', error);
     }
   }, CLOUD_SYNC_DEBOUNCE_MS);

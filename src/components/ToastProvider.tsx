@@ -24,6 +24,13 @@ interface ToastState {
 
 const ToastContext = createContext<ToastContextValue | undefined>(undefined);
 
+type ToastHandler = (message: string, type?: ToastType) => void;
+let globalToastHandler: ToastHandler | null = null;
+
+export const showGlobalToast: ToastHandler = (message, type = 'info') => {
+  globalToastHandler?.(message, type);
+};
+
 export const ToastProvider: React.FC<React.PropsWithChildren> = ({ children }) => {
   const colors = useThemeColors();
   const [toast, setToast] = useState<ToastState | null>(null);
@@ -63,6 +70,16 @@ export const ToastProvider: React.FC<React.PropsWithChildren> = ({ children }) =
     },
     [opacity]
   );
+
+  useEffect(() => {
+    globalToastHandler = showToast;
+
+    return () => {
+      if (globalToastHandler === showToast) {
+        globalToastHandler = null;
+      }
+    };
+  }, [showToast]);
 
   useEffect(() => {
     return () => {

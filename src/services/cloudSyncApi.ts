@@ -8,7 +8,47 @@ export type CloudSnapshot = AppStateSnapshot & {
   revision: number;
 };
 
+export const CLOUD_SYNC_CONFLICT_CODE = 'CLOUD_SYNC_CONFLICT';
+
+export class CloudSyncConflictError extends Error {
+  code = CLOUD_SYNC_CONFLICT_CODE;
+  serverSnapshot?: CloudSnapshot;
+
+  constructor(serverSnapshot?: CloudSnapshot) {
+    super('Cloud sync conflict detected');
+    this.serverSnapshot = serverSnapshot;
+  }
+}
+
 const TABLE_NAME = 'user_snapshots';
+
+type UploadSnapshotResponse = {
+  conflict?: boolean;
+  snapshot?: AppStateSnapshot;
+  revision?: number;
+  updated_at?: string;
+  user_id?: string;
+  current_row?: {
+    snapshot?: AppStateSnapshot;
+    revision?: number;
+    updated_at?: string;
+    user_id?: string;
+  };
+};
+
+const mapRowToSnapshot = (
+  row: UploadSnapshotResponse | UploadSnapshotResponse['current_row'],
+  fallback: CloudSnapshot,
+): CloudSnapshot | undefined => {
+  if (!row?.snapshot) return undefined;
+
+  return {
+    ...row.snapshot,
+    userId: row.user_id ?? fallback.userId,
+    revision: row.revision ?? fallback.revision,
+    updatedAt: row.updated_at ?? fallback.updatedAt,
+  } as CloudSnapshot;
+};
 
 export const cloudSyncApi = {
   async fetchSnapshot(userId: string): Promise<CloudSnapshot | null> {
@@ -48,30 +88,37 @@ export const cloudSyncApi = {
     }
 
     const { userId, revision, updatedAt, ...appState } = snapshot;
+    const expectedRevision = revision;
+    const nextRevision = expectedRevision + 1;
 
-    const payload = {
-      user_id: userId,
-      snapshot: appState,
-      revision,
-      updated_at: updatedAt,
-    };
-
-    const { data, error } = await supabase
-      .from(TABLE_NAME)
-      .upsert(payload, { onConflict: 'user_id' })
-      .select('*')
-      .single();
+    const { data, error } = await supabase.rpc('upload_user_snapshot', {
+      expected_revision: expectedRevision,
+      new_revision: nextRevision,
+      new_snapshot: appState,
+      new_updated_at: updatedAt,
+    });
 
     if (error) {
       logger.error('Cloud sync: uploadSnapshot failed', error);
       throw error;
     }
 
-    return {
-      ...data.snapshot,
-      userId: data.user_id,
-      revision: data.revision,
-      updatedAt: data.updated_at,
-    } as CloudSnapshot;
+    const response = data as UploadSnapshotResponse | null;
+    if (!response) {
+      throw new Error('Cloud sync: uploadSnapshot returned empty response.');
+    }
+
+    const currentRow = response.current_row ?? response;
+    const serverSnapshot = mapRowToSnapshot(currentRow, snapshot);
+
+    if (response.conflict) {
+      throw new CloudSyncConflictError(serverSnapshot);
+    }
+
+    if (!serverSnapshot) {
+      throw new Error('Cloud sync: uploadSnapshot returned invalid snapshot data.');
+    }
+
+    return serverSnapshot;
   },
 };
