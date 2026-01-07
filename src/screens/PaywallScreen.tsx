@@ -33,7 +33,6 @@ const formatPriceText = (pkg: PurchasesPackage | null, fallback: string) =>
 
 export const PaywallScreen: React.FC = () => {
   const colors = useThemeColors();
-  const setProStatus = useAppStore((state) => state.setProStatus);
   const isPro = useIsPro();
   const proStatus = useProStatus();
   const styles = useMemo(() => createStyles(colors), [colors]);
@@ -222,19 +221,6 @@ export const PaywallScreen: React.FC = () => {
     }
   };
 
-  const handleDevUnlock = () => {
-    if (__DEV__) {
-      const timestamp = new Date().toISOString();
-      setProStatus({
-        isPro: true,
-        source: 'promo',
-        activatedAt: timestamp,
-        lastVerifiedAt: timestamp,
-      });
-      Alert.alert(t('paywall.alerts.devUnlock.title'), t('paywall.alerts.devUnlock.body'));
-    }
-  };
-
   const annualPriceText = formatPriceText(annualPackage, PRO_PRICING.annual.priceText);
   const monthlyPriceText = formatPriceText(monthlyPackage, PRO_PRICING.monthly.priceText);
   // Always use translation-based labels; price is displayed above the button
@@ -376,11 +362,6 @@ export const PaywallScreen: React.FC = () => {
 
         <Text style={styles.legalText}>{t('paywall.legal')}</Text>
 
-        {__DEV__ && (
-          <TouchableOpacity style={styles.devUnlock} onPress={handleDevUnlock}>
-            <Text style={styles.devUnlockText}>{t('paywall.devUnlockLabel')}</Text>
-          </TouchableOpacity>
-        )}
       </ScrollView>
     </ScreenContainer>
   );
@@ -563,17 +544,6 @@ function createStyles(colors: ReturnType<typeof useThemeColors>) {
       fontSize: 12,
       lineHeight: 18,
       textAlign: 'center',
-    },
-    devUnlock: {
-      alignSelf: 'center',
-      paddingVertical: spacing.md,
-      paddingHorizontal: spacing.lg,
-      borderRadius: 12,
-      borderWidth: 1,
-      borderColor: colors.border,
-    },
-    devUnlockText: {
-      color: colors.textSecondary,
     },
   });
 }
