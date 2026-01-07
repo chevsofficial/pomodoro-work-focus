@@ -8,11 +8,15 @@ const SOUND_CHANNEL_ID = 'pomodoro-sound';
 const SOUND_NO_VIBRATION_CHANNEL_ID = 'pomodoro-sound-no-vibration';
 const SILENT_CHANNEL_ID = 'pomodoro-silent';
 
-export const initializeNotifications = async () => {
+type NotificationHandlerConfig = {
+  soundEnabled: boolean;
+};
+
+export const initializeNotifications = async ({ soundEnabled }: NotificationHandlerConfig) => {
   Notifications.setNotificationHandler({
     handleNotification: async () => ({
       shouldShowAlert: true,
-      shouldPlaySound: true,
+      shouldPlaySound: soundEnabled,
       shouldSetBadge: false,
     }),
   });
