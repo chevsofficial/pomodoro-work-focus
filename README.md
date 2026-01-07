@@ -30,3 +30,7 @@ This project is a React Native + Expo application bootstrap that provides:
    ```
 
 Each tab currently renders placeholder content and is ready for further development.
+
+## Release checklist
+
+- Increment `expo.ios.buildNumber` and `expo.android.versionCode` in `app.json` before every App Store or Play Store submission.
