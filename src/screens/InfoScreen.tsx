@@ -1,4 +1,3 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useNavigation } from '@react-navigation/native';
 import React, { useMemo, useState } from 'react';
@@ -17,14 +16,13 @@ import { ScreenContainer } from '../components/ScreenContainer';
 import { APP_LINKS } from '../config/links';
 import { RootStackParamList } from '../navigation/RootNavigator';
 import { navigateToProUpsell } from '../navigation/proNavigation';
-import { STORAGE_KEY, useIsPro, useLanguage, useProStatus } from '../store/appStore';
+import { useLanguage } from '../store/appStore';
 import { spacing } from '../theme/spacing';
 import { useThemeColors } from '../theme/useThemeColors';
 import { Language } from '../models';
 import { saveLanguage } from '../i18n/language';
 import { setAppLanguage } from '../i18n';
 import { t } from '../i18n/translations';
-import { logger } from '../utils/logger';
 
 type InfoItem = {
   title: string;
@@ -65,8 +63,6 @@ const InfoRow: React.FC<InfoRowProps> = ({
 export const InfoScreen: React.FC = () => {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const colors = useThemeColors();
-  const proStatus = useProStatus();
-  const isPro = useIsPro();
   const language = useLanguage();
   const [isLanguageModalVisible, setLanguageModalVisible] = useState(false);
   const styles = useMemo(() => createStyles(colors), [colors]);
@@ -162,16 +158,6 @@ export const InfoScreen: React.FC = () => {
     navigateToProUpsell(navigation);
   };
 
-  const clearLocalData = async () => {
-    try {
-      await AsyncStorage.removeItem(STORAGE_KEY);
-      Alert.alert(t('info.alerts.clearedTitle'), t('info.alerts.clearedBody'));
-    } catch (error) {
-      logger.error('Failed to clear local data', error);
-      Alert.alert(t('info.alerts.clearFailedTitle'), t('info.alerts.clearFailedBody'));
-    }
-  };
-
   return (
     <ScreenContainer>
       <ScrollView
@@ -221,21 +207,6 @@ export const InfoScreen: React.FC = () => {
             <Text style={styles.upgradeButtonText}>{t('common.viewProPlans')}</Text>
           </TouchableOpacity>
         </View>
-
-        {__DEV__ && (
-          <View style={styles.debugCard}>
-            <Text style={styles.debugTitle}>{t('info.debug.title')}</Text>
-            <Text style={styles.debugText}>
-              {t('info.debug.isPro').replace('{value}', String(isPro))}
-            </Text>
-            <Text style={styles.debugText}>
-              {t('info.debug.proStatus').replace('{value}', String(proStatus.isPro))}
-            </Text>
-            <TouchableOpacity style={styles.clearButton} onPress={clearLocalData}>
-              <Text style={styles.clearButtonText}>{t('info.debug.clearLocalData')}</Text>
-            </TouchableOpacity>
-          </View>
-        )}
 
       </ScrollView>
 
@@ -367,33 +338,6 @@ function createStyles(colors: ReturnType<typeof useThemeColors>) {
       fontWeight: '600',
       fontSize: 15,
       textTransform: 'uppercase',
-    },
-    debugCard: {
-      marginTop: spacing.xl,
-      padding: spacing.lg,
-      borderRadius: 12,
-      backgroundColor: colors.surface,
-    },
-    debugTitle: {
-      color: colors.textPrimary,
-      fontWeight: '700',
-      marginBottom: spacing.xs,
-    },
-    debugText: {
-      color: colors.textSecondary,
-      marginBottom: spacing.xs,
-    },
-    clearButton: {
-      marginTop: spacing.sm,
-      paddingVertical: spacing.sm,
-      paddingHorizontal: spacing.md,
-      borderRadius: 8,
-      backgroundColor: colors.primary,
-      alignSelf: 'flex-start',
-    },
-    clearButtonText: {
-      color: colors.textPrimary,
-      fontWeight: '700',
     },
     modalBackdrop: {
       flex: 1,

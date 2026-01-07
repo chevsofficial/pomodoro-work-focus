@@ -395,7 +395,6 @@ export const translations: Record<Language, Record<string, any>> = {
       loadingPlans: 'Loading plans…',
       unlockedVia: 'Unlocked via {source}.',
       restore: 'Restore Purchases',
-      devUnlockLabel: 'DEV: Unlock Pro',
       expoGo: {
         title: 'TomoFlow Pro',
         body:
@@ -434,10 +433,6 @@ export const translations: Record<Language, Record<string, any>> = {
         restoreFailed: {
           title: 'Restore failed',
           body: 'We could not restore purchases. Please try again later.',
-        },
-        devUnlock: {
-          title: 'Dev unlock',
-          body: 'Pro has been unlocked for development builds.',
         },
       },
       errors: {
@@ -989,7 +984,6 @@ export const translations: Record<Language, Record<string, any>> = {
       loadingPlans: 'Cargando planes…',
       unlockedVia: 'Desbloqueado vía {source}.',
       restore: 'Restaurar compras',
-      devUnlockLabel: 'DEV: Desbloquear Pro',
       expoGo: {
         title: 'TomoFlow Pro',
         body:
@@ -1028,10 +1022,6 @@ export const translations: Record<Language, Record<string, any>> = {
         restoreFailed: {
           title: 'Restauración fallida',
           body: 'No pudimos restaurar las compras. Inténtalo de nuevo más tarde.',
-        },
-        devUnlock: {
-          title: 'Desbloqueo dev',
-          body: 'Pro se ha desbloqueado para builds de desarrollo.',
         },
       },
       errors: {
