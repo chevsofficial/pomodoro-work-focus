@@ -21,10 +21,12 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.chevslabs.tomoflow",
+      "buildNumber": "1",
       "jsEngine": "hermes"
     },
     "android": {
       "package": "com.chevslabs.tomoflow",
+      "versionCode": 1,
       "jsEngine": "hermes",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
