@@ -41,6 +41,58 @@ export function getRevenueCatConfigurePromise(): Promise<RevenueCatAvailability>
   return revenueCatConfigurePromise;
 }
 
+async function ensureRevenueCatConfigured() {
+  if (isExpoGo()) {
+    return false;
+  }
+
+  let availability = getRevenueCatAvailability();
+
+  if (availability.status === 'configuring' && revenueCatConfigurePromise) {
+    availability = await revenueCatConfigurePromise;
+  } else if (availability.status === 'unconfigured') {
+    availability = await configureRevenueCat();
+  }
+
+  return availability.status === 'configured';
+}
+
+export async function logInRevenueCat(appUserId: string) {
+  if (!appUserId) {
+    return null;
+  }
+
+  const isConfigured = await ensureRevenueCatConfigured();
+
+  if (!isConfigured) {
+    return null;
+  }
+
+  try {
+    const loginResult = await Purchases.logIn(appUserId);
+    logger.info('[RevenueCat] Purchases.logIn succeeded');
+    return loginResult;
+  } catch (error) {
+    logger.warn('[RevenueCat] Purchases.logIn failed', error);
+    return null;
+  }
+}
+
+export async function logOutRevenueCat() {
+  const isConfigured = await ensureRevenueCatConfigured();
+
+  if (!isConfigured) {
+    return;
+  }
+
+  try {
+    await Purchases.logOut();
+    logger.info('[RevenueCat] Purchases.logOut succeeded');
+  } catch (error) {
+    logger.warn('[RevenueCat] Purchases.logOut failed', error);
+  }
+}
+
 /**
  * Initialize RevenueCat safely.
  * - In Expo Go: we SKIP configuring, to avoid crashes.

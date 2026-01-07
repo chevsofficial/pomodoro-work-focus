@@ -18,7 +18,7 @@ import {
 } from './src/utils/notificationService';
 import { reportMissingSupabaseConfig, supabase } from './src/services/supabaseClient';
 import { cloudSyncApi } from './src/services/cloudSyncApi';
-import { configureRevenueCat } from './src/services/revenuecat';
+import { configureRevenueCat, logInRevenueCat, logOutRevenueCat } from './src/services/revenuecat';
 import { ToastProvider } from './src/components/ToastProvider';
 import { AuthCallbackHandler } from './src/components/AuthCallbackHandler';
 import { handlePendingNavigation, navigationRef } from './src/navigation/navigationRef';
@@ -138,12 +138,15 @@ const App: React.FC = () => {
       const userId = session?.user?.id;
 
       if (!userId) {
+        await logOutRevenueCat();
+        appStore.setPro(false);
         appStore.setCloudUser(undefined);
         appStore.setCloudSyncEnabled(false);
         return;
       }
 
       appStore.setCloudUser(userId);
+      await logInRevenueCat(userId);
 
       const cloudSnapshot = await cloudSyncApi.fetchSnapshot(userId);
       if (cloudSnapshot) {
@@ -156,11 +159,9 @@ const App: React.FC = () => {
     };
   }, []);
 
-if (!isReady) {
-  return (
-    <View style={[styles.bootSplash, { backgroundColor: colors.background }]} />
-  );
-}
+  if (!isReady) {
+    return <View style={[styles.bootSplash, { backgroundColor: colors.background }]} />;
+  }
 
   return (
     <SafeAreaProvider>
