@@ -13,7 +13,7 @@ import {
   View,
 } from 'react-native';
 import { ScreenContainer } from '../components/ScreenContainer';
-import { APP_LINKS } from '../config/links';
+import { ANDROID_APP_ID, APP_LINKS } from '../config/links';
 import { RootStackParamList } from '../navigation/RootNavigator';
 import { navigateToProUpsell } from '../navigation/proNavigation';
 import { useLanguage } from '../store/appStore';
@@ -67,16 +67,31 @@ export const InfoScreen: React.FC = () => {
   const [isLanguageModalVisible, setLanguageModalVisible] = useState(false);
   const styles = useMemo(() => createStyles(colors), [colors]);
 
-  const rateUrl =
-    Platform.select({
-      ios: APP_LINKS.appStore,
-      android: APP_LINKS.playStore,
-    }) ?? APP_LINKS.website;
-
   const openLink = (url: string) => {
     Linking.openURL(url).catch(() => {
       Alert.alert(t('info.alerts.openLinkTitle'), t('info.alerts.openLinkBody'));
     });
+  };
+
+  const handleRateAppPress = async () => {
+    try {
+      if (Platform.OS === 'android') {
+        const marketUrl = `market://details?id=${ANDROID_APP_ID}`;
+        const supported = await Linking.canOpenURL(marketUrl);
+
+        if (supported) {
+          await Linking.openURL(marketUrl);
+          return;
+        }
+
+        await Linking.openURL(APP_LINKS.playStore);
+        return;
+      }
+
+      await Linking.openURL(APP_LINKS.appStore);
+    } catch {
+      Alert.alert(t('info.alerts.openLinkTitle'), t('info.alerts.openLinkBody'));
+    }
   };
 
   const handleLanguagePress = () => {
@@ -110,7 +125,7 @@ export const InfoScreen: React.FC = () => {
         {
           title: t('info.sections.support.rate.title'),
           description: t('info.sections.support.rate.description'),
-          onPress: () => openLink(rateUrl),
+          onPress: handleRateAppPress,
         },
       ],
     },
