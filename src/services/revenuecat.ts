@@ -209,7 +209,6 @@ export async function refreshProStatus() {
     return info;
   } catch (error) {
     logger.warn('[RevenueCat] getCustomerInfo failed', error);
-    useAppStore.getState().setPro(false);
     return null;
   }
 }
