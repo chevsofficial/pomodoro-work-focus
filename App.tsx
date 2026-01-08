@@ -16,18 +16,24 @@ import {
   requestNotificationPermissions,
   syncNotificationChannels,
 } from './src/utils/notificationService';
-import { reportMissingSupabaseConfig, supabase } from './src/services/supabaseClient';
+import { supabase } from './src/services/supabaseClient';
 import { cloudSyncApi } from './src/services/cloudSyncApi';
 import { configureRevenueCat, logInRevenueCat, logOutRevenueCat } from './src/services/revenuecat';
 import { ToastProvider } from './src/components/ToastProvider';
 import { AuthCallbackHandler } from './src/components/AuthCallbackHandler';
 import { handlePendingNavigation, navigationRef } from './src/navigation/navigationRef';
+import { MissingConfig } from './src/config/runtimeConfig';
+import { ConfigErrorScreen } from './src/screens/ConfigErrorScreen';
 
 const App: React.FC = () => {
   const colors = useThemeColors();
   const settings = useSettings();
   const language = useLanguage();
   const [isReady, setIsReady] = useState(false);
+
+  const shouldBlockSupabase = !__DEV__ && MissingConfig.supabase;
+  const shouldBlockRevenueCat = !__DEV__ && MissingConfig.revenueCatProd;
+  const shouldBlockApp = shouldBlockSupabase || shouldBlockRevenueCat;
 
   const statusBarStyle = useMemo<StatusBarStyle>(() => {
     const hex = colors.background.replace('#', '');
@@ -88,10 +94,12 @@ const App: React.FC = () => {
   );
 
   useEffect(() => {
+    if (shouldBlockApp) return;
     configureRevenueCat();
-  }, []);
+  }, [shouldBlockApp]);
 
   useEffect(() => {
+    if (shouldBlockApp) return;
     let isMounted = true;
 
     (async () => {
@@ -106,27 +114,27 @@ const App: React.FC = () => {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [shouldBlockApp]);
 
   useEffect(() => {
-    reportMissingSupabaseConfig();
-  }, []);
-
-  useEffect(() => {
+    if (shouldBlockApp) return;
     initializeNotifications({ soundEnabled: settings.soundEnabled });
-  }, [settings.soundEnabled]);
+  }, [settings.soundEnabled, shouldBlockApp]);
 
   useEffect(() => {
+    if (shouldBlockApp) return;
     syncNotificationChannels();
-  }, [language]);
+  }, [language, shouldBlockApp]);
 
   useEffect(() => {
+    if (shouldBlockApp) return;
     if (settings.notificationsEnabled) {
       requestNotificationPermissions();
     }
-  }, [settings.notificationsEnabled]);
+  }, [settings.notificationsEnabled, shouldBlockApp]);
 
   useEffect(() => {
+    if (shouldBlockApp) return;
     const { data: subscription } = supabase.auth.onAuthStateChange(async (_event, session) => {
       const appStore = useAppStore.getState();
 
@@ -162,7 +170,15 @@ const App: React.FC = () => {
     return () => {
       subscription?.subscription.unsubscribe();
     };
-  }, []);
+  }, [shouldBlockApp]);
+
+  if (shouldBlockSupabase) {
+    return <ConfigErrorScreen message="Missing Supabase config in production build env vars." />;
+  }
+
+  if (shouldBlockRevenueCat) {
+    return <ConfigErrorScreen message="Missing RevenueCat config in production build env vars." />;
+  }
 
   if (!isReady) {
     return <View style={[styles.bootSplash, { backgroundColor: colors.background }]} />;
