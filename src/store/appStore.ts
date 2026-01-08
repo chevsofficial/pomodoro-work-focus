@@ -20,7 +20,7 @@ import {
 } from '../services/cloudSyncApi';
 import { showGlobalToast } from '../components/ToastProvider';
 import { isSupabaseConfigured, supabase } from '../services/supabaseClient';
-import { PRO_DEV_UNLOCK_ENABLED } from '../config/proFeatures';
+import { PRO_DEV_UNLOCK_ENABLED } from '../config/proFlags';
 import { logger } from '../utils/logger';
 import {
   closeCurrentSegment,

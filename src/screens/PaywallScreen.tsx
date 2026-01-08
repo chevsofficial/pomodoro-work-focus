@@ -8,15 +8,12 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import Purchases, {
-  PurchasesOfferings,
-  PurchasesPackage,
-} from 'react-native-purchases';
+import { PurchasesOffering } from 'react-native-purchases';
 import { useNavigation } from '@react-navigation/native';
 import { ScreenContainer } from '../components/ScreenContainer';
-import { PRO_BENEFITS, PRO_PRICING } from '../config/proFeatures';
 import {
   configureRevenueCat,
+  fetchOfferings,
   getRevenueCatAvailability,
   isExpoGo,
   purchasePackage,
@@ -25,11 +22,22 @@ import {
 import useAppStore, { useIsPro, useProStatus } from '../store/appStore';
 import { spacing } from '../theme/spacing';
 import { useThemeColors } from '../theme/useThemeColors';
-import { t } from '../i18n/translations';
+import { t, TranslationKey } from '../i18n/translations';
 import { logger } from '../utils/logger';
+import {
+  buildPaywallPricingFromOffering,
+  PaywallPlanKey,
+} from '../services/paywallPricing';
 
-const formatPriceText = (pkg: PurchasesPackage | null, fallback: string) =>
-  pkg?.product?.priceString ?? fallback;
+const PAYWALL_BENEFITS: TranslationKey[] = [
+  'paywall.benefits.premiumThemes',
+  'paywall.benefits.advancedAnalytics',
+  'paywall.benefits.unlimitedActivityTypes',
+  'paywall.benefits.customDurations',
+  'paywall.benefits.customDateRange',
+  'paywall.benefits.cloudSync',
+  'paywall.benefits.exportCsv',
+];
 
 export const PaywallScreen: React.FC = () => {
   const colors = useThemeColors();
@@ -39,13 +47,10 @@ export const PaywallScreen: React.FC = () => {
   const navigation = useNavigation();
   const language = useAppStore((state) => state.language);
   const expoGo = isExpoGo();
-  const [annualPackage, setAnnualPackage] = useState<PurchasesPackage | null>(null);
-  const [monthlyPackage, setMonthlyPackage] = useState<PurchasesPackage | null>(null);
+  const [offering, setOffering] = useState<PurchasesOffering | null>(null);
   const [loadingOfferings, setLoadingOfferings] = useState(true);
   const [isPurchasing, setIsPurchasing] = useState(false);
   const [isRestoring, setIsRestoring] = useState(false);
-  const [offeringsUnavailable, setOfferingsUnavailable] = useState(false);
-  const [offerings, setOfferings] = useState<PurchasesOfferings | null>(null);
   const [storeError, setStoreError] = useState<string | null>(null);
   const [revenueCatUnavailable, setRevenueCatUnavailable] = useState(false);
 
@@ -54,7 +59,6 @@ export const PaywallScreen: React.FC = () => {
 
     const loadOfferings = async () => {
       setLoadingOfferings(true);
-      setOfferingsUnavailable(false);
       setStoreError(null);
       setRevenueCatUnavailable(false);
 
@@ -65,65 +69,28 @@ export const PaywallScreen: React.FC = () => {
 
       const updatedAvailability = getRevenueCatAvailability();
       if (updatedAvailability.status === 'failed') {
-        setAnnualPackage(null);
-        setMonthlyPackage(null);
-        setOfferings(null);
+        setOffering(null);
         setStoreError(
           updatedAvailability.error ?? t('paywall.errors.subscriptionsUnavailable'),
         );
-        setOfferingsUnavailable(true);
         setRevenueCatUnavailable(true);
         setLoadingOfferings(false);
         return;
       }
 
       try {
-        const result = await Purchases.getOfferings();
-
-        if (!result || !result.current || Object.keys(result.all).length === 0) {
-          logger.warn('[RevenueCat] Offerings are empty (Test Store?)');
-          setAnnualPackage(null);
-          setMonthlyPackage(null);
-          setOfferings(null);
+        const result = await fetchOfferings();
+        setOffering(result?.current ?? null);
+        if (!result?.current) {
           setStoreError(t('paywall.errors.loadProductsLater'));
-          setOfferingsUnavailable(true);
-          return;
         }
-
-        const current = result.current;
-        logger.info('[RevenueCat] Offerings loaded', Object.keys(result.all));
-
-        let monthly: PurchasesPackage | null = current.monthly ?? null;
-        let annual: PurchasesPackage | null = current.annual ?? null;
-
-        // Fall back to availablePackages by identifier.
-        if (!monthly && current.availablePackages) {
-          monthly =
-            current.availablePackages.find(
-              (pkg: PurchasesPackage) => pkg.identifier === '$rc_monthly'
-            ) ?? null;
-        }
-        if (!annual && current.availablePackages) {
-          annual =
-            current.availablePackages.find(
-              (pkg: PurchasesPackage) => pkg.identifier === '$rc_annual'
-            ) ?? null;
-        }
-
-        setAnnualPackage(annual);
-        setMonthlyPackage(monthly);
-        setOfferings(result);
-        setStoreError(null);
       } catch (e: any) {
         logger.error('[RevenueCat] Error fetching offerings', e);
         if (e?.userInfo?.underlyingErrorMessage) {
           logger.error('[RevenueCat underlying]', e.userInfo.underlyingErrorMessage);
         }
-        setAnnualPackage(null);
-        setMonthlyPackage(null);
-        setOfferings(null);
+        setOffering(null);
         setStoreError(t('paywall.errors.loadProductsLater'));
-        setOfferingsUnavailable(true);
       } finally {
         setLoadingOfferings(false);
       }
@@ -132,7 +99,12 @@ export const PaywallScreen: React.FC = () => {
     loadOfferings();
   }, [expoGo]);
 
-  const handlePurchase = async (pkg: PurchasesPackage | null) => {
+  const pricing = useMemo(
+    () => buildPaywallPricingFromOffering(offering, t),
+    [offering, t],
+  );
+
+  const handlePurchase = async (planKey: PaywallPlanKey) => {
     if (expoGo) {
       Alert.alert(
         t('paywall.alerts.expoGo.title'),
@@ -154,17 +126,20 @@ export const PaywallScreen: React.FC = () => {
       return;
     }
 
-    if (!pkg) {
+    const selectedPackage =
+      planKey === 'annual' ? pricing.annual.rcPackage : pricing.monthly.rcPackage;
+
+    if (!selectedPackage) {
       Alert.alert(
-        t('paywall.alerts.storeUnavailable.title'),
-        t('paywall.alerts.storeUnavailable.body'),
+        t('paywall.alerts.storeUnavailableTitle'),
+        t('paywall.alerts.storeUnavailableBody'),
       );
       return;
     }
 
     try {
       setIsPurchasing(true);
-      await purchasePackage(pkg);
+      await purchasePackage(selectedPackage);
     } catch (error: any) {
       if (!error?.userCancelled) {
         Alert.alert(
@@ -221,8 +196,6 @@ export const PaywallScreen: React.FC = () => {
     }
   };
 
-  const annualPriceText = formatPriceText(annualPackage, PRO_PRICING.annual.priceText);
-  const monthlyPriceText = formatPriceText(monthlyPackage, PRO_PRICING.monthly.priceText);
   // Always use translation-based labels; price is displayed above the button
   const annualButtonLabel = t('paywall.startTrial');
   const monthlyButtonLabel = t('paywall.chooseMonthly');
@@ -233,15 +206,12 @@ export const PaywallScreen: React.FC = () => {
   }, [language, navigation]);
 
   const isAnnualDisabled =
-    isPro || isPurchasing || !!storeError || revenueCatUnavailable || !offerings?.current;
+    isPro || isPurchasing || revenueCatUnavailable;
 
   const isMonthlyDisabled =
     isPro ||
     isPurchasing ||
-    !!storeError ||
-    revenueCatUnavailable ||
-    !offerings?.current ||
-    !monthlyPackage;
+    revenueCatUnavailable;
 
   if (expoGo) {
     return (
@@ -273,7 +243,7 @@ export const PaywallScreen: React.FC = () => {
 
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>{t('paywall.featuresTitle')}</Text>
-          {PRO_BENEFITS.map((benefit) => {
+          {PAYWALL_BENEFITS.map((benefit) => {
             const benefitRow = (
               <View key={benefit} style={styles.benefitRow}>
                 <Text style={styles.benefitIcon}>✅</Text>
@@ -290,16 +260,18 @@ export const PaywallScreen: React.FC = () => {
             <View style={styles.badgeWrapper}>
               <Text style={styles.badgeText}>{t('paywall.planBadge')}</Text>
             </View>
-            <Text style={styles.planTitle}>{t('paywall.plans.annualTitle')}</Text>
-            <Text style={styles.planPrice}>{annualPriceText}</Text>
-            <Text style={styles.planDescription}>{t('paywall.plans.annualDescription')}</Text>
-            <Text style={styles.planSavings}>{t('paywall.plans.annualSavings')}</Text>
+            <Text style={styles.planTitle}>{t('paywall.pricing.annual.title')}</Text>
+            <Text style={styles.planPrice}>{pricing.annual.fullPriceLine}</Text>
+            <Text style={styles.planDescription}>
+              {t('paywall.pricing.annual.description')}
+            </Text>
+            <Text style={styles.planSavings}>{t('paywall.pricing.annual.savingsText')}</Text>
             <TouchableOpacity
               style={[
                 styles.planButton,
                 isAnnualDisabled ? styles.planButtonDisabled : undefined,
               ]}
-              onPress={() => handlePurchase(annualPackage)}
+              onPress={() => handlePurchase('annual')}
               disabled={isAnnualDisabled}
             >
               {isPurchasing ? (
@@ -313,15 +285,17 @@ export const PaywallScreen: React.FC = () => {
           </View>
 
           <View style={styles.pricingCard}>
-            <Text style={styles.planTitle}>{t('paywall.plans.monthlyTitle')}</Text>
-            <Text style={styles.planPrice}>{monthlyPriceText}</Text>
-            <Text style={styles.planDescription}>{t('paywall.plans.monthlyDescription')}</Text>
+            <Text style={styles.planTitle}>{t('paywall.pricing.monthly.title')}</Text>
+            <Text style={styles.planPrice}>{pricing.monthly.fullPriceLine}</Text>
+            <Text style={styles.planDescription}>
+              {t('paywall.pricing.monthly.description')}
+            </Text>
             <TouchableOpacity
               style={[
                 styles.secondaryButton,
                 isMonthlyDisabled ? styles.secondaryButtonDisabled : undefined,
               ]}
-              onPress={() => handlePurchase(monthlyPackage)}
+              onPress={() => handlePurchase('monthly')}
               disabled={isMonthlyDisabled}
             >
               <Text style={styles.secondaryButtonText}>{monthlyButtonLabel}</Text>
@@ -336,10 +310,6 @@ export const PaywallScreen: React.FC = () => {
             <ActivityIndicator color={colors.primary} />
             <Text style={styles.loadingText}>{t('paywall.loadingPlans')}</Text>
           </View>
-        )}
-
-        {!loadingOfferings && offeringsUnavailable && !storeError && (
-          <Text style={styles.secondaryText}>{t('paywall.errors.plansUnavailable')}</Text>
         )}
 
         {proStatus.isPro && (

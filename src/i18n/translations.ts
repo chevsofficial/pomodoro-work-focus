@@ -389,6 +389,23 @@ export const translations: Record<Language, Record<string, any>> = {
         cloudSync: 'Cloud sync between devices',
         exportCsv: 'Export CSV backups',
       },
+      pricing: {
+        monthly: {
+          title: 'Monthly Plan',
+          priceText: 'Monthly',
+          description: 'Flexible • Cancel anytime',
+        },
+        annual: {
+          title: 'Most Popular — Annual Plan',
+          priceText: 'Annual',
+          description: '7-day free trial • Cancel anytime',
+          savingsText: 'Save compared to monthly',
+        },
+      },
+      period: {
+        month: '/ month',
+        year: '/ year',
+      },
       planBadge: 'Most Popular',
       startTrial: 'Start 7-Day Free Trial',
       chooseMonthly: 'Choose Monthly',
@@ -418,6 +435,8 @@ export const translations: Record<Language, Record<string, any>> = {
           title: 'Store unavailable',
           body: 'We could not load products. Please try again shortly.',
         },
+        storeUnavailableTitle: 'Store pricing unavailable',
+        storeUnavailableBody: 'Please try again later.',
         purchaseFailed: {
           title: 'Purchase failed',
           body: 'Something went wrong while starting your subscription.',
@@ -978,6 +997,23 @@ export const translations: Record<Language, Record<string, any>> = {
         cloudSync: 'Sincronización en la nube entre dispositivos',
         exportCsv: 'Exportar copias de seguridad CSV',
       },
+      pricing: {
+        monthly: {
+          title: 'Plan mensual',
+          priceText: 'Mensual',
+          description: 'Flexible • Cancela en cualquier momento',
+        },
+        annual: {
+          title: 'Plan anual — el más popular',
+          priceText: 'Anual',
+          description: 'Prueba gratis de 7 días • Cancela en cualquier momento',
+          savingsText: 'Ahorra comparado con el mensual',
+        },
+      },
+      period: {
+        month: '/ mes',
+        year: '/ año',
+      },
       planBadge: 'Más popular',
       startTrial: 'Comenzar prueba gratuita de 7 días',
       chooseMonthly: 'Elegir mensual',
@@ -1007,6 +1043,8 @@ export const translations: Record<Language, Record<string, any>> = {
           title: 'Tienda no disponible',
           body: 'No pudimos cargar los productos. Inténtalo de nuevo en breve.',
         },
+        storeUnavailableTitle: 'Precios no disponibles',
+        storeUnavailableBody: 'Inténtalo de nuevo más tarde.',
         purchaseFailed: {
           title: 'Compra fallida',
           body: 'Ocurrió un problema al iniciar tu suscripción.',
