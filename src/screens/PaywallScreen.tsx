@@ -101,7 +101,7 @@ export const PaywallScreen: React.FC = () => {
 
   const pricing = useMemo(
     () => buildPaywallPricingFromOffering(offering, t),
-    [offering, t],
+    [language, offering, t],
   );
 
   const handlePurchase = async (planKey: PaywallPlanKey) => {
