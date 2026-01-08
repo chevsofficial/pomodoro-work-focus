@@ -25,6 +25,6 @@ export const RuntimeConfig = {
 
 export const MissingConfig = {
   supabase: !RuntimeConfig.supabaseUrl || !RuntimeConfig.supabaseAnonKey,
-  revenueCatProd: !RuntimeConfig.revenueCatAndroidKey || !RuntimeConfig.revenueCatIosKey,
+  revenueCatProd: !RuntimeConfig.revenueCatAndroidKey && !RuntimeConfig.revenueCatIosKey,
   revenueCatDev: !RuntimeConfig.revenueCatDevTestKey,
 };
