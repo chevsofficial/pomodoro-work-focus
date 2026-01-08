@@ -88,7 +88,12 @@ export const InfoScreen: React.FC = () => {
         return;
       }
 
-      await Linking.openURL(APP_LINKS.appStore);
+      if (Platform.OS === 'ios') {
+        await Linking.openURL(APP_LINKS.appStore);
+        return;
+      }
+
+      await Linking.openURL(APP_LINKS.website);
     } catch {
       Alert.alert(t('info.alerts.openLinkTitle'), t('info.alerts.openLinkBody'));
     }
