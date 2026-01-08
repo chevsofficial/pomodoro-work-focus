@@ -1,6 +1,11 @@
 // src/services/revenuecat.ts
 
-import Purchases, { LOG_LEVEL, PurchasesOfferings, PurchasesPackage } from 'react-native-purchases';
+import Purchases, {
+  LOG_LEVEL,
+  PurchasesOfferings,
+  PurchasesPackage,
+  type CustomerInfo,
+} from 'react-native-purchases';
 import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 import useAppStore from '../store/appStore';
@@ -24,6 +29,7 @@ type RevenueCatAvailability = {
   error: string | null;
 };
 
+const PRO_ENTITLEMENT_ID = 'pro';
 const REVENUECAT_UNAVAILABLE_MESSAGE = 'Subscriptions unavailable. Please try again later.';
 
 let revenueCatAvailability: RevenueCatAvailability = {
@@ -32,6 +38,46 @@ let revenueCatAvailability: RevenueCatAvailability = {
 };
 
 let revenueCatConfigurePromise: Promise<RevenueCatAvailability> | null = null;
+let removeCustomerInfoListener: (() => void) | null = null;
+
+function hasProEntitlement(customerInfo: CustomerInfo | null | undefined): boolean {
+  if (!customerInfo) return false;
+
+  // RevenueCat v5+ has: customerInfo.entitlements.active[entitlementId]
+  return Boolean(customerInfo.entitlements.active?.[PRO_ENTITLEMENT_ID]);
+}
+
+function syncProFromCustomerInfo(customerInfo: CustomerInfo | null | undefined) {
+  const isPro = hasProEntitlement(customerInfo);
+  useAppStore.getState().setPro(isPro);
+  return isPro;
+}
+
+export function attachRevenueCatCustomerInfoListener() {
+  // Prevent duplicate listeners if called twice
+  if (removeCustomerInfoListener) return;
+
+  const listener = (customerInfo: CustomerInfo) => {
+    syncProFromCustomerInfo(customerInfo);
+  };
+
+  Purchases.addCustomerInfoUpdateListener(listener);
+
+  // RevenueCat doesn't provide an official "remove listener" in some SDK versions.
+  // But newer versions do. If available, use it. If not available, we just avoid double attaching.
+  removeCustomerInfoListener = () => {
+    // @ts-expect-error - depending on SDK version
+    if (typeof Purchases.removeCustomerInfoUpdateListener === 'function') {
+      // @ts-expect-error - depending on SDK version
+      Purchases.removeCustomerInfoUpdateListener(listener);
+    }
+  };
+}
+
+export function detachRevenueCatCustomerInfoListener() {
+  removeCustomerInfoListener?.();
+  removeCustomerInfoListener = null;
+}
 
 export function getRevenueCatAvailability(): RevenueCatAvailability {
   return { ...revenueCatAvailability };
@@ -71,6 +117,8 @@ export async function logInRevenueCat(appUserId: string) {
   try {
     const loginResult = await Purchases.logIn(appUserId);
     logger.info('[RevenueCat] Purchases.logIn succeeded');
+    syncProFromCustomerInfo(loginResult.customerInfo);
+    await refreshProStatus();
     return loginResult;
   } catch (error) {
     logger.warn('[RevenueCat] Purchases.logIn failed', error);
@@ -82,6 +130,7 @@ export async function logOutRevenueCat() {
   const isConfigured = await ensureRevenueCatConfigured();
 
   if (!isConfigured) {
+    useAppStore.getState().setPro(false);
     return;
   }
 
@@ -90,6 +139,8 @@ export async function logOutRevenueCat() {
     logger.info('[RevenueCat] Purchases.logOut succeeded');
   } catch (error) {
     logger.warn('[RevenueCat] Purchases.logOut failed', error);
+  } finally {
+    useAppStore.getState().setPro(false);
   }
 }
 
@@ -132,6 +183,7 @@ export async function configureRevenueCat() {
       Purchases.setLogLevel(__DEV__ ? LOG_LEVEL.INFO : LOG_LEVEL.WARN);
 
       await Purchases.configure({ apiKey });
+      attachRevenueCatCustomerInfoListener();
       logger.info('[RevenueCat] Purchases configured successfully', {
         platform: Platform.OS,
       });
@@ -150,6 +202,18 @@ export async function configureRevenueCat() {
   return revenueCatConfigurePromise;
 }
 
+export async function refreshProStatus() {
+  try {
+    const info = await Purchases.getCustomerInfo();
+    syncProFromCustomerInfo(info);
+    return info;
+  } catch (error) {
+    logger.warn('[RevenueCat] getCustomerInfo failed', error);
+    useAppStore.getState().setPro(false);
+    return null;
+  }
+}
+
 /**
  * Fetch offerings safely. Returns null if anything fails.
  */
@@ -164,18 +228,13 @@ export async function purchasePackage(pkg: PurchasesPackage) {
   try {
     const { customerInfo } = await Purchases.purchasePackage(pkg);
 
-    const entitlements = customerInfo.entitlements.active;
-    const hasPro = Object.keys(entitlements).length > 0;
-
-    if (hasPro) {
-      // Assumes your store has setIsPro(boolean)
-      useAppStore.getState().setPro(true);
-    }
+    syncProFromCustomerInfo(customerInfo);
 
     return customerInfo;
   } catch (error: any) {
     if (error?.userCancelled) {
       logger.info('[RevenueCat] Purchase cancelled by user');
+      return null;
     } else {
       logger.error('[RevenueCat] Purchase failed', error);
       if (error?.userInfo?.underlyingErrorMessage) {
@@ -193,10 +252,7 @@ export async function restorePurchases() {
   try {
     const customerInfo = await Purchases.restorePurchases();
 
-    const entitlements = customerInfo.entitlements.active;
-    const hasPro = Object.keys(entitlements).length > 0;
-
-    useAppStore.getState().setPro(hasPro);
+    syncProFromCustomerInfo(customerInfo);
 
     return customerInfo;
   } catch (error) {

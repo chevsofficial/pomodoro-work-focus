@@ -155,10 +155,8 @@ const App: React.FC = () => {
 
       appStore.setCloudUser(userId);
       const loginResult = await logInRevenueCat(userId);
-      if (loginResult?.customerInfo) {
-        const entitlements = loginResult.customerInfo.entitlements.active;
-        const hasPro = Object.keys(entitlements).length > 0;
-        appStore.setPro(hasPro);
+      if (!loginResult) {
+        appStore.setPro(false);
       }
 
       const cloudSnapshot = await cloudSyncApi.fetchSnapshot(userId);
