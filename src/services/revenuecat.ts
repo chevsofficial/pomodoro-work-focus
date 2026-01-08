@@ -153,25 +153,8 @@ export async function configureRevenueCat() {
 /**
  * Fetch offerings safely. Returns null if anything fails.
  */
-export async function fetchOfferings(): Promise<PurchasesOfferings | null> {
-  try {
-    const offerings = await Purchases.getOfferings();
-
-    if (!offerings || !offerings.current || Object.keys(offerings.all).length === 0) {
-      logger.warn('[RevenueCat] Offerings are empty (Test Store?)');
-      return null;
-    }
-
-    logger.info('[RevenueCat] Offerings fetched', Object.keys(offerings.all));
-
-    return offerings;
-  } catch (error: any) {
-    logger.error('[RevenueCat] Error fetching offerings', error);
-    if (error?.userInfo?.underlyingErrorMessage) {
-      logger.error('[RevenueCat underlying]', error.userInfo.underlyingErrorMessage);
-    }
-    return null;
-  }
+export async function fetchOfferings(): Promise<PurchasesOfferings> {
+  return Purchases.getOfferings();
 }
 
 /**

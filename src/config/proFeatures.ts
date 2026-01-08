@@ -1,28 +1,7 @@
-import { TranslationKey } from '../i18n/translations';
+export const PRO_FEATURES = [
+  'cloudSync',
+  'fullAnalytics',
+  'themes',
+] as const;
 
-export const PRO_BENEFITS: TranslationKey[] = [
-  'paywall.benefits.premiumThemes',
-  'paywall.benefits.advancedAnalytics',
-  'paywall.benefits.unlimitedActivityTypes',
-  'paywall.benefits.customDurations',
-  'paywall.benefits.customDateRange',
-  'paywall.benefits.cloudSync',
-  'paywall.benefits.exportCsv',
-];
-
-export const PRO_PRICING = {
-  monthly: {
-    title: 'Monthly Plan',
-    priceText: '$3.99 / month',
-    description: 'Flexible • Cancel anytime',
-  },
-  annual: {
-    title: 'Most Popular — Annual Plan',
-    priceText: '$19.99 / year',
-    description: '7-day free trial • Cancel anytime',
-    savingsText: 'Save 58% compared to monthly',
-  },
-};
-
-export const PRO_DEV_UNLOCK_ENABLED =
-  __DEV__ && process.env.EXPO_PUBLIC_FORCE_ALL_PRO_FEATURES === 'true';
+export type ProFeatureKey = (typeof PRO_FEATURES)[number];
