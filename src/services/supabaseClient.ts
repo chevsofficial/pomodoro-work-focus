@@ -1,15 +1,9 @@
 import { createClient } from '@supabase/supabase-js';
-import Constants from 'expo-constants';
+import { RuntimeConfig } from '../config/runtimeConfig';
 import { logger } from '../utils/logger';
 
-const extras = (Constants.expoConfig?.extra ?? {}) as {
-  EXPO_PUBLIC_SUPABASE_URL?: string;
-  EXPO_PUBLIC_SUPABASE_ANON_KEY?: string;
-};
-
-const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL ?? extras.EXPO_PUBLIC_SUPABASE_URL;
-const SUPABASE_ANON_KEY =
-  process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? extras.EXPO_PUBLIC_SUPABASE_ANON_KEY;
+const SUPABASE_URL = RuntimeConfig.supabaseUrl;
+const SUPABASE_ANON_KEY = RuntimeConfig.supabaseAnonKey;
 
 const CONFIG_MISSING_CODE = 'CONFIG_MISSING';
 const MISSING_CONFIG_MESSAGE = 'Supabase credentials are not configured.';
