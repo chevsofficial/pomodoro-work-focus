@@ -1,4 +1,5 @@
 import { t } from '../i18n/translations';
+import { getAuthRedirectUrl } from '../config/authLinks';
 import { isSupabaseConfigured, supabaseClient } from './supabaseClient';
 
 export type SignUpStatus = 'signedUp' | 'existingAccount';
@@ -27,7 +28,7 @@ export const signUpWithEmail = async (email: string, password: string): Promise<
     throw new Error(t('cloud.missingConfigError'));
   }
 
-  const emailRedirectTo = 'https://tomoflow.app/auth-callback';
+  const emailRedirectTo = getAuthRedirectUrl('auth-callback');
 
   const { data, error } = await supabaseClient.auth.signUp({
     email,
@@ -72,7 +73,7 @@ export const sendPasswordResetEmail = async (email: string) => {
     throw new Error(t('cloud.missingConfigError'));
   }
 
-  const redirectTo = 'https://tomoflow.app/auth-recovery';
+  const redirectTo = getAuthRedirectUrl('auth-recovery');
 
   const { data, error } = await supabaseClient.auth.resetPasswordForEmail(email, {
     redirectTo,
