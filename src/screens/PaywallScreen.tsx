@@ -23,7 +23,6 @@ import useAppStore, { useIsPro, useProStatus } from '../store/appStore';
 import { spacing } from '../theme/spacing';
 import { useThemeColors } from '../theme/useThemeColors';
 import { t, TranslationKey } from '../i18n/translations';
-import { logger } from '../utils/logger';
 import {
   buildPaywallPricingFromOffering,
   PaywallPlanKey,
@@ -78,22 +77,12 @@ export const PaywallScreen: React.FC = () => {
         return;
       }
 
-      try {
-        const result = await fetchOfferings();
-        setOffering(result?.current ?? null);
-        if (!result?.current) {
-          setStoreError(t('paywall.errors.loadProductsLater'));
-        }
-      } catch (e: any) {
-        logger.error('[RevenueCat] Error fetching offerings', e);
-        if (e?.userInfo?.underlyingErrorMessage) {
-          logger.error('[RevenueCat underlying]', e.userInfo.underlyingErrorMessage);
-        }
-        setOffering(null);
+      const result = await fetchOfferings();
+      setOffering(result?.current ?? null);
+      if (!result?.current) {
         setStoreError(t('paywall.errors.loadProductsLater'));
-      } finally {
-        setLoadingOfferings(false);
       }
+      setLoadingOfferings(false);
     };
 
     loadOfferings();
