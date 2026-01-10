@@ -22,7 +22,11 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.chevslabs.tomoflow",
       "buildNumber": "1",
-      "jsEngine": "hermes"
+      "jsEngine": "hermes",
+      "associatedDomains": [
+        "applinks:tomoflow.app",
+        "applinks:www.tomoflow.app"
+      ]
     },
     "android": {
       "package": "com.chevslabs.tomoflow",
@@ -31,7 +35,39 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#1B1D23"
-      }
+      },
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ],
+          "data": [
+            {
+              "scheme": "https",
+              "host": "tomoflow.app",
+              "pathPrefix": "/auth-callback"
+            },
+            {
+              "scheme": "https",
+              "host": "tomoflow.app",
+              "pathPrefix": "/auth-recovery"
+            },
+            {
+              "scheme": "https",
+              "host": "www.tomoflow.app",
+              "pathPrefix": "/auth-callback"
+            },
+            {
+              "scheme": "https",
+              "host": "www.tomoflow.app",
+              "pathPrefix": "/auth-recovery"
+            }
+          ]
+        }
+      ]
     },
     "web": {
       "bundler": "metro",
