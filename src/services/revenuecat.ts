@@ -214,10 +214,21 @@ export async function refreshProStatus() {
 }
 
 /**
- * Fetch offerings safely. Returns null if anything fails.
+ * Fetch offerings safely. Returns null on failure (never throws).
  */
-export async function fetchOfferings(): Promise<PurchasesOfferings> {
-  return Purchases.getOfferings();
+export async function fetchOfferings(): Promise<PurchasesOfferings | null> {
+  try {
+    const availability = getRevenueCatAvailability();
+    if (availability.status === 'skipped' || availability.status === 'failed') {
+      logger.info('[RevenueCat] fetchOfferings skipped (not configured)');
+      return null;
+    }
+
+    return await Purchases.getOfferings();
+  } catch (error) {
+    logger.warn('[RevenueCat] fetchOfferings failed', error);
+    return null;
+  }
 }
 
 /**
