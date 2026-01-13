@@ -87,7 +87,8 @@ export const cloudSyncApi = {
       throw new Error('Supabase credentials are not configured.');
     }
 
-    const { userId: _userId, revision, updatedAt, ...appState } = snapshot;
+    const { revision, updatedAt, ...rest } = snapshot;
+    const { userId, ...appState } = rest;
     const expectedRevision = revision;
     const nextRevision = expectedRevision + 1;
 
