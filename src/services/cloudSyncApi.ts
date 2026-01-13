@@ -88,7 +88,11 @@ export const cloudSyncApi = {
     }
 
     const { revision, updatedAt, ...rest } = snapshot;
-    const { userId, ...appState } = rest;
+
+    // Omit userId without binding an unused variable (avoids eslint no-unused-vars)
+    const appState = { ...rest } as Omit<typeof rest, 'userId'>;
+    delete (appState as any).userId;
+
     const expectedRevision = revision;
     const nextRevision = expectedRevision + 1;
 
