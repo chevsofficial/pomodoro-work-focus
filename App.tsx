@@ -24,6 +24,7 @@ import { AuthCallbackHandler } from './src/components/AuthCallbackHandler';
 import { handlePendingNavigation, navigationRef } from './src/navigation/navigationRef';
 import { MissingConfig } from './src/config/runtimeConfig';
 import { ConfigErrorScreen } from './src/screens/ConfigErrorScreen';
+import { isProdBuild } from './src/utils/env';
 
 const App: React.FC = () => {
   const colors = useThemeColors();
@@ -31,8 +32,9 @@ const App: React.FC = () => {
   const language = useLanguage();
   const [isReady, setIsReady] = useState(false);
 
-  const shouldBlockSupabase = !__DEV__ && MissingConfig.supabase;
-  const shouldBlockRevenueCat = !__DEV__ && MissingConfig.revenueCatProd;
+  const prodBuild = isProdBuild();
+  const shouldBlockSupabase = prodBuild && MissingConfig.supabase;
+  const shouldBlockRevenueCat = prodBuild && MissingConfig.revenueCatProd;
   const shouldBlockApp = shouldBlockSupabase || shouldBlockRevenueCat;
 
   const statusBarStyle = useMemo<StatusBarStyle>(() => {
@@ -171,11 +173,15 @@ const App: React.FC = () => {
   }, [shouldBlockApp]);
 
   if (shouldBlockSupabase) {
-    return <ConfigErrorScreen message="Missing Supabase config in production build env vars." />;
+    return (
+      <ConfigErrorScreen message="Missing Supabase configuration (EXPO_PUBLIC_SUPABASE_URL / EXPO_PUBLIC_SUPABASE_ANON_KEY)." />
+    );
   }
 
   if (shouldBlockRevenueCat) {
-    return <ConfigErrorScreen message="Missing RevenueCat config in production build env vars." />;
+    return (
+      <ConfigErrorScreen message="Missing RevenueCat configuration (EXPO_PUBLIC_REVENUECAT_ANDROID_KEY / EXPO_PUBLIC_REVENUECAT_IOS_KEY)." />
+    );
   }
 
   if (!isReady) {
