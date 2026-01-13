@@ -79,8 +79,18 @@
       }
     },
     "owner": "chevsofficial",
-    "plugins": [
-      "expo-localization"
-    ]
+"plugins": [
+  "expo-localization",
+  [
+    "expo-build-properties",
+    {
+      "android": {
+        "compileSdkVersion": 35,
+        "targetSdkVersion": 35,
+        "buildToolsVersion": "35.0.0"
+      }
+    }
+  ]
+]
   }
 }
