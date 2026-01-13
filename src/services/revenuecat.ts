@@ -66,10 +66,12 @@ export function attachRevenueCatCustomerInfoListener() {
   // RevenueCat doesn't provide an official "remove listener" in some SDK versions.
   // But newer versions do. If available, use it. If not available, we just avoid double attaching.
   removeCustomerInfoListener = () => {
-    // @ts-expect-error - depending on SDK version
-    if (typeof Purchases.removeCustomerInfoUpdateListener === 'function') {
-      // @ts-expect-error - depending on SDK version
-      Purchases.removeCustomerInfoUpdateListener(listener);
+    const maybeRemove = (Purchases as unknown as {
+      removeCustomerInfoUpdateListener?: (cb: (info: CustomerInfo) => void) => void;
+    }).removeCustomerInfoUpdateListener;
+
+    if (typeof maybeRemove === 'function') {
+      maybeRemove(listener);
     }
   };
 }

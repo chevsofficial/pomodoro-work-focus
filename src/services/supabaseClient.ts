@@ -49,7 +49,7 @@ const createMissingConfigClient = () => {
 
 export const supabaseClient = isSupabaseConfigured
   ? createClient(SUPABASE_URL as string, SUPABASE_ANON_KEY as string)
-  : (createMissingConfigClient() as ReturnType<typeof createClient>);
+  : (createMissingConfigClient() as unknown as ReturnType<typeof createClient>);
 
 export const supabase = supabaseClient;
 
