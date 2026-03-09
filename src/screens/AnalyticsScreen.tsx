@@ -384,18 +384,7 @@ export const AnalyticsScreen: React.FC = () => {
     }));
   }, [activityTypeRatio, totalRangeHours]);
   const maxHours = Math.max(totalRangeHours, 0.1);
-
-  if (!cloudUserId) {
-    return (
-      <ScreenContainer>
-        <Text style={styles.title}>{t('analytics.title')}</Text>
-        <Text style={styles.subtitle}>Create a free account to unlock analytics.</Text>
-        <TouchableOpacity style={styles.rangePillActive} onPress={() => navigation.navigate('Auth')}>
-          <Text style={styles.rangePillLabelActive}>Create free account</Text>
-        </TouchableOpacity>
-      </ScreenContainer>
-    );
-  }
+  const isAuthed = Boolean(cloudUserId);
 
   return (
     <ScreenContainer>
@@ -713,6 +702,16 @@ export const AnalyticsScreen: React.FC = () => {
         cancelLabel={t('common.cancel')}
         applyLabel={t('common.apply')}
       />
+
+      {!isAuthed && (
+        <View style={styles.authOverlay}>
+          <Text style={styles.sectionTitle}>Create a free account to unlock Analytics</Text>
+          <Text style={styles.subtitle}>You can preview this page, but analytics actions are locked.</Text>
+          <TouchableOpacity style={styles.rangePillActive} onPress={() => navigation.navigate('Auth')}>
+            <Text style={styles.rangePillLabelActive}>Create free account</Text>
+          </TouchableOpacity>
+        </View>
+      )}
     </ScreenContainer>
   );
 };
@@ -1013,6 +1012,14 @@ function createStyles(colors: ReturnType<typeof useThemeColors>) {
       width: 32,
       height: 32,
       margin: 4,
+    },
+    authOverlay: {
+      ...StyleSheet.absoluteFillObject,
+      backgroundColor: `${colors.background}e6`,
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: spacing.lg,
+      gap: spacing.sm,
     },
   });
 }

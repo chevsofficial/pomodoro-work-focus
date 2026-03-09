@@ -246,6 +246,10 @@ export const TasksScreen: React.FC = () => {
   }, [doneTasks]);
 
   const handleToggleCompleted = (taskId: string) => {
+    if (!isAuthed) {
+      navigation.navigate('Auth');
+      return;
+    }
     toggleTaskCompleted(taskId);
   };
 
@@ -261,6 +265,11 @@ export const TasksScreen: React.FC = () => {
   };
 
   const handleAddTaskPress = () => {
+    if (!isAuthed) {
+      navigation.navigate('Auth');
+      return;
+    }
+
     if (!canCreateTask && !isPro) {
       navigateToProUpsell(navigation);
       return;
@@ -270,6 +279,10 @@ export const TasksScreen: React.FC = () => {
   };
 
   const handleOpenTaskDetail = (taskId: string) => {
+    if (!isAuthed) {
+      navigation.navigate('Auth');
+      return;
+    }
     navigation.navigate('TaskDetail', { taskId });
   };
 
@@ -313,22 +326,7 @@ export const TasksScreen: React.FC = () => {
     );
   };
 
-  if (!cloudUserId) {
-    return (
-      <ScreenContainer>
-        <Text style={styles.headerTitle}>{t('tasks.header')}</Text>
-        <View style={styles.emptyState}>
-          <Text style={styles.emptyStateTitle}>Create a free account to use tasks</Text>
-          <Text style={styles.emptyStateSubtitle}>
-            Timer is available without login. Sign in to save tasks and sync progress.
-          </Text>
-          <TouchableOpacity style={styles.proUpsellButton} onPress={() => navigation.navigate('Auth')}>
-            <Text style={styles.proUpsellButtonText}>Create free account</Text>
-          </TouchableOpacity>
-        </View>
-      </ScreenContainer>
-    );
-  }
+  const isAuthed = Boolean(cloudUserId);
 
   return (
     <ScreenContainer>
@@ -426,6 +424,16 @@ export const TasksScreen: React.FC = () => {
         colors={colors}
         styles={styles}
       />
+
+      {!isAuthed && (
+        <View style={styles.authOverlay}>
+          <Text style={styles.emptyStateTitle}>Create a free account to unlock Tasks</Text>
+          <Text style={styles.emptyStateSubtitle}>You can browse this page, but actions are locked.</Text>
+          <TouchableOpacity style={styles.proUpsellButton} onPress={() => navigation.navigate('Auth')}>
+            <Text style={styles.proUpsellButtonText}>Create free account</Text>
+          </TouchableOpacity>
+        </View>
+      )}
     </ScreenContainer>
   );
 };
@@ -714,6 +722,14 @@ function createStyles(colors: ReturnType<typeof useThemeColors>) {
     },
     modalButtonPrimaryText: {
       color: colors.background,
+    },
+    authOverlay: {
+      ...StyleSheet.absoluteFillObject,
+      backgroundColor: `${colors.background}e6`,
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: spacing.lg,
+      gap: spacing.sm,
     },
   });
 }
