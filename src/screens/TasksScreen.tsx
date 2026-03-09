@@ -186,6 +186,7 @@ export const TasksScreen: React.FC = () => {
   const canCreateTask = useAppStore(selectCanCreateTask);
   const remainingTasks = useAppStore(selectRemainingFreeTasks);
   const isPro = useIsPro();
+  const cloudUserId = useAppStore((state) => state.cloudSync.userId);
   const styles = useMemo(() => createStyles(colors), [colors]);
 
   const activityTypeMap = useMemo(() => {
@@ -311,6 +312,23 @@ export const TasksScreen: React.FC = () => {
       </TouchableOpacity>
     );
   };
+
+  if (!cloudUserId) {
+    return (
+      <ScreenContainer>
+        <Text style={styles.headerTitle}>{t('tasks.header')}</Text>
+        <View style={styles.emptyState}>
+          <Text style={styles.emptyStateTitle}>Create a free account to use tasks</Text>
+          <Text style={styles.emptyStateSubtitle}>
+            Timer is available without login. Sign in to save tasks and sync progress.
+          </Text>
+          <TouchableOpacity style={styles.proUpsellButton} onPress={() => navigation.navigate('Auth')}>
+            <Text style={styles.proUpsellButtonText}>Create free account</Text>
+          </TouchableOpacity>
+        </View>
+      </ScreenContainer>
+    );
+  }
 
   return (
     <ScreenContainer>

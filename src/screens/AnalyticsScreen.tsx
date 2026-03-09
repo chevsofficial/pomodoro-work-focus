@@ -174,6 +174,7 @@ export const AnalyticsScreen: React.FC = () => {
   const isPro = useIsPro();
   const streak = useStreak();
   const analyticsMinDate = useAnalyticsMinDate();
+  const cloudUserId = useAppStore((state) => state.cloudSync.userId);
   const intervals = useAppStore((state) => state.intervals);
   const tasks = useAppStore((state) => state.tasks);
   const activityTypes = useAppStore((state) => state.activityTypes);
@@ -383,6 +384,19 @@ export const AnalyticsScreen: React.FC = () => {
     }));
   }, [activityTypeRatio, totalRangeHours]);
   const maxHours = Math.max(totalRangeHours, 0.1);
+
+  if (!cloudUserId) {
+    return (
+      <ScreenContainer>
+        <Text style={styles.title}>{t('analytics.title')}</Text>
+        <Text style={styles.subtitle}>Create a free account to unlock analytics.</Text>
+        <TouchableOpacity style={styles.rangePillActive} onPress={() => navigation.navigate('Auth')}>
+          <Text style={styles.rangePillLabelActive}>Create free account</Text>
+        </TouchableOpacity>
+      </ScreenContainer>
+    );
+  }
+
   return (
     <ScreenContainer>
       <ScrollView

@@ -4,7 +4,7 @@ import * as Linking from 'expo-linking';
 import { NavigationContainer, DefaultTheme, Theme } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar, StatusBarStyle } from 'expo-status-bar';
-import { StyleSheet, View } from 'react-native';
+import { Platform, StyleSheet, View } from 'react-native';
 import { RootNavigator } from './src/navigation/RootNavigator';
 import { ThemeProvider } from './src/theme/ThemeProvider';
 import { useThemeColors } from './src/theme/useThemeColors';
@@ -19,6 +19,7 @@ import {
 import { supabase } from './src/services/supabaseClient';
 import { cloudSyncApi } from './src/services/cloudSyncApi';
 import { configureRevenueCat, logInRevenueCat, logOutRevenueCat } from './src/services/revenuecat';
+import { refreshWebProEntitlement } from './src/services/webEntitlements';
 import { ToastProvider } from './src/components/ToastProvider';
 import { AuthCallbackHandler } from './src/components/AuthCallbackHandler';
 import { handlePendingNavigation, navigationRef } from './src/navigation/navigationRef';
@@ -34,7 +35,7 @@ const App: React.FC = () => {
 
   const prodBuild = isProdBuild();
   const shouldBlockSupabase = prodBuild && MissingConfig.supabase;
-  const shouldBlockRevenueCat = prodBuild && MissingConfig.revenueCatProd;
+  const shouldBlockRevenueCat = prodBuild && Platform.OS !== 'web' && MissingConfig.revenueCatProd;
   const shouldBlockApp = shouldBlockSupabase || shouldBlockRevenueCat;
 
   const statusBarStyle = useMemo<StatusBarStyle>(() => {
@@ -156,9 +157,14 @@ const App: React.FC = () => {
       }
 
       appStore.setCloudUser(userId);
-      const loginResult = await logInRevenueCat(userId);
-      if (!loginResult) {
-        appStore.setPro(false);
+
+      if (Platform.OS === 'web') {
+        await refreshWebProEntitlement(userId);
+      } else {
+        const loginResult = await logInRevenueCat(userId);
+        if (!loginResult) {
+          appStore.setPro(false);
+        }
       }
 
       const cloudSnapshot = await cloudSyncApi.fetchSnapshot(userId);

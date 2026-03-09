@@ -2,13 +2,13 @@ import React, { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
-import { PurchasesOffering } from 'react-native-purchases';
 import { useNavigation } from '@react-navigation/native';
 import { ScreenContainer } from '../components/ScreenContainer';
 import {
@@ -27,6 +27,8 @@ import {
   buildPaywallPricingFromOffering,
   PaywallPlanKey,
 } from '../services/paywallPricing';
+import { startStripeCheckout } from '../services/stripeWeb';
+import { refreshWebProEntitlement } from '../services/webEntitlements';
 
 const PAYWALL_BENEFITS: TranslationKey[] = [
   'paywall.benefits.premiumThemes',
@@ -45,8 +47,9 @@ export const PaywallScreen: React.FC = () => {
   const styles = useMemo(() => createStyles(colors), [colors]);
   const navigation = useNavigation();
   const language = useAppStore((state) => state.language);
+  const cloudUserId = useAppStore((state) => state.cloudSync.userId);
   const expoGo = isExpoGo();
-  const [offering, setOffering] = useState<PurchasesOffering | null>(null);
+  const [offering, setOffering] = useState<any>(null);
   const [loadingOfferings, setLoadingOfferings] = useState(true);
   const [isPurchasing, setIsPurchasing] = useState(false);
   const [isRestoring, setIsRestoring] = useState(false);
@@ -54,6 +57,13 @@ export const PaywallScreen: React.FC = () => {
   const [revenueCatUnavailable, setRevenueCatUnavailable] = useState(false);
 
   useEffect(() => {
+    if (Platform.OS === 'web') {
+      if (cloudUserId) {
+        refreshWebProEntitlement(cloudUserId);
+      }
+      return;
+    }
+
     if (expoGo) return;
 
     const loadOfferings = async () => {
@@ -86,11 +96,26 @@ export const PaywallScreen: React.FC = () => {
     };
 
     loadOfferings();
-  }, [expoGo]);
+  }, [expoGo, cloudUserId]);
 
   const pricing = buildPaywallPricingFromOffering(offering, t);
 
   const handlePurchase = async (planKey: PaywallPlanKey) => {
+    if (Platform.OS === 'web') {
+      if (!cloudUserId) {
+        Alert.alert('Create a free account first', 'Sign in before upgrading to Pro.');
+        navigation.navigate('Auth' as never);
+        return;
+      }
+
+      try {
+        await startStripeCheckout(cloudUserId);
+      } catch (error) {
+        Alert.alert('Stripe checkout unavailable', 'Configure Stripe environment variables and API endpoint.');
+      }
+      return;
+    }
+
     if (expoGo) {
       Alert.alert(
         t('paywall.alerts.expoGo.title'),
