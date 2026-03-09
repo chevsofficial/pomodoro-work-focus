@@ -4,7 +4,7 @@ import * as Linking from 'expo-linking';
 import { NavigationContainer, DefaultTheme, Theme } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar, StatusBarStyle } from 'expo-status-bar';
-import { Platform, StyleSheet, View } from 'react-native';
+import { Alert, Platform, StyleSheet, View } from 'react-native';
 import { RootNavigator } from './src/navigation/RootNavigator';
 import { ThemeProvider } from './src/theme/ThemeProvider';
 import { useThemeColors } from './src/theme/useThemeColors';
@@ -99,6 +99,48 @@ const App: React.FC = () => {
   useEffect(() => {
     if (shouldBlockApp) return;
     configureRevenueCat();
+  }, [shouldBlockApp]);
+
+  useEffect(() => {
+    if (shouldBlockApp || Platform.OS !== 'web') return;
+
+    const handleUrl = async (url: string | null) => {
+      if (!url) return;
+      const parsed = Linking.parse(url);
+      const checkoutState = (parsed.queryParams?.checkout as string | undefined) ?? undefined;
+      if (!checkoutState) return;
+
+      if (checkoutState === 'cancel') {
+        Alert.alert('Checkout canceled', 'You can upgrade any time from the Pro screen.');
+        return;
+      }
+
+      if (checkoutState !== 'success') return;
+
+      const { data } = await supabase.auth.getSession();
+      const userId = data?.session?.user?.id;
+      if (!userId) {
+        Alert.alert('Sign in required', 'Please sign in to finish Pro activation.');
+        return;
+      }
+
+      const hasPro = await refreshWebProEntitlement(userId);
+      if (hasPro) {
+        Alert.alert('Pro unlocked', 'Your subscription is active.');
+      } else {
+        Alert.alert(
+          'Processing subscription',
+          'Payment succeeded, but entitlement is still syncing. Refresh in a moment.',
+        );
+      }
+    };
+
+    Linking.getInitialURL().then(handleUrl).catch(() => undefined);
+    const subscription = Linking.addEventListener('url', ({ url }) => {
+      handleUrl(url).catch(() => undefined);
+    });
+
+    return () => subscription.remove();
   }, [shouldBlockApp]);
 
   useEffect(() => {
