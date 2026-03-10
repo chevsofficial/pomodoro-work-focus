@@ -8,6 +8,7 @@ import { spacing } from '../theme/spacing';
 import { useThemeColors } from '../theme/useThemeColors';
 import { t } from '../i18n/translations';
 import { useToast } from '../components/ToastProvider';
+import { trackEvent } from '../services/productEvents';
 
 type AuthMode = 'signIn' | 'signUp';
 
@@ -27,6 +28,7 @@ export const AuthScreen: React.FC<Props> = ({ navigation }) => {
 
   const handleSubmit = async () => {
     setError(undefined);
+    trackEvent('auth_submit_clicked', { mode });
     const trimmedEmail = email.trim();
 
     if (!trimmedEmail || !password) {
@@ -38,6 +40,7 @@ export const AuthScreen: React.FC<Props> = ({ navigation }) => {
     try {
       if (mode === 'signIn') {
         await signInWithEmail(trimmedEmail, password);
+        trackEvent('auth_signin_success');
         if (navigation.canGoBack()) {
           navigation.goBack();
         } else {
@@ -57,6 +60,7 @@ export const AuthScreen: React.FC<Props> = ({ navigation }) => {
       }
 
       showToast(t('auth.verifyEmailBody'), 'success');
+      trackEvent('auth_signup_success');
       navigation.goBack();
     } catch (err: any) {
       const message = err?.message?.toLowerCase?.() ?? '';

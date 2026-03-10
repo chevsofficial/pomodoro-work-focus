@@ -17,6 +17,7 @@ import { useTimerStore } from '../store/useTimerStore';
 import { useThemeColors } from '../theme/useThemeColors';
 import { spacing } from '../theme/spacing';
 import { t } from '../i18n/translations';
+import { trackEvent } from '../services/productEvents';
 
 const formatTime = (seconds: number) => {
   const safeSeconds = Math.max(0, Math.floor(seconds));
@@ -123,6 +124,9 @@ export const PomodoroScreen: React.FC = () => {
   } = useTimerStore((state) => state);
 
   const [isTaskPickerVisible, setTaskPickerVisible] = useState(false);
+  const [onboardingVisible, setOnboardingVisible] = useState(false);
+  const [weeklyRecapVisible, setWeeklyRecapVisible] = useState(false);
+  const intervals = useAppStore((state) => state.intervals);
   const earlySkipInfoVisible = useAppStore((state) => state.earlySkipInfoVisible);
   const hideEarlySkipInfo = useAppStore((state) => state.hideEarlySkipInfo);
   const setShowEarlySkipInfoModal = useAppStore((state) => state.setShowEarlySkipInfoModal);
@@ -176,6 +180,33 @@ export const PomodoroScreen: React.FC = () => {
     }
   }, [route.params?.taskId, setCurrentTask]);
 
+  const getWeekKey = (d: Date) => {
+    const copy = new Date(d);
+    const day = copy.getDay();
+    const diffSinceMonday = (day + 6) % 7;
+    copy.setDate(copy.getDate() - diffSinceMonday);
+    copy.setHours(0, 0, 0, 0);
+    return copy.toISOString().slice(0, 10);
+  };
+
+  useEffect(() => {
+    if (!effectiveSettings.onboardingCompleted) {
+      setOnboardingVisible(true);
+      trackEvent('onboarding_shown');
+    }
+  }, [effectiveSettings.onboardingCompleted]);
+
+  useEffect(() => {
+    const now = new Date();
+    const isMonday = now.getDay() === 1;
+    const weekKey = getWeekKey(now);
+    if (isMonday && effectiveSettings.lastWeeklyRecapWeek !== weekKey && effectiveSettings.onboardingCompleted) {
+      setWeeklyRecapVisible(true);
+      trackEvent('weekly_recap_shown', { weekKey });
+      updateSettings({ lastWeeklyRecapWeek: weekKey });
+    }
+  }, [effectiveSettings.lastWeeklyRecapWeek, effectiveSettings.onboardingCompleted, updateSettings]);
+
   const selectedTask = useMemo(
     () => visibleTasks.find((task) => task.id === currentTaskId),
     [visibleTasks, currentTaskId],
@@ -208,6 +239,7 @@ export const PomodoroScreen: React.FC = () => {
       longBreakMinutes: preset.longBreak,
       intervalsBeforeLongBreak: preset.rounds,
     });
+    trackEvent('preset_applied', { presetId });
     setIntervalType('work');
   };
 
@@ -217,6 +249,29 @@ export const PomodoroScreen: React.FC = () => {
     currentIntervalType === 'work'
       ? completedWorkIntervals + 1
       : completedWorkIntervals;
+
+  const weeklyRecap = useMemo(() => {
+    const now = new Date();
+    const weekStart = new Date(now);
+    const day = weekStart.getDay();
+    const diffSinceMonday = (day + 6) % 7;
+    weekStart.setDate(weekStart.getDate() - diffSinceMonday);
+    weekStart.setHours(0, 0, 0, 0);
+
+    const completedThisWeek = intervals.filter((i) => {
+      if (i.type !== 'work' || i.wasSkipped || !i.endedAt) return false;
+      return new Date(i.startedAt) >= weekStart;
+    });
+
+    const focusedHours =
+      completedThisWeek.reduce((sum, i) => sum + ((i.analyticsDurationSeconds ?? i.durationSeconds) / 3600), 0);
+
+    return {
+      completedCount: completedThisWeek.length,
+      focusedHours,
+    };
+  }, [intervals]);
+
   return (
     <ScreenContainer>
       <View style={styles.header}>
@@ -264,7 +319,11 @@ export const PomodoroScreen: React.FC = () => {
         </View>
         <TouchableOpacity
           style={[styles.flowToggle, effectiveSettings.flowModeEnabled && styles.flowToggleActive]}
-          onPress={() => updateSettings({ flowModeEnabled: !effectiveSettings.flowModeEnabled })}
+          onPress={() => {
+            const next = !effectiveSettings.flowModeEnabled;
+            updateSettings({ flowModeEnabled: next });
+            trackEvent('flow_mode_toggled', { enabled: next });
+          }}
         >
           <Text style={[styles.flowToggleText, effectiveSettings.flowModeEnabled && styles.flowToggleTextActive]}>
             {effectiveSettings.flowModeEnabled ? 'Flow mode: ON (continuous focus)' : 'Flow mode: OFF'}
@@ -306,7 +365,14 @@ export const PomodoroScreen: React.FC = () => {
             styles.primaryButton,
             isRunning ? styles.pauseButton : styles.startButton,
           ]}
-          onPress={isRunning ? pauseTimer : startTimer}
+          onPress={() => {
+            if (isRunning) {
+              pauseTimer();
+              return;
+            }
+            trackEvent('timer_started', { intervalType: currentIntervalType, hasTask: Boolean(currentTaskId) });
+            startTimer();
+          }}
         >
           <Text style={styles.primaryButtonText}>
             {isRunning ? t('pomodoro.pause') : t('pomodoro.start')}
@@ -377,6 +443,44 @@ export const PomodoroScreen: React.FC = () => {
                   </TouchableOpacity>
                 </View>
               </View>
+        </View>
+      </Modal>
+
+      <Modal visible={onboardingVisible} transparent animationType="fade" onRequestClose={() => setOnboardingVisible(false)}>
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>Welcome to TomoFlow</Text>
+            <Text style={styles.modalBody}>Pick a preset and start your first focus session in under a minute.</Text>
+            <View style={styles.presetRow}>
+              {POMODORO_PRESETS.map((preset) => (
+                <TouchableOpacity key={preset.id} style={styles.presetChip} onPress={() => applyPreset(preset.id)}>
+                  <Text style={styles.presetChipLabel}>{preset.label}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            <TouchableOpacity
+              style={[styles.modalButton, styles.modalCloseButton]}
+              onPress={() => {
+                updateSettings({ onboardingCompleted: true });
+                setOnboardingVisible(false);
+                trackEvent('onboarding_completed');
+              }}
+            >
+              <Text style={styles.modalButtonText}>Let’s go</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal visible={weeklyRecapVisible} transparent animationType="fade" onRequestClose={() => setWeeklyRecapVisible(false)}>
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>Weekly recap</Text>
+            <Text style={styles.modalBody}>You completed {weeklyRecap.completedCount} focus sessions and logged {weeklyRecap.focusedHours.toFixed(1)}h of focus this week.</Text>
+            <TouchableOpacity style={[styles.modalButton, styles.modalCloseButton]} onPress={() => setWeeklyRecapVisible(false)}>
+              <Text style={styles.modalButtonText}>Nice</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </Modal>
     </ScreenContainer>

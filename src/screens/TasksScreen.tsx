@@ -27,6 +27,7 @@ import { useThemeColors } from '../theme/useThemeColors';
 import { spacing } from '../theme/spacing';
 import { t } from '../i18n/translations';
 import { formatDateHeader } from '../utils/dateFormatting';
+import { trackEvent } from '../services/productEvents';
 
 type TasksNavigation = NativeStackNavigationProp<RootStackParamList>;
 
@@ -328,6 +329,12 @@ export const TasksScreen: React.FC = () => {
 
   const isAuthed = Boolean(cloudUserId);
 
+  useEffect(() => {
+    if (!isAuthed) {
+      trackEvent('overlay_viewed', { screen: 'tasks' });
+    }
+  }, [isAuthed]);
+
   return (
     <ScreenContainer>
       <Text style={styles.headerTitle}>{t('tasks.header')}</Text>
@@ -428,7 +435,7 @@ export const TasksScreen: React.FC = () => {
       {!isAuthed && (
         <View style={styles.authOverlay}>
           <Text style={styles.overlayTitle}>Create a free account to unlock Tasks</Text>
-          <TouchableOpacity style={styles.overlayButton} onPress={() => navigation.navigate('Auth')}>
+          <TouchableOpacity style={styles.overlayButton} onPress={() => { trackEvent('overlay_cta_clicked', { screen: 'tasks' }); navigation.navigate('Auth'); }}>
             <Text style={styles.proUpsellButtonText}>Create free account</Text>
           </TouchableOpacity>
         </View>

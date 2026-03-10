@@ -29,6 +29,7 @@ import {
 } from '../services/paywallPricing';
 import { startStripeCheckout } from '../services/stripeWeb';
 import { refreshWebProEntitlement } from '../services/webEntitlements';
+import { trackEvent } from '../services/productEvents';
 
 const PAYWALL_BENEFITS: TranslationKey[] = [
   'paywall.benefits.premiumThemes',
@@ -98,9 +99,14 @@ export const PaywallScreen: React.FC = () => {
     loadOfferings();
   }, [expoGo, cloudUserId]);
 
+  useEffect(() => {
+    trackEvent('paywall_viewed');
+  }, []);
+
   const pricing = buildPaywallPricingFromOffering(offering, t);
 
   const handlePurchase = async (planKey: PaywallPlanKey) => {
+    trackEvent('paywall_purchase_clicked', { planKey, platform: Platform.OS });
     if (Platform.OS === 'web') {
       if (!cloudUserId) {
         Alert.alert('Create a free account first', 'Sign in before upgrading to Pro.');

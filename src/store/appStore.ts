@@ -266,6 +266,8 @@ const defaultSettings: PomodoroSettings = {
   intervalsBeforeLongBreak: 4,
   autoStartNextInterval: false,
   flowModeEnabled: false,
+  onboardingCompleted: false,
+  lastWeeklyRecapWeek: undefined,
   soundEnabled: true,
   vibrationEnabled: true,
   notificationsEnabled: true,

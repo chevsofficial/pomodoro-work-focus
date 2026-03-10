@@ -54,6 +54,8 @@ export interface PomodoroSettings {
   intervalsBeforeLongBreak: number;
   autoStartNextInterval: boolean;
   flowModeEnabled: boolean;
+  onboardingCompleted: boolean;
+  lastWeeklyRecapWeek?: string;
   soundEnabled: boolean;
   vibrationEnabled: boolean;
   notificationsEnabled: boolean;

@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Image,
   ScrollView,
@@ -29,6 +29,7 @@ import { formatAnalyticsDate } from '../utils/dateFormatting';
 import { spacing } from '../theme/spacing';
 import { useThemeColors } from '../theme/useThemeColors';
 import { t } from '../i18n/translations';
+import { trackEvent } from '../services/productEvents';
 
 type AnalyticsRangeKey =
   | 'today'
@@ -408,6 +409,12 @@ export const AnalyticsScreen: React.FC = () => {
   const maxHours = Math.max(totalRangeHours, 0.1);
   const isAuthed = Boolean(cloudUserId);
 
+  useEffect(() => {
+    if (!isAuthed) {
+      trackEvent('overlay_viewed', { screen: 'analytics' });
+    }
+  }, [isAuthed]);
+
   return (
     <ScreenContainer>
       <ScrollView
@@ -748,7 +755,7 @@ export const AnalyticsScreen: React.FC = () => {
       {!isAuthed && (
         <View style={styles.authOverlay}>
           <Text style={styles.overlayTitle}>Create a free account to unlock Analytics</Text>
-          <TouchableOpacity style={styles.overlayButton} onPress={() => navigation.navigate('Auth')}>
+          <TouchableOpacity style={styles.overlayButton} onPress={() => { trackEvent('overlay_cta_clicked', { screen: 'analytics' }); navigation.navigate('Auth'); }}>
             <Text style={styles.rangePillLabelActive}>Create free account</Text>
           </TouchableOpacity>
         </View>
