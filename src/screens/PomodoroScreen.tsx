@@ -1,4 +1,4 @@
-import { RouteProp, useRoute } from '@react-navigation/native';
+import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   AppState,
@@ -10,7 +10,7 @@ import {
   View,
 } from 'react-native';
 import { ScreenContainer } from '../components/ScreenContainer';
-import { RootTabParamList } from '../navigation/RootNavigator';
+import { RootStackParamList, RootTabParamList } from '../navigation/RootNavigator';
 import { IntervalType, Task } from '../models';
 import useAppStore, { useEffectiveSettings, useTasks } from '../store/appStore';
 import { useTimerStore } from '../store/useTimerStore';
@@ -18,6 +18,9 @@ import { useThemeColors } from '../theme/useThemeColors';
 import { spacing } from '../theme/spacing';
 import { t } from '../i18n/translations';
 import { trackEvent } from '../services/productEvents';
+import { useSubscriptionGate } from '../utils/subscriptionGate';
+import { navigateToProUpsell } from '../navigation/proNavigation';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 const formatTime = (seconds: number) => {
   const safeSeconds = Math.max(0, Math.floor(seconds));
@@ -97,6 +100,7 @@ const TaskPickerModal: React.FC<{
 
 export const PomodoroScreen: React.FC = () => {
   const route = useRoute<RouteProp<RootTabParamList, 'Pomodoro'>>();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const colors = useThemeColors();
   const tasks = useTasks();
   const visibleTasks = useMemo(
@@ -132,6 +136,7 @@ export const PomodoroScreen: React.FC = () => {
   const setShowEarlySkipInfoModal = useAppStore((state) => state.setShowEarlySkipInfoModal);
   const updateSettings = useAppStore((state) => state.updateSettings);
   const effectiveSettings = useEffectiveSettings();
+  const { isPro } = useSubscriptionGate();
   useAppStore((state) => state.language);
   const intervalLabels: Record<string, string> = {
     work: t('pomodoro.workLabel'),
@@ -233,6 +238,13 @@ export const PomodoroScreen: React.FC = () => {
     const preset = POMODORO_PRESETS.find((p) => p.id === presetId);
     if (!preset) return;
 
+    const isFreePreset = preset.id === 'classic';
+    if (!isFreePreset && !isPro) {
+      trackEvent('preset_locked_clicked', { presetId });
+      navigateToProUpsell(navigation);
+      return;
+    }
+
     updateSettings({
       workDurationMinutes: preset.work,
       shortBreakMinutes: preset.shortBreak,
@@ -274,133 +286,143 @@ export const PomodoroScreen: React.FC = () => {
 
   return (
     <ScreenContainer>
-      <View style={styles.header}>
-        <Text style={styles.title}>{t('pomodoro.title')}</Text>
-        <Text style={styles.subtitle}>{t('pomodoro.subtitle')}</Text>
-      </View>
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <View style={styles.header}>
+          <Text style={styles.title}>{t('pomodoro.title')}</Text>
+          <Text style={styles.subtitle}>{t('pomodoro.subtitle')}</Text>
+        </View>
 
-      <View style={styles.segmentedControl}>
-        {intervalOptions.map((option) => (
-          <React.Fragment key={option.value}>
-            <TouchableOpacity
-              style={[
-                styles.segment,
-                currentIntervalType === option.value && styles.segmentActive,
-              ]}
-              onPress={() => setIntervalType(option.value)}
-            >
-              <Text
+        <View style={styles.segmentedControl}>
+          {intervalOptions.map((option) => (
+            <React.Fragment key={option.value}>
+              <TouchableOpacity
                 style={[
-                  styles.segmentLabel,
-                  currentIntervalType === option.value && styles.segmentLabelActive,
+                  styles.segment,
+                  currentIntervalType === option.value && styles.segmentActive,
                 ]}
+                onPress={() => setIntervalType(option.value)}
               >
-                {option.label}
-              </Text>
-            </TouchableOpacity>
-          </React.Fragment>
-        ))}
-      </View>
-
-      <View style={styles.presetsCard}>
-        <Text style={styles.taskSelectorLabel}>Session presets</Text>
-        <View style={styles.presetRow}>
-          {POMODORO_PRESETS.map((preset) => (
-            <TouchableOpacity
-              key={preset.id}
-              style={[styles.presetChip, currentPresetId === preset.id && styles.presetChipActive]}
-              onPress={() => applyPreset(preset.id)}
-            >
-              <Text style={[styles.presetChipLabel, currentPresetId === preset.id && styles.presetChipLabelActive]}>
-                {preset.label}
-              </Text>
-            </TouchableOpacity>
+                <Text
+                  style={[
+                    styles.segmentLabel,
+                    currentIntervalType === option.value && styles.segmentLabelActive,
+                  ]}
+                >
+                  {option.label}
+                </Text>
+              </TouchableOpacity>
+            </React.Fragment>
           ))}
         </View>
-        <TouchableOpacity
-          style={[styles.flowToggle, effectiveSettings.flowModeEnabled && styles.flowToggleActive]}
-          onPress={() => {
-            const next = !effectiveSettings.flowModeEnabled;
-            updateSettings({ flowModeEnabled: next });
-            trackEvent('flow_mode_toggled', { enabled: next });
-          }}
-        >
-          <Text style={[styles.flowToggleText, effectiveSettings.flowModeEnabled && styles.flowToggleTextActive]}>
-            {effectiveSettings.flowModeEnabled ? 'Flow mode: ON (continuous focus)' : 'Flow mode: OFF'}
-          </Text>
-        </TouchableOpacity>
-      </View>
 
-      <View style={styles.timerCard}>
-        <Text style={styles.intervalName}>{intervalLabel}</Text>
-        <Text style={styles.timerValue}>{formattedTime}</Text>
-        <Text style={styles.intervalCounter}>
-          {currentIntervalType === 'work'
-            ? t('pomodoro.focusCount').replace('{count}', String(focusCount))
-            : currentIntervalType === 'short_break'
-            ? t('pomodoro.shortBreakLabel')
-            : t('pomodoro.longBreakLabel')}
-        </Text>
-      </View>
-
-      <View style={styles.taskSelector}>
-        <Text style={styles.taskSelectorLabel}>{t('pomodoro.linkedTask')}</Text>
-        <TouchableOpacity
-          style={styles.taskSelectorButton}
-          onPress={() => setTaskPickerVisible(true)}
-        >
-          <View style={styles.taskSelectorContent}>
-            <Text style={styles.taskSelectorValue} numberOfLines={1}>
-              {selectedTask ? selectedTask.title : t('pomodoro.noTaskSelected')}
-            </Text>
-            <Text style={styles.taskSelectorHint}>{t('pomodoro.chooseTaskHint')}</Text>
+        <View style={styles.presetsCard}>
+          <Text style={styles.taskSelectorLabel}>Session presets</Text>
+          <View style={styles.presetRow}>
+            {POMODORO_PRESETS.map((preset) => {
+              const isFreePreset = preset.id === 'classic';
+              const isLocked = !isFreePreset && !isPro;
+              return (
+                <TouchableOpacity
+                  key={preset.id}
+                  style={[styles.presetChip, currentPresetId === preset.id && styles.presetChipActive]}
+                  onPress={() => applyPreset(preset.id)}
+                >
+                  <Text style={[styles.presetChipLabel, currentPresetId === preset.id && styles.presetChipLabelActive]}>
+                    {preset.label}{isLocked ? ' 🔒' : ''}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
           </View>
-          <Text style={styles.taskSelectorAction}>{t('pomodoro.changeTask')}</Text>
-        </TouchableOpacity>
-      </View>
+          <TouchableOpacity
+            style={[styles.flowToggle, effectiveSettings.flowModeEnabled && styles.flowToggleActive]}
+            onPress={() => {
+              if (!isPro) {
+                trackEvent('flow_mode_locked_clicked');
+                navigateToProUpsell(navigation);
+                return;
+              }
+              const next = !effectiveSettings.flowModeEnabled;
+              updateSettings({ flowModeEnabled: next });
+              trackEvent('flow_mode_toggled', { enabled: next });
+            }}
+          >
+            <Text style={[styles.flowToggleText, effectiveSettings.flowModeEnabled && styles.flowToggleTextActive]}>
+              {effectiveSettings.flowModeEnabled ? 'Flow mode: ON (continuous focus)' : 'Flow mode: OFF'}{!isPro ? ' 🔒' : ''}
+            </Text>
+          </TouchableOpacity>
+        </View>
 
-      <View style={styles.controlsRow}>
-        <TouchableOpacity
-          style={[
-            styles.primaryButton,
-            isRunning ? styles.pauseButton : styles.startButton,
-          ]}
-          onPress={() => {
-            if (isRunning) {
-              pauseTimer();
-              return;
-            }
-            trackEvent('timer_started', { intervalType: currentIntervalType, hasTask: Boolean(currentTaskId) });
-            startTimer();
-          }}
-        >
-          <Text style={styles.primaryButtonText}>
-            {isRunning ? t('pomodoro.pause') : t('pomodoro.start')}
+        <View style={styles.timerCard}>
+          <Text style={styles.intervalName}>{intervalLabel}</Text>
+          <Text style={styles.timerValue}>{formattedTime}</Text>
+          <Text style={styles.intervalCounter}>
+            {currentIntervalType === 'work'
+              ? t('pomodoro.focusCount').replace('{count}', String(focusCount))
+              : currentIntervalType === 'short_break'
+              ? t('pomodoro.shortBreakLabel')
+              : t('pomodoro.longBreakLabel')}
           </Text>
-        </TouchableOpacity>
-      </View>
+        </View>
 
-      <View style={styles.secondaryControls}>
-        {activeIntervalId && (
-          <>
-            <TouchableOpacity
-              style={[styles.secondaryButton, styles.endNowButton]}
-              onPress={endIntervalNow}
-            >
-              <Text style={[styles.secondaryButtonText, styles.endNowButtonText]}>
-                {t('pomodoro.endAndSave')}
+        <View style={styles.taskSelector}>
+          <Text style={styles.taskSelectorLabel}>{t('pomodoro.linkedTask')}</Text>
+          <TouchableOpacity
+            style={styles.taskSelectorButton}
+            onPress={() => setTaskPickerVisible(true)}
+          >
+            <View style={styles.taskSelectorContent}>
+              <Text style={styles.taskSelectorValue} numberOfLines={1}>
+                {selectedTask ? selectedTask.title : t('pomodoro.noTaskSelected')}
               </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.secondaryButton, styles.skipButton]}
-              onPress={skipCurrentInterval}
-            >
-              <Text style={styles.secondaryButtonText}>{t('pomodoro.skip')}</Text>
-            </TouchableOpacity>
-          </>
-        )}
-      </View>
+              <Text style={styles.taskSelectorHint}>{t('pomodoro.chooseTaskHint')}</Text>
+            </View>
+            <Text style={styles.taskSelectorAction}>{t('pomodoro.changeTask')}</Text>
+          </TouchableOpacity>
+        </View>
 
+        <View style={styles.controlsRow}>
+          <TouchableOpacity
+            style={[
+              styles.primaryButton,
+              isRunning ? styles.pauseButton : styles.startButton,
+            ]}
+            onPress={() => {
+              if (isRunning) {
+                pauseTimer();
+                return;
+              }
+              trackEvent('timer_started', { intervalType: currentIntervalType, hasTask: Boolean(currentTaskId) });
+              startTimer();
+            }}
+          >
+            <Text style={styles.primaryButtonText}>
+              {isRunning ? t('pomodoro.pause') : t('pomodoro.start')}
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.secondaryControls}>
+          {activeIntervalId && (
+            <>
+              <TouchableOpacity
+                style={[styles.secondaryButton, styles.endNowButton]}
+                onPress={endIntervalNow}
+              >
+                <Text style={[styles.secondaryButtonText, styles.endNowButtonText]}>
+                  {t('pomodoro.endAndSave')}
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.secondaryButton, styles.skipButton]}
+                onPress={skipCurrentInterval}
+              >
+                <Text style={styles.secondaryButtonText}>{t('pomodoro.skip')}</Text>
+              </TouchableOpacity>
+            </>
+          )}
+        </View>
+      </ScrollView>
 
       <TaskPickerModal
         visible={isTaskPickerVisible}
@@ -489,6 +511,9 @@ export const PomodoroScreen: React.FC = () => {
 
 function createStyles(colors: ReturnType<typeof useThemeColors>) {
   return StyleSheet.create({
+    scrollContent: {
+      paddingBottom: spacing.xl,
+    },
     header: {
       marginBottom: spacing.lg,
     },

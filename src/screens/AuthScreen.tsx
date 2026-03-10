@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Image, KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { ScreenContainer } from '../components/ScreenContainer';
@@ -14,17 +14,23 @@ type AuthMode = 'signIn' | 'signUp';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Auth'>;
 
-export const AuthScreen: React.FC<Props> = ({ navigation }) => {
+export const AuthScreen: React.FC<Props> = ({ navigation, route }) => {
   const colors = useThemeColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const { showToast } = useToast();
-  const [mode, setMode] = useState<AuthMode>('signIn');
+  const initialMode: AuthMode = route.params?.mode === 'signUp' ? 'signUp' : 'signIn';
+  const [mode, setMode] = useState<AuthMode>(initialMode);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | undefined>();
   const [passwordVisible, setPasswordVisible] = useState(false);
-  
+
+  useEffect(() => {
+    if (route.params?.mode === 'signUp') {
+      setMode('signUp');
+    }
+  }, [route.params?.mode]);
 
   const handleSubmit = async () => {
     setError(undefined);
@@ -105,7 +111,12 @@ export const AuthScreen: React.FC<Props> = ({ navigation }) => {
             style={styles.backButton}
             onPress={() => {
               if (navigation.canGoBack()) navigation.goBack();
-              else navigation.navigate('RootTabs');
+              else {
+                navigation.reset({
+                  index: 0,
+                  routes: [{ name: 'RootTabs' }],
+                });
+              }
             }}
           >
             <Text style={styles.backButtonText}>← Back</Text>

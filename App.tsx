@@ -180,7 +180,8 @@ const App: React.FC = () => {
 
   useEffect(() => {
     if (shouldBlockApp) return;
-    const { data: subscription } = supabase.auth.onAuthStateChange(async (_event, session) => {
+
+    const handleSession = async (session: Awaited<ReturnType<typeof supabase.auth.getSession>>['data']['session']) => {
       const appStore = useAppStore.getState();
 
       if (appStore.isPasswordRecovery) {
@@ -213,6 +214,15 @@ const App: React.FC = () => {
       if (cloudSnapshot) {
         appStore.hydrateFromCloudSnapshot(cloudSnapshot);
       }
+    };
+
+    supabase.auth
+      .getSession()
+      .then(({ data }) => handleSession(data.session))
+      .catch(() => undefined);
+
+    const { data: subscription } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      await handleSession(session);
     });
 
     return () => {

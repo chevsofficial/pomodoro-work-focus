@@ -31,7 +31,7 @@ export type RootStackParamList = {
   RootTabs: NavigatorScreenParams<RootTabParamList>;
   TaskDetail: { taskId: string };
   Paywall: { source?: string } | undefined;
-  Auth: undefined;
+  Auth: { mode?: 'signIn' | 'signUp' } | undefined;
   AuthCallback: undefined;
   ForgotPassword: undefined;
   ResetPassword: { errorCode?: string } | undefined;
