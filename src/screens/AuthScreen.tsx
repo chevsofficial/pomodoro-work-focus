@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import * as Linking from 'expo-linking';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Image, KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { ScreenContainer } from '../components/ScreenContainer';
@@ -14,11 +15,35 @@ type AuthMode = 'signIn' | 'signUp';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Auth'>;
 
+const resolveAuthMode = (url?: string | null, routeMode?: string): AuthMode => {
+  if (routeMode === 'signUp') return 'signUp';
+
+  if (url) {
+    const mode = String(Linking.parse(url).queryParams?.mode ?? '').toLowerCase();
+    if (mode === 'signup' || mode === 'sign_up' || mode === 'sign-up' || mode === 'createaccount') {
+      return 'signUp';
+    }
+    if (mode === 'signin' || mode === 'sign_in' || mode === 'sign-in' || mode === 'login') {
+      return 'signIn';
+    }
+  }
+
+  if (Platform.OS === 'web' && typeof window !== 'undefined') {
+    const mode = new URLSearchParams(window.location.search).get('mode')?.toLowerCase() ?? '';
+    if (mode === 'signup' || mode === 'sign_up' || mode === 'sign-up' || mode === 'createaccount') {
+      return 'signUp';
+    }
+  }
+
+  return 'signIn';
+};
+
 export const AuthScreen: React.FC<Props> = ({ navigation, route }) => {
   const colors = useThemeColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const { showToast } = useToast();
-  const initialMode: AuthMode = route.params?.mode === 'signUp' ? 'signUp' : 'signIn';
+  const incomingUrl = Linking.useURL();
+  const initialMode: AuthMode = resolveAuthMode(incomingUrl, route.params?.mode);
   const [mode, setMode] = useState<AuthMode>(initialMode);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -27,10 +52,14 @@ export const AuthScreen: React.FC<Props> = ({ navigation, route }) => {
   const [passwordVisible, setPasswordVisible] = useState(false);
 
   useEffect(() => {
-    if (route.params?.mode === 'signUp') {
-      setMode('signUp');
-    }
-  }, [route.params?.mode]);
+    setMode(resolveAuthMode(incomingUrl, route.params?.mode));
+  }, [incomingUrl, route.params?.mode]);
+
+  useEffect(() => {
+    navigation.setOptions({
+      title: mode === 'signUp' ? 'Sign Up' : 'Login',
+    });
+  }, [mode, navigation]);
 
   const handleSubmit = async () => {
     setError(undefined);

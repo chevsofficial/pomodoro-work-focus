@@ -436,7 +436,7 @@ export const TasksScreen: React.FC = () => {
         <View style={styles.authOverlay}>
           <Text style={styles.overlayTitle}>Create a free account to unlock Tasks</Text>
           <TouchableOpacity style={styles.overlayButton} onPress={() => { trackEvent('overlay_cta_clicked', { screen: 'tasks' }); navigation.navigate('Auth'); }}>
-            <Text style={styles.proUpsellButtonText}>Create free account</Text>
+            <Text style={styles.overlayButtonText}>Create free account</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -750,6 +750,11 @@ function createStyles(colors: ReturnType<typeof useThemeColors>) {
       backgroundColor: colors.primary,
       paddingHorizontal: spacing.md,
       paddingVertical: spacing.sm,
+    },
+    overlayButtonText: {
+      color: colors.background,
+      fontWeight: '600',
+      fontSize: 13,
     },
   });
 }

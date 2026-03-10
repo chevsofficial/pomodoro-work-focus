@@ -210,6 +210,10 @@ export function RootNavigator() {
       <Stack.Screen
         name="ActivityTypesManager"
         component={ActivityTypesManagerScreen}
+        options={{
+          headerTintColor: colors.primary,
+          headerBackTitleVisible: false,
+        }}
       />
     </AnyStackNavigator>
   );

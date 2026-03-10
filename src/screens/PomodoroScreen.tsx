@@ -20,6 +20,7 @@ import { t } from '../i18n/translations';
 import { trackEvent } from '../services/productEvents';
 import { useSubscriptionGate } from '../utils/subscriptionGate';
 import { navigateToProUpsell } from '../navigation/proNavigation';
+import { ProBadge } from '../components/ProBadge';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 const formatTime = (seconds: number) => {
@@ -332,23 +333,14 @@ export const PomodoroScreen: React.FC = () => {
                       {preset.label}
                     </Text>
                     {isLocked && (
-                      <View
-                        style={[
-                          styles.proBadge,
-                          {
-                            borderColor: currentPresetId === preset.id ? `${colors.background}aa` : colors.border,
-                            backgroundColor: currentPresetId === preset.id ? `${colors.background}22` : colors.background,
-                          },
-                        ]}
-                      >
-                        <Text
-                          style={[
-                            styles.proBadgeText,
-                            { color: currentPresetId === preset.id ? colors.background : colors.textSecondary },
-                          ]}
-                        >
-                          PRO
-                        </Text>
+                      <View style={styles.proBadge}>
+                        <ProBadge
+                          style={
+                            currentPresetId === preset.id
+                              ? styles.proBadgeTextActive
+                              : styles.proBadgeText
+                          }
+                        />
                       </View>
                     )}
                   </View>
@@ -374,8 +366,8 @@ export const PomodoroScreen: React.FC = () => {
                 {effectiveSettings.flowModeEnabled ? 'Flow mode: ON (continuous focus)' : 'Flow mode: OFF'}
               </Text>
               {!isPro && (
-                <View style={[styles.proBadge, { borderColor: colors.border, backgroundColor: colors.background }]}> 
-                  <Text style={[styles.proBadgeText, { color: colors.textSecondary }]}>PRO</Text>
+                <View style={styles.proBadge}>
+                  <ProBadge />
                 </View>
               )}
             </View>
@@ -640,16 +632,13 @@ function createStyles(colors: ReturnType<typeof useThemeColors>) {
       fontSize: 12,
     },
     proBadge: {
-      borderWidth: 1,
-      borderRadius: 6,
-      paddingHorizontal: 5,
-      paddingVertical: 1,
       marginTop: 1,
     },
     proBadgeText: {
-      fontSize: 10,
-      fontWeight: '700',
-      letterSpacing: 0.4,
+      color: '#FF5A5F',
+    },
+    proBadgeTextActive: {
+      color: colors.background,
     },
     flowToggleTextActive: {
       color: colors.textPrimary,

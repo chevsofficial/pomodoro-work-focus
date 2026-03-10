@@ -10,6 +10,7 @@ import {
   View,
   ViewStyle,
 } from 'react-native';
+import { ProBadge } from './ProBadge';
 import { useThemeColors } from '../theme/useThemeColors';
 
 type LockedMinuteInputProps = {
@@ -57,8 +58,8 @@ export const LockedMinuteInput: React.FC<LockedMinuteInputProps> = ({
       <Text style={[styles.lockedText, { color: colors.textPrimary }, textStyle]}>
         {String(value)}
       </Text>
-      <View style={[styles.proBadge, { borderColor: colors.border, backgroundColor: colors.background }]}>
-        <Text style={[styles.proBadgeText, { color: colors.textSecondary }]}>PRO</Text>
+      <View style={styles.proBadge}>
+        <ProBadge />
       </View>
     </View>
   );
@@ -90,14 +91,5 @@ const styles = StyleSheet.create({
     right: 10,
     top: '50%',
     transform: [{ translateY: -9 }],
-    borderWidth: 1,
-    borderRadius: 6,
-    paddingHorizontal: 5,
-    paddingVertical: 1,
-  },
-  proBadgeText: {
-    fontSize: 10,
-    fontWeight: '700',
-    letterSpacing: 0.4,
   },
 });

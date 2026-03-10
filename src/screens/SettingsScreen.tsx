@@ -31,6 +31,7 @@ import { signOut } from '../services/authService';
 import { isSupabaseConfigured } from '../services/supabaseClient';
 import { spacing } from '../theme/spacing';
 import { THEMES, ThemeId, useThemeColors } from '../theme/useThemeColors';
+import { ProBadge } from '../components/ProBadge';
 import {
   ACTIVITY_COLORS,
   DEFAULT_ACTIVITY_COLOR,
@@ -1009,7 +1010,7 @@ export const SettingsScreen: React.FC = () => {
                     {t(`themes.${theme.id}` as any)}
                   </Text>
 
-                  {isLocked && <Text style={styles.themeLockLabel}>{t('settings.theme.proLabel')}</Text>}
+                  {isLocked && <ProBadge style={styles.themeLockLabel} />}
                 </View>
               </TouchableOpacity>
             );

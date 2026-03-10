@@ -756,7 +756,7 @@ export const AnalyticsScreen: React.FC = () => {
         <View style={styles.authOverlay}>
           <Text style={styles.overlayTitle}>Create a free account to unlock Analytics</Text>
           <TouchableOpacity style={styles.overlayButton} onPress={() => { trackEvent('overlay_cta_clicked', { screen: 'analytics' }); navigation.navigate('Auth'); }}>
-            <Text style={styles.rangePillLabelActive}>Create free account</Text>
+            <Text style={styles.overlayButtonText}>Create free account</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -1083,11 +1083,16 @@ function createStyles(colors: ReturnType<typeof useThemeColors>) {
       marginBottom: spacing.sm,
     },
     overlayButton: {
-      borderRadius: 999,
+      alignSelf: 'center',
+      borderRadius: 16,
       backgroundColor: colors.primary,
       paddingHorizontal: spacing.md,
       paddingVertical: spacing.sm,
-      alignSelf: 'center',
+    },
+    overlayButtonText: {
+      color: colors.background,
+      fontWeight: '600',
+      fontSize: 13,
     },
   });
 }
