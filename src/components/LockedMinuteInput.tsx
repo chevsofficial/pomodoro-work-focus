@@ -10,7 +10,6 @@ import {
   View,
   ViewStyle,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import { useThemeColors } from '../theme/useThemeColors';
 
 type LockedMinuteInputProps = {
@@ -58,12 +57,9 @@ export const LockedMinuteInput: React.FC<LockedMinuteInputProps> = ({
       <Text style={[styles.lockedText, { color: colors.textPrimary }, textStyle]}>
         {String(value)}
       </Text>
-      <Ionicons
-        name="lock-closed"
-        size={14}
-        color={colors.textSecondary}
-        style={styles.lockIcon}
-      />
+      <View style={[styles.proBadge, { borderColor: colors.border, backgroundColor: colors.background }]}>
+        <Text style={[styles.proBadgeText, { color: colors.textSecondary }]}>PRO</Text>
+      </View>
     </View>
   );
 
@@ -83,17 +79,25 @@ const styles = StyleSheet.create({
     position: 'relative',
     height: 44,
     justifyContent: 'center',
-    paddingRight: 32,
+    paddingRight: 44,
   },
   lockedText: {
     fontSize: 14,
     fontWeight: '500',
   },
-  lockIcon: {
+  proBadge: {
     position: 'absolute',
-    right: 12,
+    right: 10,
     top: '50%',
-    transform: [{ translateY: -7 }],
-    opacity: 0.45,
+    transform: [{ translateY: -9 }],
+    borderWidth: 1,
+    borderRadius: 6,
+    paddingHorizontal: 5,
+    paddingVertical: 1,
+  },
+  proBadgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 0.4,
   },
 });

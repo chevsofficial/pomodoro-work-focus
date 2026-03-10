@@ -182,9 +182,9 @@ export function RootNavigator() {
       <Stack.Screen
         name="Auth"
         component={AuthScreen}
-        options={{
-          title: 'Cloud Sync',
-        }}
+        options={({ route }) => ({
+          title: route.params?.mode === 'signUp' ? 'Sign up' : 'Login',
+        })}
       />
       <Stack.Screen
         name="AuthCallback"

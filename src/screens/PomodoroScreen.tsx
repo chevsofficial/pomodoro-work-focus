@@ -1,5 +1,4 @@
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
-import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   AppState,
@@ -333,12 +332,24 @@ export const PomodoroScreen: React.FC = () => {
                       {preset.label}
                     </Text>
                     {isLocked && (
-                      <Ionicons
-                        name="lock-closed"
-                        size={12}
-                        color={currentPresetId === preset.id ? colors.background : colors.textSecondary}
-                        style={styles.lockIcon}
-                      />
+                      <View
+                        style={[
+                          styles.proBadge,
+                          {
+                            borderColor: currentPresetId === preset.id ? `${colors.background}aa` : colors.border,
+                            backgroundColor: currentPresetId === preset.id ? `${colors.background}22` : colors.background,
+                          },
+                        ]}
+                      >
+                        <Text
+                          style={[
+                            styles.proBadgeText,
+                            { color: currentPresetId === preset.id ? colors.background : colors.textSecondary },
+                          ]}
+                        >
+                          PRO
+                        </Text>
+                      </View>
                     )}
                   </View>
                 </TouchableOpacity>
@@ -362,7 +373,11 @@ export const PomodoroScreen: React.FC = () => {
               <Text style={[styles.flowToggleText, effectiveSettings.flowModeEnabled && styles.flowToggleTextActive]}>
                 {effectiveSettings.flowModeEnabled ? 'Flow mode: ON (continuous focus)' : 'Flow mode: OFF'}
               </Text>
-              {!isPro && <Ionicons name="lock-closed" size={12} color={colors.textSecondary} style={styles.lockIcon} />}
+              {!isPro && (
+                <View style={[styles.proBadge, { borderColor: colors.border, backgroundColor: colors.background }]}> 
+                  <Text style={[styles.proBadgeText, { color: colors.textSecondary }]}>PRO</Text>
+                </View>
+              )}
             </View>
           </TouchableOpacity>
         </View>
@@ -624,8 +639,17 @@ function createStyles(colors: ReturnType<typeof useThemeColors>) {
       fontWeight: '600',
       fontSize: 12,
     },
-    lockIcon: {
+    proBadge: {
+      borderWidth: 1,
+      borderRadius: 6,
+      paddingHorizontal: 5,
+      paddingVertical: 1,
       marginTop: 1,
+    },
+    proBadgeText: {
+      fontSize: 10,
+      fontWeight: '700',
+      letterSpacing: 0.4,
     },
     flowToggleTextActive: {
       color: colors.textPrimary,

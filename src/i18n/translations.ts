@@ -477,7 +477,7 @@ export const translations: Record<Language, Record<string, any>> = {
     auth: {
       titleSignIn: 'Sign in',
       titleSignUp: 'Create an account',
-      subtitle: 'Use your email and password to access Cloud Sync.',
+      subtitle: 'Use your email and password to continue.',
       createAccount: 'Create account',
       toggleToSignUp: "Don't have an account? Sign up",
       toggleToSignIn: 'Already have an account? Sign in',
@@ -1085,7 +1085,7 @@ export const translations: Record<Language, Record<string, any>> = {
     auth: {
       titleSignIn: 'Iniciar sesión',
       titleSignUp: 'Crear una cuenta',
-      subtitle: 'Usa tu correo y contraseña para acceder a la sincronización en la nube.',
+      subtitle: 'Usa tu correo y contraseña para continuar.',
       createAccount: 'Crear cuenta',
       toggleToSignUp: '¿No tienes cuenta? Regístrate',
       toggleToSignIn: '¿Ya tienes cuenta? Inicia sesión',
