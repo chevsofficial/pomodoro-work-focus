@@ -427,9 +427,8 @@ export const TasksScreen: React.FC = () => {
 
       {!isAuthed && (
         <View style={styles.authOverlay}>
-          <Text style={styles.emptyStateTitle}>Create a free account to unlock Tasks</Text>
-          <Text style={styles.emptyStateSubtitle}>You can browse this page, but actions are locked.</Text>
-          <TouchableOpacity style={styles.proUpsellButton} onPress={() => navigation.navigate('Auth')}>
+          <Text style={styles.overlayTitle}>Create a free account to unlock Tasks</Text>
+          <TouchableOpacity style={styles.overlayButton} onPress={() => navigation.navigate('Auth')}>
             <Text style={styles.proUpsellButtonText}>Create free account</Text>
           </TouchableOpacity>
         </View>
@@ -730,6 +729,20 @@ function createStyles(colors: ReturnType<typeof useThemeColors>) {
       justifyContent: 'center',
       padding: spacing.lg,
       gap: spacing.sm,
+    },
+    overlayTitle: {
+      fontSize: 18,
+      fontWeight: '700',
+      color: colors.textPrimary,
+      textAlign: 'center',
+      marginBottom: spacing.sm,
+    },
+    overlayButton: {
+      alignSelf: 'center',
+      borderRadius: 16,
+      backgroundColor: colors.primary,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
     },
   });
 }

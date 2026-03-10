@@ -247,6 +247,16 @@ export const PaywallScreen: React.FC = () => {
   return (
     <ScreenContainer withTopPadding={false}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => {
+            if ((navigation as any).canGoBack?.()) (navigation as any).goBack();
+            else (navigation as any).navigate('RootTabs');
+          }}
+        >
+          <Text style={styles.backButtonText}>← Back</Text>
+        </TouchableOpacity>
+
         <View style={styles.header}>
           <Text style={styles.heroTitle}>{t('paywall.heroTitle')}</Text>
           <Text style={styles.heroBody}>{t('paywall.heroBody')}</Text>
@@ -354,6 +364,19 @@ function createStyles(colors: ReturnType<typeof useThemeColors>) {
       paddingHorizontal: spacing.lg,
       paddingVertical: spacing.xl,
       gap: spacing.lg,
+    },
+    backButton: {
+      alignSelf: 'flex-start',
+      borderRadius: 10,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.background,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: spacing.xs,
+    },
+    backButtonText: {
+      color: colors.textPrimary,
+      fontWeight: '700',
     },
     header: {
       alignItems: 'center',

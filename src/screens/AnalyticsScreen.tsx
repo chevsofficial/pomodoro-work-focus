@@ -705,9 +705,8 @@ export const AnalyticsScreen: React.FC = () => {
 
       {!isAuthed && (
         <View style={styles.authOverlay}>
-          <Text style={styles.sectionTitle}>Create a free account to unlock Analytics</Text>
-          <Text style={styles.subtitle}>You can preview this page, but analytics actions are locked.</Text>
-          <TouchableOpacity style={styles.rangePillActive} onPress={() => navigation.navigate('Auth')}>
+          <Text style={styles.overlayTitle}>Create a free account to unlock Analytics</Text>
+          <TouchableOpacity style={styles.overlayButton} onPress={() => navigation.navigate('Auth')}>
             <Text style={styles.rangePillLabelActive}>Create free account</Text>
           </TouchableOpacity>
         </View>
@@ -1020,6 +1019,20 @@ function createStyles(colors: ReturnType<typeof useThemeColors>) {
       justifyContent: 'center',
       padding: spacing.lg,
       gap: spacing.sm,
+    },
+    overlayTitle: {
+      fontSize: 18,
+      fontWeight: '700',
+      color: colors.textPrimary,
+      textAlign: 'center',
+      marginBottom: spacing.sm,
+    },
+    overlayButton: {
+      borderRadius: 999,
+      backgroundColor: colors.primary,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+      alignSelf: 'center',
     },
   });
 }

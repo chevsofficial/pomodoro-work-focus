@@ -97,6 +97,16 @@ export const AuthScreen: React.FC<Props> = ({ navigation }) => {
         keyboardVerticalOffset={80}
       >
         <View style={styles.card}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => {
+              if (navigation.canGoBack()) navigation.goBack();
+              else navigation.navigate('RootTabs');
+            }}
+          >
+            <Text style={styles.backButtonText}>← Back</Text>
+          </TouchableOpacity>
+
           <Text style={styles.title}>{mode === 'signIn' ? t('auth.titleSignIn') : t('auth.titleSignUp')}</Text>
           <Text style={styles.subtitle}>{t('auth.subtitle')}</Text>
 
@@ -170,6 +180,20 @@ const createStyles = (colors: ReturnType<typeof useThemeColors>) =>
       padding: spacing.xl,
       borderWidth: 1,
       borderColor: colors.border,
+    },
+    backButton: {
+      alignSelf: 'flex-start',
+      marginBottom: spacing.sm,
+      paddingVertical: spacing.xs,
+      paddingHorizontal: spacing.sm,
+      borderRadius: 10,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.background,
+    },
+    backButtonText: {
+      color: colors.textPrimary,
+      fontWeight: '700',
     },
     title: {
       fontSize: 24,
