@@ -47,7 +47,7 @@ Set these in local env / Vercel project settings:
 
 - `EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_placeholder`
 - `EXPO_PUBLIC_STRIPE_PRICE_ID=price_placeholder`
-- `EXPO_PUBLIC_STRIPE_SUCCESS_URL=https://www.tomoflow.app/app?checkout=success`
+- `EXPO_PUBLIC_STRIPE_SUCCESS_URL=https://www.tomoflow.app/paywall?checkout=success`
 - `EXPO_PUBLIC_STRIPE_CANCEL_URL=https://www.tomoflow.app/paywall?checkout=cancel`
 - `EXPO_PUBLIC_STRIPE_CHECKOUT_API_URL=https://www.tomoflow.app/api/stripe/checkout`
 - `STRIPE_SECRET_KEY=sk_test_placeholder`

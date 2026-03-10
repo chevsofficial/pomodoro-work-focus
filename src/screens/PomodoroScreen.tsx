@@ -1,4 +1,5 @@
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   AppState,
@@ -327,9 +328,19 @@ export const PomodoroScreen: React.FC = () => {
                   style={[styles.presetChip, currentPresetId === preset.id && styles.presetChipActive]}
                   onPress={() => applyPreset(preset.id)}
                 >
-                  <Text style={[styles.presetChipLabel, currentPresetId === preset.id && styles.presetChipLabelActive]}>
-                    {preset.label}{isLocked ? ' 🔒' : ''}
-                  </Text>
+                  <View style={styles.presetChipContent}>
+                    <Text style={[styles.presetChipLabel, currentPresetId === preset.id && styles.presetChipLabelActive]}>
+                      {preset.label}
+                    </Text>
+                    {isLocked && (
+                      <Ionicons
+                        name="lock-closed"
+                        size={12}
+                        color={currentPresetId === preset.id ? colors.background : colors.textSecondary}
+                        style={styles.lockIcon}
+                      />
+                    )}
+                  </View>
                 </TouchableOpacity>
               );
             })}
@@ -347,9 +358,12 @@ export const PomodoroScreen: React.FC = () => {
               trackEvent('flow_mode_toggled', { enabled: next });
             }}
           >
-            <Text style={[styles.flowToggleText, effectiveSettings.flowModeEnabled && styles.flowToggleTextActive]}>
-              {effectiveSettings.flowModeEnabled ? 'Flow mode: ON (continuous focus)' : 'Flow mode: OFF'}{!isPro ? ' 🔒' : ''}
-            </Text>
+            <View style={styles.flowToggleContent}>
+              <Text style={[styles.flowToggleText, effectiveSettings.flowModeEnabled && styles.flowToggleTextActive]}>
+                {effectiveSettings.flowModeEnabled ? 'Flow mode: ON (continuous focus)' : 'Flow mode: OFF'}
+              </Text>
+              {!isPro && <Ionicons name="lock-closed" size={12} color={colors.textSecondary} style={styles.lockIcon} />}
+            </View>
           </TouchableOpacity>
         </View>
 
@@ -570,6 +584,11 @@ function createStyles(colors: ReturnType<typeof useThemeColors>) {
       paddingHorizontal: spacing.sm,
       paddingVertical: spacing.xs,
     },
+    presetChipContent: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+    },
     presetChipActive: {
       backgroundColor: colors.primary,
       borderColor: colors.primary,
@@ -595,10 +614,18 @@ function createStyles(colors: ReturnType<typeof useThemeColors>) {
       backgroundColor: `${colors.accent}33`,
       borderColor: colors.accent,
     },
+    flowToggleContent: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+    },
     flowToggleText: {
       color: colors.textSecondary,
       fontWeight: '600',
       fontSize: 12,
+    },
+    lockIcon: {
+      marginTop: 1,
     },
     flowToggleTextActive: {
       color: colors.textPrimary,

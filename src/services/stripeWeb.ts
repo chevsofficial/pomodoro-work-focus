@@ -11,7 +11,7 @@ export async function startStripeCheckout(userId: string) {
       priceId: RuntimeConfig.stripePriceId || 'price_placeholder',
       successUrl:
         RuntimeConfig.stripeSuccessUrl ||
-        'https://www.tomoflow.app/app?checkout=success',
+        'https://www.tomoflow.app/paywall?checkout=success',
       cancelUrl:
         RuntimeConfig.stripeCancelUrl ||
         'https://www.tomoflow.app/paywall?checkout=cancel',
