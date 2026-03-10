@@ -2,8 +2,7 @@ import React, { useMemo } from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { NavigatorScreenParams, RouteProp } from '@react-navigation/native';
-import { Ionicons } from '@expo/vector-icons';
-import { StyleSheet } from 'react-native';
+import { StyleSheet, Text } from 'react-native';
 import { AnalyticsScreen } from '../screens/AnalyticsScreen';
 import { InfoScreen } from '../screens/InfoScreen';
 import { PomodoroScreen } from '../screens/PomodoroScreen';
@@ -52,11 +51,11 @@ const AnyStackNavigator = Stack.Navigator as any;
 type TabIconProps = {
   color: string;
   size: number;
-  name: string;
+  glyph: string;
 };
 
-const TabIcon = ({ color, size, name }: TabIconProps) => (
-  <Ionicons name={name as any} size={size} color={color} />
+const TabIcon = ({ color, size, glyph }: TabIconProps) => (
+  <Text style={{ color, fontSize: size, lineHeight: size + 2 }}>{glyph}</Text>
 );
 
 type TabBarIconRenderer = ({
@@ -77,29 +76,29 @@ type TabBarIconProps = {
 };
 
 const TabBarIcon = ({ routeName, focused, color, size }: TabBarIconProps) => {
-  let iconName: string;
+  let glyph: string;
 
   switch (routeName) {
     case 'Tasks':
-      iconName = focused ? 'list' : 'list-outline';
+      glyph = focused ? '☰' : '☷';
       break;
     case 'Pomodoro':
-      iconName = focused ? 'timer' : 'timer-outline';
+      glyph = focused ? '⏱' : '⏲';
       break;
     case 'Analytics':
-      iconName = focused ? 'stats-chart' : 'stats-chart-outline';
+      glyph = focused ? '◔' : '◷';
       break;
     case 'Settings':
-      iconName = focused ? 'settings' : 'settings-outline';
+      glyph = focused ? '⚙' : '⛭';
       break;
     case 'Info':
-      iconName = focused ? 'information-circle' : 'information-circle-outline';
+      glyph = focused ? 'ⓘ' : 'ℹ';
       break;
     default:
-      iconName = focused ? 'ellipse' : 'ellipse-outline';
+      glyph = '•';
   }
 
-  return <TabIcon name={iconName} size={size} color={color} />;
+  return <TabIcon glyph={glyph} size={size} color={color} />;
 };
 
 const renderTabBarIcon = (routeName: keyof RootTabParamList): TabBarIconRenderer => {
