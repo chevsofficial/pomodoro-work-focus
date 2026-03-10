@@ -12,7 +12,7 @@ import {
 import { ScreenContainer } from '../components/ScreenContainer';
 import { RootTabParamList } from '../navigation/RootNavigator';
 import { IntervalType, Task } from '../models';
-import useAppStore, { useTasks } from '../store/appStore';
+import useAppStore, { useEffectiveSettings, useTasks } from '../store/appStore';
 import { useTimerStore } from '../store/useTimerStore';
 import { useThemeColors } from '../theme/useThemeColors';
 import { spacing } from '../theme/spacing';
@@ -26,6 +26,12 @@ const formatTime = (seconds: number) => {
   const secs = (safeSeconds % 60).toString().padStart(2, '0');
   return `${minutes}:${secs}`;
 };
+
+const POMODORO_PRESETS = [
+  { id: 'classic', label: 'Classic 25/5', work: 25, shortBreak: 5, longBreak: 15, rounds: 4 },
+  { id: 'deep', label: 'Deep 50/10', work: 50, shortBreak: 10, longBreak: 20, rounds: 3 },
+  { id: 'sprint', label: 'Sprint 15/3', work: 15, shortBreak: 3, longBreak: 10, rounds: 4 },
+] as const;
 
 const TaskPickerModal: React.FC<{
   visible: boolean;
@@ -120,6 +126,8 @@ export const PomodoroScreen: React.FC = () => {
   const earlySkipInfoVisible = useAppStore((state) => state.earlySkipInfoVisible);
   const hideEarlySkipInfo = useAppStore((state) => state.hideEarlySkipInfo);
   const setShowEarlySkipInfoModal = useAppStore((state) => state.setShowEarlySkipInfoModal);
+  const updateSettings = useAppStore((state) => state.updateSettings);
+  const effectiveSettings = useEffectiveSettings();
   useAppStore((state) => state.language);
   const intervalLabels: Record<string, string> = {
     work: t('pomodoro.workLabel'),
@@ -179,6 +187,30 @@ export const PomodoroScreen: React.FC = () => {
     { label: t('pomodoro.longBreakLabel'), value: 'long_break' as IntervalType },
   ];
 
+  const currentPresetId = useMemo(() => {
+    const found = POMODORO_PRESETS.find(
+      (p) =>
+        p.work === effectiveSettings.workDurationMinutes &&
+        p.shortBreak === effectiveSettings.shortBreakMinutes &&
+        p.longBreak === effectiveSettings.longBreakMinutes &&
+        p.rounds === effectiveSettings.intervalsBeforeLongBreak,
+    );
+    return found?.id;
+  }, [effectiveSettings]);
+
+  const applyPreset = (presetId: (typeof POMODORO_PRESETS)[number]['id']) => {
+    const preset = POMODORO_PRESETS.find((p) => p.id === presetId);
+    if (!preset) return;
+
+    updateSettings({
+      workDurationMinutes: preset.work,
+      shortBreakMinutes: preset.shortBreak,
+      longBreakMinutes: preset.longBreak,
+      intervalsBeforeLongBreak: preset.rounds,
+    });
+    setIntervalType('work');
+  };
+
   const intervalLabel = intervalLabels[currentIntervalType];
   const formattedTime = formatTime(remainingSeconds);
   const focusCount =
@@ -213,6 +245,31 @@ export const PomodoroScreen: React.FC = () => {
             </TouchableOpacity>
           </React.Fragment>
         ))}
+      </View>
+
+      <View style={styles.presetsCard}>
+        <Text style={styles.taskSelectorLabel}>Session presets</Text>
+        <View style={styles.presetRow}>
+          {POMODORO_PRESETS.map((preset) => (
+            <TouchableOpacity
+              key={preset.id}
+              style={[styles.presetChip, currentPresetId === preset.id && styles.presetChipActive]}
+              onPress={() => applyPreset(preset.id)}
+            >
+              <Text style={[styles.presetChipLabel, currentPresetId === preset.id && styles.presetChipLabelActive]}>
+                {preset.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+        <TouchableOpacity
+          style={[styles.flowToggle, effectiveSettings.flowModeEnabled && styles.flowToggleActive]}
+          onPress={() => updateSettings({ flowModeEnabled: !effectiveSettings.flowModeEnabled })}
+        >
+          <Text style={[styles.flowToggleText, effectiveSettings.flowModeEnabled && styles.flowToggleTextActive]}>
+            {effectiveSettings.flowModeEnabled ? 'Flow mode: ON (continuous focus)' : 'Flow mode: OFF'}
+          </Text>
+        </TouchableOpacity>
       </View>
 
       <View style={styles.timerCard}>
@@ -362,6 +419,60 @@ function createStyles(colors: ReturnType<typeof useThemeColors>) {
     },
     segmentLabelActive: {
       color: colors.background,
+    },
+    presetsCard: {
+      borderRadius: 16,
+      backgroundColor: colors.surface,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.md,
+      marginBottom: spacing.md,
+    },
+    presetRow: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: spacing.xs,
+      marginTop: spacing.xs,
+    },
+    presetChip: {
+      borderRadius: 999,
+      backgroundColor: colors.background,
+      borderWidth: 1,
+      borderColor: colors.border,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: spacing.xs,
+    },
+    presetChipActive: {
+      backgroundColor: colors.primary,
+      borderColor: colors.primary,
+    },
+    presetChipLabel: {
+      fontSize: 12,
+      color: colors.textSecondary,
+      fontWeight: '600',
+    },
+    presetChipLabelActive: {
+      color: colors.background,
+    },
+    flowToggle: {
+      marginTop: spacing.sm,
+      borderRadius: 10,
+      borderWidth: 1,
+      borderColor: colors.border,
+      paddingVertical: spacing.xs,
+      paddingHorizontal: spacing.sm,
+      alignSelf: 'flex-start',
+    },
+    flowToggleActive: {
+      backgroundColor: `${colors.accent}33`,
+      borderColor: colors.accent,
+    },
+    flowToggleText: {
+      color: colors.textSecondary,
+      fontWeight: '600',
+      fontSize: 12,
+    },
+    flowToggleTextActive: {
+      color: colors.textPrimary,
     },
     timerCard: {
       borderRadius: 24,

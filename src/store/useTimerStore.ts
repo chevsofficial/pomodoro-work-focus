@@ -69,6 +69,10 @@ const determineNextInterval = (
   shouldCountWorkCompletion: boolean,
   taskId?: string,
 ) => {
+  const appState = useAppStore.getState();
+  const settings = selectEffectiveSettings(appState);
+  const flowModeEnabled = settings.flowModeEnabled;
+
   const config = getTimingConfigForTask(taskId);
   const requiredBeforeLongBreak = Math.max(1, config.intervalsBeforeLongBreak || 1);
 
@@ -78,6 +82,13 @@ const determineNextInterval = (
 
     if (shouldTriggerLongBreak) {
       return { nextType: 'long_break' as IntervalType, nextCompletedWorkIntervals: 0 };
+    }
+
+    if (flowModeEnabled) {
+      return {
+        nextType: 'work' as IntervalType,
+        nextCompletedWorkIntervals: incremented,
+      };
     }
 
     return {

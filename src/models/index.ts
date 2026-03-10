@@ -53,6 +53,7 @@ export interface PomodoroSettings {
   longBreakMinutes: number;
   intervalsBeforeLongBreak: number;
   autoStartNextInterval: boolean;
+  flowModeEnabled: boolean;
   soundEnabled: boolean;
   vibrationEnabled: boolean;
   notificationsEnabled: boolean;

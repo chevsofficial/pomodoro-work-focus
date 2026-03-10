@@ -315,6 +315,28 @@ export const AnalyticsScreen: React.FC = () => {
 
   const rangeFocusHours = rangeFocusSeconds / 3600;
 
+  const weeklyTrend = useMemo(() => {
+    const now = new Date();
+    const thisWeekStart = startOfWeek(now);
+    const prevWeekStart = addDays(thisWeekStart, -7);
+    const prevWeekEnd = addDays(thisWeekStart, -1);
+
+    const sumHours = (start: Date, end: Date) =>
+      analyticsIntervals
+        .filter((i) => {
+          if (!i.endedAt) return false;
+          const startedAt = new Date(i.startedAt);
+          return startedAt >= start && startedAt <= end && i.type === 'work' && !i.wasSkipped;
+        })
+        .reduce((sum, i) => sum + getAnalyticsDurationSeconds(i) / 3600, 0);
+
+    const thisWeekHours = sumHours(thisWeekStart, now);
+    const prevWeekHours = sumHours(prevWeekStart, endOfDay(prevWeekEnd));
+    const deltaPct = prevWeekHours > 0 ? ((thisWeekHours - prevWeekHours) / prevWeekHours) * 100 : null;
+
+    return { thisWeekHours, prevWeekHours, deltaPct };
+  }, [analyticsIntervals]);
+
   const activityTypeMap = useMemo(() => {
     const entries = activityTypes.map((type) => [type.id, type] as const);
     return Object.fromEntries(entries) as Record<string, (typeof activityTypes)[number]>;
@@ -415,6 +437,26 @@ export const AnalyticsScreen: React.FC = () => {
               <Text style={styles.totalValue}>{lifetimeFocusHours.toFixed(1)}h</Text>
             </View>
           </View>
+        </View>
+
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Weekly trend</Text>
+          <Text style={styles.cardSubtitle}>Your focus momentum vs last week.</Text>
+          <View style={styles.totalRow}>
+            <View style={styles.totalColumn}>
+              <Text style={styles.totalLabel}>This week</Text>
+              <Text style={styles.totalValue}>{weeklyTrend.thisWeekHours.toFixed(1)}h</Text>
+            </View>
+            <View style={styles.totalColumn}>
+              <Text style={styles.totalLabel}>Last week</Text>
+              <Text style={styles.totalValue}>{weeklyTrend.prevWeekHours.toFixed(1)}h</Text>
+            </View>
+          </View>
+          <Text style={styles.trendDelta}>
+            {weeklyTrend.deltaPct === null
+              ? 'No baseline from last week yet.'
+              : `${weeklyTrend.deltaPct >= 0 ? '▲' : '▼'} ${Math.abs(weeklyTrend.deltaPct).toFixed(0)}% vs last week`}
+          </Text>
         </View>
 
         <View style={styles.section}>
@@ -903,6 +945,12 @@ function createStyles(colors: ReturnType<typeof useThemeColors>) {
     totalValueRow: {
       flexDirection: 'row',
       alignItems: 'center',
+    },
+    trendDelta: {
+      marginTop: spacing.sm,
+      color: colors.accent,
+      fontSize: 13,
+      fontWeight: '700',
     },
     focusMetricsRow: {
       flexDirection: 'row',

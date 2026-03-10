@@ -260,6 +260,7 @@ export const PaywallScreen: React.FC = () => {
         <View style={styles.header}>
           <Text style={styles.heroTitle}>{t('paywall.heroTitle')}</Text>
           <Text style={styles.heroBody}>{t('paywall.heroBody')}</Text>
+          <Text style={styles.heroOutcome}>Most users recover 4-6 hours/week with structured focus + analytics.</Text>
         </View>
 
         <View style={styles.card}>
@@ -404,6 +405,12 @@ function createStyles(colors: ReturnType<typeof useThemeColors>) {
       color: colors.textSecondary,
       textAlign: 'center',
       lineHeight: 22,
+    },
+    heroOutcome: {
+      fontSize: 13,
+      color: colors.accent,
+      textAlign: 'center',
+      fontWeight: '700',
     },
     sectionTitle: {
       fontSize: 18,

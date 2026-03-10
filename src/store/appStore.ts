@@ -151,6 +151,7 @@ const FREE_DEFAULT_SHORT_MIN = 5;
 const FREE_DEFAULT_LONG_MIN = 15;
 const FREE_DEFAULT_INTERVALS_BEFORE_LONG = 4;
 const FREE_DEFAULT_AUTOSTART = false;
+const FREE_DEFAULT_FLOW_MODE = false;
 
 const ORPHAN_INTERVAL_AGE_MS = 5 * 60 * 1000;
 
@@ -170,6 +171,7 @@ export const selectEffectiveSettings = (state: AppStore): PomodoroSettings => {
     longBreakMinutes: FREE_DEFAULT_LONG_MIN,
     intervalsBeforeLongBreak: FREE_DEFAULT_INTERVALS_BEFORE_LONG,
     autoStartNextInterval: FREE_DEFAULT_AUTOSTART,
+    flowModeEnabled: FREE_DEFAULT_FLOW_MODE,
   };
 };
 
@@ -263,6 +265,7 @@ const defaultSettings: PomodoroSettings = {
   longBreakMinutes: 15,
   intervalsBeforeLongBreak: 4,
   autoStartNextInterval: false,
+  flowModeEnabled: false,
   soundEnabled: true,
   vibrationEnabled: true,
   notificationsEnabled: true,
