@@ -115,7 +115,7 @@ export const PaywallScreen: React.FC = () => {
       }
 
       try {
-        await startStripeCheckout(cloudUserId);
+        await startStripeCheckout(cloudUserId, planKey);
       } catch (error) {
         Alert.alert('Stripe checkout unavailable', 'Configure Stripe environment variables and API endpoint.');
       }

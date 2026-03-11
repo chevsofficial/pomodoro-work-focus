@@ -1,6 +1,8 @@
 import { RuntimeConfig } from '../config/runtimeConfig';
 
-export async function startStripeCheckout(userId: string) {
+export type StripePlanKey = 'monthly' | 'annual';
+
+export async function startStripeCheckout(userId: string, planKey: StripePlanKey) {
   const endpoint = RuntimeConfig.stripeCheckoutApiUrl || '/api/stripe/checkout';
 
   const response = await fetch(endpoint, {
@@ -8,6 +10,8 @@ export async function startStripeCheckout(userId: string) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       userId,
+      planKey,
+      // Backward-compatible fallback consumed by legacy API versions.
       priceId: RuntimeConfig.stripePriceId || 'price_placeholder',
       successUrl:
         RuntimeConfig.stripeSuccessUrl ||
